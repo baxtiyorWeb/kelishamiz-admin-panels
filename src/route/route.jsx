@@ -4,6 +4,7 @@ import AuthLayout from "../layout/AuthLayout";
 import PrivateRoute from "./PrivateRoute";
 import LoginComponent from "../auth/LoginComponent";
 import Category from "../modules/Category";
+import Properties from "../modules/Properties";
 export const AppRouter = () => {
   return (
     <Routes>
@@ -17,6 +18,7 @@ export const AppRouter = () => {
       ></Route>
       <Route path="/" element={<AppLayout />}>
         <Route path="/categories" element={<Category />} />
+        <Route path="/properties" element={<Properties />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>

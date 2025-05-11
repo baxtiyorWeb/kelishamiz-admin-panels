@@ -65,7 +65,7 @@ const Category = () => {
     },
     onError: (error) => {
       console.error("Error creating category", error);
-      message.error("Failed to create category")
+      message.error("Failed to create category");
     },
   });
 

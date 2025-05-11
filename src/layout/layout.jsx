@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  ProductOutlined,
+  PropertySafetyTwoTone,
   UploadOutlined,
   UserOutlined,
   VideoCameraOutlined,
@@ -34,8 +36,9 @@ const AppLayout = () => {
             },
             {
               key: "2",
-              icon: <VideoCameraOutlined />,
-              label: "nav 2",
+              icon: <ProductOutlined />,
+              label: "Xususiyatlar",
+              onClick: () => navigate("/properties"),
             },
             {
               key: "3",

@@ -1,0 +1,12 @@
+/* global.css yoki App.css */
+.custom-cascader-popup {
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    padding: 0 !important;
+  }
+  .custom-cascader-popup .ant-cascader-menu {
+    height: 300px !important;
+  }
+  .custom-cascader-popup .ant-cascader-menu-item {
+    height: 40px; /* har bir item balandligi */
+  }
