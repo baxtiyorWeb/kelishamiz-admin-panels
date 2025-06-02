@@ -5,6 +5,9 @@ import PrivateRoute from "./PrivateRoute";
 import LoginComponent from "../auth/LoginComponent";
 import Category from "../modules/Category";
 import Properties from "../modules/Properties";
+import Profiles from "../modules/Profiles";
+import Products from "../modules/Products";
+import Locations from "../modules/Locations";
 export const AppRouter = () => {
   return (
     <Routes>
@@ -17,8 +20,11 @@ export const AppRouter = () => {
         }
       ></Route>
       <Route path="/" element={<AppLayout />}>
-        <Route path="/categories" element={<Category />} />
+        <Route path="/categories" index element={<Category />} />
         <Route path="/properties" element={<Properties />} />
+        <Route path="/profiles" element={<Profiles />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/locations" element={<Locations />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>

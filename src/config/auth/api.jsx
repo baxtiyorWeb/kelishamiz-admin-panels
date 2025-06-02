@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://kelishamiz-backend.vercel.app",
+  baseURL: "https://api.kelishamiz.uz",
   headers: {
     "Content-Type": "application/json",
   },

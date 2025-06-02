@@ -1,17 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  ProductFilled,
   ProductOutlined,
-  PropertySafetyTwoTone,
-  UploadOutlined,
-  UserOutlined,
-  VideoCameraOutlined,
+  ProfileOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate } from "react-router-dom";
-import { IoGridOutline } from "react-icons/io5";
 import { CiGrid32 } from "react-icons/ci";
+import { MapIcon, MapPinHouse, MapPinIcon } from "lucide-react";
 const { Header, Sider, Content } = Layout;
 const AppLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -19,6 +17,13 @@ const AppLayout = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+
+  useEffect(() => {
+    if (window.location.pathname === "/") {
+      navigate("/categories");
+    }
+  }, []);
+
   return (
     <Layout className="min-h-screen">
       <Sider trigger={null} collapsible collapsed={collapsed}>
@@ -26,24 +31,37 @@ const AppLayout = () => {
         <Menu
           theme="dark"
           mode="inline"
-          defaultSelectedKeys={["1"]}
+          selectedKeys={[location.pathname]}
           items={[
             {
-              key: "1",
+              key: "/categories",
               icon: <CiGrid32 />,
               label: "Kategoriyalar",
               onClick: () => navigate("/categories"),
             },
             {
-              key: "2",
+              key: "/properties",
               icon: <ProductOutlined />,
               label: "Xususiyatlar",
               onClick: () => navigate("/properties"),
             },
             {
-              key: "3",
-              icon: <UploadOutlined />,
-              label: "nav 3",
+              key: "/profiles",
+              icon: <ProfileOutlined />,
+              label: "profillar",
+              onClick: () => navigate("/profiles"),
+            },
+            {
+              key: "/products",
+              icon: <ProductFilled />,
+              label: "mahsulotlar",
+              onClick: () => navigate("/products"),
+            },
+            {
+              key: "/locations",
+              icon: <MapIcon />,
+              label: "joylashuvlar",
+              onClick: () => navigate("/locations"),
             },
           ]}
         />

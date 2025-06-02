@@ -2,18 +2,15 @@ import React, { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, isArray } from "lodash";
 import { Button } from "antd";
-import { Input } from "antd";
-import { Select } from "antd";
-import { Table } from "antd";
-import { Modal } from "antd";
+
 import { Popconfirm, Upload, message } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
 import CascaderComponent from "./../components/Cascader";
 import InputComponent from "./../components/Input";
 import ModalComponent from "./../components/Modal";
 import FileUploadComponent from "./../components/Upload";
 // Import your actual API configuration
 import api from "../config/auth/api";
+import Table from "./../components/Table";
 
 // Mock FileUpload Component (Replace with your actual component)
 
@@ -36,21 +33,23 @@ const Category = () => {
     ? get(data, "content")
     : [];
 
-  const buildOptionsRecursively = (categories = [], parentName = null) => {
-    return categories.map((item) => {
-      const currentName = parentName
-        ? `${parentName} / ${item.name}`
-        : item.name;
-      const option = {
-        value: item.id,
-        label: currentName,
-      };
-
-      return option;
-    });
+  const [lastId, setLastId] = useState(null);
+  const buildCascaderOptions = (categories = []) => {
+    return categories.map((item) => ({
+      label: item.name,
+      value: item.id,
+      children: item.children?.length
+        ? buildCascaderOptions(item.children)
+        : undefined,
+    }));
   };
+  const options = buildCascaderOptions(categoryList);
 
-  const options = buildOptionsRecursively(categoryList);
+  const handleChange = (value) => {
+    const selectedId = value[value.length - 1]; // oxirgi id
+    setLastId(selectedId);
+    console.log("Selected last category ID:", selectedId);
+  };
 
   const handleCategoryMutate = useMutation({
     mutationFn: async (category) => {
@@ -102,7 +101,7 @@ const Category = () => {
     handleCategoryMutate.mutate({
       name,
       imageUrl,
-      parentId: selectedParentId,
+      parentId: lastId,
     });
   };
 
@@ -154,8 +153,8 @@ const Category = () => {
         isModalOpen={isOpenEditModal}
       >
         <div className="grid gap-4 py-4">
-          <div className="grid  grid-cols-4 items-center gap-4">
-            <label htmlFor="name" className="text-right">
+          <div className="grid grid-cols-1 items-center gap-4">
+            <label htmlFor="name" className="text-left">
               Name
             </label>
             <InputComponent
@@ -164,25 +163,23 @@ const Category = () => {
               onChange={(e) => setName(e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="parent" className="text-right">
+          <div className="grid grid-cols-1 items-center gap-4">
+            <label htmlFor="parent" className="text-leftt">
               Parent Category
             </label>
             <CascaderComponent
               options={options}
-              onChange={(value) =>
-                setSelectedParentId(value === "null" ? null : parseInt(value))
-              }
+              onChange={(value) => handleChange(value)}
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="image" className="text-right">
+          <div className="grid grid-cols-1 items-center gap-4">
+            <label htmlFor="image" className="text-left">
               Image
             </label>
             <FileUploadComponent onFileSelect={handleFileUpload} />
           </div>
           {imageUrl && (
-            <div className="grid grid-cols-4 items-center gap-4">
+            <div className="grid grid-cols-1 items-center gap-4">
               <label className="text-right">Preview</label>
               <div className="col-span-3">
                 <img
@@ -204,7 +201,7 @@ const Category = () => {
         Add Category
       </Button>
 
-      <Table dataSource={categoryList} columns={columns} rowKey="id" />
+      <Table dataSource={categoryList} columnDefs={columns} rowKey="id" />
     </div>
   );
 };
