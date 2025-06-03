@@ -5,6 +5,7 @@ import {
   ProductFilled,
   ProductOutlined,
   ProfileOutlined,
+  RocketOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate } from "react-router-dom";
@@ -68,6 +69,12 @@ const AppLayout = () => {
               icon: <Users />,
               label: "Foydalanuvchilar",
               onClick: () => navigate("/users"),
+            },
+            {
+              key: "/banners",
+              icon: <RocketOutlined />,
+              label: "Bannerlar",
+              onClick: () => navigate("/banners"),
             },
           ]}
         />

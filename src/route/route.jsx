@@ -9,6 +9,7 @@ import Profiles from "../modules/Profiles";
 import Products from "../modules/Products";
 import Locations from "../modules/Locations";
 import Users from "../modules/Users";
+import Banners from "../modules/Banner";
 export const AppRouter = () => {
   return (
     <Routes>
@@ -27,6 +28,7 @@ export const AppRouter = () => {
         <Route path="/products" element={<Products />} />
         <Route path="/locations" element={<Locations />} />
         <Route path="/users" element={<Users />} />
+        <Route path="/banners" element={<Banners />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>
