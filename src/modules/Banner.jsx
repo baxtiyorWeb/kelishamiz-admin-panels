@@ -118,7 +118,7 @@ const Banners = () => {
 
   // Bannerni yangilash
   const updateBannerMutation = useMutation({
-    mutationFn: async (id, values) => {
+    mutationFn: async ({ id, values }) => {
       const formData = new FormData();
       const fileList = values?.file;
 
@@ -139,15 +139,13 @@ const Banners = () => {
       for (let pair of formData.entries()) {
         console.log(pair[0], pair[1]);
       }
-
       const response = await api.patch(`/banners/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      if (response.status !== 201 || !response.data) {
-        throw new Error("Banner yaratishda xatolik yuz berdi.");
+      if (response.status !== 200 || !response.data) {
+        throw new Error("Banner yangilashda xatolik yuz berdi.");
       }
       return response.data;
     },
