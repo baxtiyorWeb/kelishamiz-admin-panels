@@ -121,8 +121,6 @@ const Banners = () => {
     mutationFn: async (values) => {
       const formData = new FormData();
       const fileList = values?.file;
-      console.log("FileList:", fileList);
-      console.log("Values:", values);
 
       if (fileList && fileList[0] && fileList[0].originFileObj) {
         formData.append("file", fileList[0].originFileObj);
@@ -142,7 +140,7 @@ const Banners = () => {
         console.log(pair[0], pair[1]);
       }
 
-      const response = await api.post("/banners", formData, {
+      const response = await api.put("/banners", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
