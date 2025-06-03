@@ -1,8 +1,8 @@
 /* eslint-disable no-unsafe-optional-chaining */
 import axios from "axios";
-
+// https://api.kelishamiz.uz
 const api = axios.create({
-  baseURL: "https://api.kelishamiz.uz",
+  baseURL: "http://localhost:3030",
   headers: {
     "Content-Type": "application/json",
   },

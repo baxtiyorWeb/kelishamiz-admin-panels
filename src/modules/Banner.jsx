@@ -73,19 +73,32 @@ const Banners = () => {
   const createBannerMutation = useMutation({
     mutationFn: async (values) => {
       const formData = new FormData();
+      const fileList = values?.file;
+
+      if (fileList && fileList[0] && fileList[0].originFileObj) {
+        formData.append("file", fileList[0].originFileObj);
+      }
+
       Object.keys(values).forEach((key) => {
-        if (key === "file" && values[key] && values[key].file) {
-          formData.append("file", values[key].file.originFileObj);
-        } else if (values[key] !== undefined && values[key] !== null) {
+        if (
+          key !== "file" &&
+          values[key] !== undefined &&
+          values[key] !== null
+        ) {
           formData.append(key, values[key]);
         }
       });
+
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
 
       const response = await api.post("/banners", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
+
       if (response.status !== 201 || !response.data) {
         throw new Error("Banner yaratishda xatolik yuz berdi.");
       }
@@ -105,23 +118,38 @@ const Banners = () => {
 
   // Bannerni yangilash
   const updateBannerMutation = useMutation({
-    mutationFn: async ({ id, values }) => {
+    mutationFn: async (values) => {
       const formData = new FormData();
+      const fileList = values?.file;
+      console.log("FileList:", fileList);
+      console.log("Values:", values);
+
+      if (fileList && fileList[0] && fileList[0].originFileObj) {
+        formData.append("file", fileList[0].originFileObj);
+      }
+
       Object.keys(values).forEach((key) => {
-        if (key === "file" && values[key] && values[key].file) {
-          formData.append("file", values[key].file.originFileObj);
-        } else if (values[key] !== undefined && values[key] !== null) {
+        if (
+          key !== "file" &&
+          values[key] !== undefined &&
+          values[key] !== null
+        ) {
           formData.append(key, values[key]);
         }
       });
 
-      const response = await api.patch(`/banners/${id}`, formData, {
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+
+      const response = await api.post("/banners", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-      if (response.status !== 200 || !response.data) {
-        throw new Error("Banner yangilashda xatolik yuz berdi.");
+
+      if (response.status !== 201 || !response.data) {
+        throw new Error("Banner yaratishda xatolik yuz berdi.");
       }
       return response.data;
     },
