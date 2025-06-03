@@ -9,7 +9,7 @@ import {
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate } from "react-router-dom";
 import { CiGrid32 } from "react-icons/ci";
-import { MapIcon, MapPinHouse, MapPinIcon } from "lucide-react";
+import { MapIcon, MapPinHouse, MapPinIcon, Users } from "lucide-react";
 const { Header, Sider, Content } = Layout;
 const AppLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -62,6 +62,12 @@ const AppLayout = () => {
               icon: <MapIcon />,
               label: "joylashuvlar",
               onClick: () => navigate("/locations"),
+            },
+            {
+              key: "/users",
+              icon: <Users />,
+              label: "Foydalanuvchilar",
+              onClick: () => navigate("/users"),
             },
           ]}
         />

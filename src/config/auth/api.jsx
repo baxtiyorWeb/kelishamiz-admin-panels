@@ -61,7 +61,7 @@ api.interceptors.response.use(
       if (error.response.data.message === "Invalid refresh token") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        window.location.href = "/auth/login";
+        // window.location.href = "/auth/login";
         return Promise.reject(error);
       }
 
@@ -84,14 +84,14 @@ api.interceptors.response.use(
         if (!refreshToken) {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
-          window.location.href = "/auth/login";
+          // window.location.href = "/auth/login";
           return Promise.reject(new Error("No refresh token found."));
         }
 
         try {
-          const response = await api.post(`/authority/refresh-token`, {
-            refreshToken: refreshToken,
-          });
+          const response = await api.get(
+            `/auth/refresh-token?=refreshToken${refreshToken}`
+          );
 
           if (response.status === 200) {
             const {
@@ -115,7 +115,7 @@ api.interceptors.response.use(
           processQueue(err, null);
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
-          window.location.href = "/auth/login";
+          // window.location.href = "/auth/login";
           return Promise.reject(err);
         } finally {
           isRefreshing = false;

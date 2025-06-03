@@ -8,6 +8,7 @@ import Properties from "../modules/Properties";
 import Profiles from "../modules/Profiles";
 import Products from "../modules/Products";
 import Locations from "../modules/Locations";
+import Users from "../modules/Users";
 export const AppRouter = () => {
   return (
     <Routes>
@@ -25,6 +26,7 @@ export const AppRouter = () => {
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/products" element={<Products />} />
         <Route path="/locations" element={<Locations />} />
+        <Route path="/users" element={<Users />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>
