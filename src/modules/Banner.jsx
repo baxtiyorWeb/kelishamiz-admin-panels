@@ -118,7 +118,7 @@ const Banners = () => {
 
   // Bannerni yangilash
   const updateBannerMutation = useMutation({
-    mutationFn: async (values) => {
+    mutationFn: async (id, values) => {
       const formData = new FormData();
       const fileList = values?.file;
 
@@ -140,7 +140,7 @@ const Banners = () => {
         console.log(pair[0], pair[1]);
       }
 
-      const response = await api.put("/banners", formData, {
+      const response = await api.patch(`/banners/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
