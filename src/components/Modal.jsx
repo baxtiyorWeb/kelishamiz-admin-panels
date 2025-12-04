@@ -1,10 +1,10 @@
-import React from "react";
-import { Button, Modal } from "antd";
+import { Modal } from "antd";
 const AppModal = ({
   isModalOpen = false,
   setIsModalOpen = () => false,
   handleFunc = () => {},
   children,
+  title = "",
 }) => {
   const handleOk = () => {
     setIsModalOpen(false);
@@ -16,7 +16,7 @@ const AppModal = ({
   return (
     <>
       <Modal
-        title="Basic Modal"
+        title={title}
         closable={{ "aria-label": "Custom Close Button" }}
         open={isModalOpen}
         onOk={handleOk}

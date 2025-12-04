@@ -1,31 +1,39 @@
 import React, { useState, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, isArray } from "lodash";
-import { Button } from "antd";
+import { Button, Popconfirm, message, Spin, TreeSelect } from "antd";
+import { ArrowLeft, ArrowRight, Edit, Trash } from "lucide-react";
 
-import { Popconfirm, Upload, message } from "antd";
-import CascaderComponent from "./../components/Cascader";
 import InputComponent from "./../components/Input";
 import ModalComponent from "./../components/Modal";
 import FileUploadComponent from "./../components/Upload";
-// Import your actual API configuration
-import api from "../config/auth/api";
 import Table from "./../components/Table";
+import api from "../config/auth/api";
 
-// Mock FileUpload Component (Replace with your actual component)
+const initialCategoryState = {
+  name: "",
+  imageUrl: "",
+  parentId: null, // TreeSelect qiymatini saqlash uchun qo'shildi
+};
 
 const Category = () => {
-  const [isOpenEditModal, setisOpenEditModal] = useState(false);
-  const [selectedParentId, setSelectedParentId] = useState(null);
-  const [name, setName] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
   const queryClient = useQueryClient();
 
-  const { data, isLoading, refetch } = useQuery({
-    // Added refetch
-    queryKey: ["categories"],
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModal] = useState(false);
+  const [categoryData, setCategoryData] = useState(initialCategoryState);
+  const [editingCategory, setEditingCategory] = useState(initialCategoryState);
+  const [selectedId, setSelectedId] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [currentEditId, setCurrentEditId] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["categories", selectedId],
     queryFn: async () => {
-      return (await api.get("/category")).data;
+      const parentIdQuery =
+        selectedId !== null ? `?parentId=${selectedId}` : "";
+      return (await api.get(`/category${parentIdQuery}`)).data;
     },
   });
 
@@ -33,80 +41,152 @@ const Category = () => {
     ? get(data, "content")
     : [];
 
-  const [lastId, setLastId] = useState(null);
-  const buildCascaderOptions = (categories = []) => {
-    return categories.map((item) => ({
-      label: item.name,
-      value: item.id,
-      children: item.children?.length
-        ? buildCascaderOptions(item.children)
-        : undefined,
-    }));
-  };
-  const options = buildCascaderOptions(categoryList);
+  const cleanedCategoryList = categoryList?.map(
+    ({ children, ...rest }) => rest
+  );
 
-  const handleChange = (value) => {
-    const selectedId = value[value.length - 1]; // oxirgi id
-    setLastId(selectedId);
-    console.log("Selected last category ID:", selectedId);
-  };
+  const createCategoryMutation = useMutation({
+    mutationFn: async (category) => api.post("/category", category),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["categories"]);
+      setIsCreateModalOpen(false);
+      setCategoryData(initialCategoryState);
+      message.success("Kategoriya muvaffaqiyatli yaratildi! 🎉");
+    },
+    onError: (error) => {
+      message.error(
+        "Yaratishda xato: " +
+          get(error, "response.data.message", "Noma'lum xato")
+      );
+    },
+  });
 
-  const handleCategoryMutate = useMutation({
+  const updateCategoryMutation = useMutation({
     mutationFn: async (category) => {
-      return await api.post("/category", category);
+      const { id, ...updateData } = category;
+      return api.put(`/category/${id}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["categories"]);
-      setisOpenEditModal(false);
-      setName("");
-      setImageUrl("");
-      setSelectedParentId(null);
+      setIsEditModal(false);
+      setEditingCategory(initialCategoryState);
+      setCurrentEditId(null);
+      message.success("Kategoriya muvaffaqiyatli tahrirlandi!");
     },
     onError: (error) => {
-      console.error("Error creating category", error);
-      message.error("Failed to create category");
+      message.error(
+        "Tahrirlashda xato: " +
+          get(error, "response.data.message", "Noma'lum xato")
+      );
     },
   });
 
-  const handleCategoryMutateDelete = useMutation({
-    mutationFn: async (id) => {
-      return await api.delete(`/category/${id}`);
-    },
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id) => api.delete(`/category/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(["categories"]);
+      message.success("Kategoriya muvaffaqiyatli o'chirildi! 🗑️");
     },
     onError: (error) => {
-      console.error("Error deleting category", error);
-      message.error("Failed to delete category"); // Show error message
+      message.error(
+        "O'chirishda xato: " +
+          get(error, "response.data.message", "Noma'lum xato")
+      );
     },
   });
 
-  const handleFileUpload = useCallback(async (file) => {
+  const handleFileUpload = useCallback(async (file, isEdit = false) => {
     const formData = new FormData();
     formData.append("file", file);
+    setIsUploading(true);
 
     try {
       const response = await api.post("/file/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setImageUrl(get(response, "data.content.url", ""));
-      message.success("File uploaded successfully");
+      const imageUrl = get(response, "data.content.url", "");
+
+      if (isEdit) {
+        setEditingCategory((prev) => ({ ...prev, imageUrl }));
+      } else {
+        setCategoryData((prev) => ({ ...prev, imageUrl }));
+      }
+      message.success("Fayl muvaffaqiyatli yuklandi!");
     } catch (error) {
-      console.error("Upload error:", error);
-      message.error("File upload failed");
+      message.error("Fayl yuklashda xato!");
+    } finally {
+      setIsUploading(false);
     }
   }, []);
 
   const handleCreateCategory = () => {
-    handleCategoryMutate.mutate({
-      name,
-      imageUrl,
-      parentId: lastId,
+    // 1. Agar TreeSelect (categoryData.parentId) orqali Parent tanlangan bo'lsa, o'shani ishlat.
+    // 2. Aks holda, joriy jadval ko'rinishi (selectedId) parent bo'ladi.
+    const parentIdToUse =
+      categoryData.parentId !== undefined && categoryData.parentId !== null
+        ? categoryData.parentId
+        : selectedId;
+
+    createCategoryMutation.mutate({
+      name: categoryData.name,
+      imageUrl: categoryData.imageUrl,
+      parentId: parentIdToUse,
+    });
+  };
+
+  const handleUpdateCategory = () => {
+    if (!currentEditId) return message.error("Tahrirlash uchun ID topilmadi.");
+
+    updateCategoryMutation.mutate({
+      id: currentEditId,
+      name: editingCategory.name,
+      imageUrl: editingCategory.imageUrl,
     });
   };
 
   const handleDelete = (id) => {
-    handleCategoryMutateDelete.mutate(id);
+    deleteCategoryMutation.mutate(id);
+  };
+
+  const handleGoToChild = (id) => {
+    if (selectedId !== id) {
+      setHistory((prev) => [...prev, selectedId]);
+      setSelectedId(id);
+    }
+  };
+
+  const handleGoBack = () => {
+    if (history.length > 0) {
+      const previousId = history[history.length - 1];
+      const newHistory = history.slice(0, -1);
+      setHistory(newHistory);
+      setSelectedId(previousId);
+    } else {
+      setSelectedId(null);
+    }
+  };
+
+  const openEditModal = (record) => {
+    setCurrentEditId(record.id);
+    setEditingCategory({
+      name: record.name,
+      imageUrl: record.imageUrl || "",
+    });
+    setIsEditModal(true);
+  };
+
+  const transformToTreeData = (categories) => {
+    // API'dan kelgan ma'lumotni TreeSelect uchun formatlash
+    return categories?.map((item) => ({
+      title: item.name,
+      value: item.id,
+      key: item.id,
+      children: item.children?.map((child) => ({
+        title: child.name,
+        value: child.id,
+        key: child.id,
+      })),
+    }));
   };
 
   const columns = [
@@ -116,74 +196,127 @@ const Category = () => {
       key: "id",
     },
     {
-      title: "Category Name",
+      title: "Nomi",
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "Parent Category",
-      dataIndex: "parentName",
-      key: "parentName",
+      title: "Keyingi kategoriya",
+      key: "goToChild",
+      render: (_, record) => (
+        <div>
+          <ArrowRight
+            className="text-gray-600 mx-3 cursor-pointer rounded-[10px] border p-1 hover:bg-gray-100 transition"
+            size={30}
+            onClick={() => handleGoToChild(record.id)}
+          />
+        </div>
+      ),
     },
     {
-      title: "Action",
+      title: "Harakatlar",
       key: "action",
       render: (_, record) => (
-        <Popconfirm
-          title="Are you sure to delete this category?"
-          onConfirm={() => handleDelete(record.id)}
-          okText="Yes"
-          cancelText="No"
-        >
-          <Button type="danger" size="small">
-            Delete
-          </Button>
-        </Popconfirm>
+        <div className="flex justify-start items-center w-full">
+          <Popconfirm
+            title="Haqiqatan ham ushbu kategoriyani o'chirmoqchimisiz?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Ha"
+            cancelText="Yo'q"
+            okButtonProps={{ loading: deleteCategoryMutation.isPending }}
+          >
+            <Trash
+              className={`mx-3 cursor-pointer rounded-[10px] border p-1 transition ${
+                deleteCategoryMutation.isPending
+                  ? "text-gray-400"
+                  : "text-red-500 hover:bg-red-50"
+              }`}
+              size={30}
+            />
+          </Popconfirm>
+
+          <Edit
+            onClick={() => openEditModal(record)}
+            className="text-blue-500 mx-3 cursor-pointer rounded-[10px] border p-1 hover:bg-blue-50 transition"
+            size={30}
+          />
+        </div>
       ),
     },
   ];
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading)
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Spin size="large" tip="Kategoriyalar yuklanmoqda..." />
+      </div>
+    );
 
   return (
     <div>
       <ModalComponent
+        title="Kategoriya qo'shish"
         handleFunc={handleCreateCategory}
-        setIsModalOpen={setisOpenEditModal}
-        isModalOpen={isOpenEditModal}
+        setIsModalOpen={setIsCreateModalOpen}
+        isModalOpen={isCreateModalOpen}
+        okText="Qo'shish"
+        cancelText="Bekor qilish"
+        loading={createCategoryMutation.isPending || isUploading}
       >
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-1 items-center gap-4">
-            <label htmlFor="name" className="text-left">
-              Name
+            <label htmlFor="name" className="text-left font-medium">
+              Nomi
             </label>
             <InputComponent
               id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={categoryData.name}
+              onChange={(e) =>
+                setCategoryData((prev) => ({ ...prev, name: e.target.value }))
+              }
+              placeholder="Kategoriya nomini kiriting"
             />
           </div>
+
           <div className="grid grid-cols-1 items-center gap-4">
-            <label htmlFor="parent" className="text-leftt">
+            <label htmlFor="parent" className="text-left font-medium">
               Parent Category
             </label>
-            <CascaderComponent
-              options={options}
-              onChange={(value) => handleChange(value)}
+            <TreeSelect
+              value={categoryData.parentId}
+              onChange={(value) =>
+                setCategoryData((prev) => ({ ...prev, parentId: value }))
+              }
+              treeData={transformToTreeData(categoryList)}
+              placeholder="Parent kategoriyani tanlang"
+              allowClear
+              
+              style={{ width: "100%" }}
             />
           </div>
+
           <div className="grid grid-cols-1 items-center gap-4">
-            <label htmlFor="image" className="text-left">
-              Image
+            <label htmlFor="image" className="text-left font-medium">
+              Rasm
             </label>
-            <FileUploadComponent onFileSelect={handleFileUpload} />
+            <div className="relative">
+              <FileUploadComponent
+                onFileSelect={(file) => handleFileUpload(file, false)}
+              />
+              {isUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 rounded-md">
+                  <Spin size="small" />
+                </div>
+              )}
+            </div>
           </div>
-          {imageUrl && (
+
+          {categoryData.imageUrl && (
             <div className="grid grid-cols-1 items-center gap-4">
-              <label className="text-right">Preview</label>
+              <label className="text-left font-medium">Ko'rish</label>
               <div className="col-span-3">
                 <img
-                  src={imageUrl}
+                  src={categoryData.imageUrl}
                   alt="Uploaded"
                   style={{ maxWidth: "100px", maxHeight: "100px" }}
                 />
@@ -193,15 +326,95 @@ const Category = () => {
         </div>
       </ModalComponent>
 
-      <Button
-        variant="outline"
-        className="my-4 float-end"
-        onClick={() => setisOpenEditModal(true)}
+      <ModalComponent
+        title={`Kategoriyani tahrirlash ( ${currentEditId || ""})`}
+        handleFunc={handleUpdateCategory}
+        isModalOpen={isEditModalOpen}
+        setIsModalOpen={setIsEditModal}
+        okText="Saqlash"
+        cancelText="Bekor qilish"
+        loading={updateCategoryMutation.isPending || isUploading}
       >
-        Add Category
-      </Button>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-1 items-center gap-4">
+            <label htmlFor="edit-name" className="text-left font-medium">
+              Nomi
+            </label>
+            <InputComponent
+              id="edit-name"
+              value={editingCategory.name}
+              onChange={(e) =>
+                setEditingCategory((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
+              placeholder="Yangi nomini kiriting"
+            />
+          </div>
+          <div className="grid grid-cols-1 items-center gap-4">
+            <label htmlFor="edit-image" className="text-left font-medium">
+              Rasm
+            </label>
+            <div className="relative">
+              <FileUploadComponent
+                onFileSelect={(file) => handleFileUpload(file, true)}
+              />
+              {isUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 rounded-md">
+                  <Spin size="small" />
+                </div>
+              )}
+            </div>
+          </div>
+          {editingCategory.imageUrl && (
+            <div className="grid grid-cols-1 items-center gap-4">
+              <label className="text-left font-medium">Joriy rasm</label>
+              <div className="col-span-3">
+                <img
+                  src={editingCategory.imageUrl}
+                  alt="Current"
+                  style={{ maxWidth: "100px", maxHeight: "100px" }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </ModalComponent>
 
-      <Table dataSource={categoryList} columnDefs={columns} rowKey="id" />
+      <div className="w-full my-4 flex justify-between items-center">
+        <div className="flex items-center space-x-3">
+          {(selectedId !== null || history.length > 0) && (
+            <ArrowLeft
+              onClick={handleGoBack}
+              className="text-gray-600 cursor-pointer rounded-[10px] border p-1 hover:bg-gray-100 transition"
+              size={30}
+              title="Orqaga"
+            />
+          )}
+         
+        </div>
+
+        <Button
+          type="primary"
+          onClick={() => {
+            setCategoryData(initialCategoryState);
+            setIsCreateModalOpen(true);
+          }}
+          disabled={
+            createCategoryMutation.isPending || updateCategoryMutation.isPending
+          }
+        >
+          Kategoriya qo'shish
+        </Button>
+      </div>
+
+      <Table
+        dataSource={cleanedCategoryList}
+        columnDefs={columns}
+        rowKey="id"
+        loading={isLoading || deleteCategoryMutation.isPending}
+      />
     </div>
   );
 };

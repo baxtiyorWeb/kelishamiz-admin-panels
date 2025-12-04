@@ -1,6 +1,4 @@
-import React, { useState } from "react";
-import { Form, Input, InputNumber, Popconfirm, Table, Typography } from "antd";
-import { Loader } from "lucide-react";
+import { Form, Input, InputNumber,  Table,  } from "antd";
 
 const EditableCell = ({
   editing,
