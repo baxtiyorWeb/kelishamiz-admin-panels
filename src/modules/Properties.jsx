@@ -25,6 +25,7 @@ const initialPropertyState = {
 const typeOptions = [
   { value: "STRING", label: "String" },
   { value: "NUMBER", label: "Number" },
+  { value: "INT", label: "INT" },
   { value: "BOOLEAN", label: "Boolean" },
   { value: "DATE", label: "Date" },
   { value: "SELECT", label: "Select" },
