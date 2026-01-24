@@ -38,8 +38,8 @@ const Category = () => {
   const [currentEditId, setCurrentEditId] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [page, setPage] = useState(1);
-  const totalPages = 1; // Assuming pagination is handled elsewhere
-  
+  const totalPages = 1;
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["categories", selectedId],
