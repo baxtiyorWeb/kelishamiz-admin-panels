@@ -1,30 +1,29 @@
 import { Modal } from "antd";
+
 const AppModal = ({
   isModalOpen = false,
   setIsModalOpen = () => false,
-  handleFunc = () => {},
+  onOk, // handleFunc o'rniga onOk ishlatamiz (standart bo'yicha)
   children,
   title = "",
+  confirmLoading = false, // Yuklanish holati uchun
 }) => {
-  const handleOk = () => {
-    setIsModalOpen(false);
-    handleFunc();
-  };
   const handleCancel = () => {
     setIsModalOpen(false);
   };
+
   return (
-    <>
-      <Modal
-        title={title}
-        closable={{ "aria-label": "Custom Close Button" }}
-        open={isModalOpen}
-        onOk={handleOk}
-        onCancel={handleCancel}
-      >
-        {children}
-      </Modal>
-    </>
+    <Modal
+      title={title}
+      open={isModalOpen}
+      onOk={onOk} // Bu yerda setIsModalOpen(false) ni olib tashladik!
+      onCancel={handleCancel}
+      confirmLoading={confirmLoading}
+      destroyOnClose={true} // Modal yopilganda ichini tozalash uchun
+    >
+      {children}
+    </Modal>
   );
 };
+
 export default AppModal;

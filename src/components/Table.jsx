@@ -41,7 +41,8 @@ const AppTable = ({
   setPageSize,
 }) => {
   const [form] = Form.useForm();
-
+  console.log(dataSource);
+  
   return (
     <Form form={form} component={false}>
       <Table
