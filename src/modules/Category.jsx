@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, isArray } from "lodash";
 import {
@@ -40,18 +40,20 @@ const Category = () => {
   const [page, setPage] = useState(1);
   const totalPages = 1;
 
-
+  // 1. Kategoriyalarni olish (Interceptor formatiga moslangan)
   const { data, isLoading } = useQuery({
     queryKey: ["categories", selectedId],
     queryFn: async () => {
-      const parentIdQuery =
-        selectedId !== null ? `?parentId=${selectedId}` : "";
-      return (await api.get(`/category${parentIdQuery}`)).data?.content;
+      const parentIdQuery = selectedId !== null ? `?parentId=${selectedId}` : "";
+      const response = await api.get(`/category${parentIdQuery}`);
+      // Interceptor content ichida qaytaradi
+      return response.data?.content || response.data || [];
     },
   });
 
-  const categoryList = isArray(data) ? data : [];
+  const categoryList = useMemo(() => (isArray(data) ? data : []), [data]);
 
+  // 2. Kategoriya yaratish
   const createCategoryMutation = useMutation({
     mutationFn: async (category) => api.post("/category", category),
     onSuccess: () => {
@@ -61,28 +63,20 @@ const Category = () => {
       message.success("Kategoriya muvaffaqiyatli yaratildi! 🎉");
     },
     onError: (error) => {
-      message.error(
-        "Yaratishda xato: " +
-          get(error, "response.data.message", "Noma'lum xato")
-      );
+      message.error(get(error, "response.data.message", "Yaratishda xato"));
     },
   });
 
+  // 3. Kategoriya tahrirlash
   const updateCategoryMutation = useMutation({
-    mutationFn: async ({ id, ...updateData }) =>
-      api.put(`/category/${id}`, updateData),
+    mutationFn: async ({ id, ...updateData }) => api.put(`/category/${id}`, updateData),
     onSuccess: () => {
       queryClient.invalidateQueries(["categories"]);
       setIsEditModalOpen(false);
-      setEditingCategory(initialCategoryState);
-      setCurrentEditId(null);
-      message.success("Kategoriya muvaffaqiyatli yangilandi!");
+      message.success("Yangilandi!");
     },
     onError: (error) => {
-      message.error(
-        "Yangilashda xato: " +
-          get(error, "response.data.message", "Noma'lum xato")
-      );
+      message.error(get(error, "response.data.message", "Yangilashda xato"));
     },
   });
 
@@ -90,28 +84,7 @@ const Category = () => {
     mutationFn: async (id) => api.delete(`/category/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(["categories"]);
-      message.success("Kategoriya muvaffaqiyatli o'chirildi! 🗑️");
-    },
-    onError: (error) => {
-      message.error(
-        "O'chirishda xato: " +
-          get(error, "response.data.message", "Noma'lum xato")
-      );
-    },
-  });
-
-  const toggleVisibilityMutation = useMutation({
-    mutationFn: async ({ id, isVisible }) =>
-      api.put(`/category/${id}`, { isVisible }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["categories"]);
-      message.success("Ko'rinish muvaffaqiyatli o'zgartirildi!");
-    },
-    onError: (error) => {
-      message.error(
-        "Ko'rinish o'zgartirishda xato: " +
-          get(error, "response.data.message", "Noma'lum xato")
-      );
+      message.success("O'chirildi!");
     },
   });
 
@@ -124,14 +97,15 @@ const Category = () => {
       const response = await api.post("/file/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      const imageUrl = get(response, "data.content.url", "");
+      // Interceptor content.url qaytaradi
+      const imageUrl = response.data?.content?.url || "";
 
       if (isEdit) {
         setEditingCategory((prev) => ({ ...prev, imageUrl }));
       } else {
         setCategoryData((prev) => ({ ...prev, imageUrl }));
       }
-      message.success("Rasm muvaffaqiyatli yuklandi!");
+      message.success("Rasm yuklandi!");
     } catch (error) {
       message.error("Rasm yuklashda xato!");
     } finally {
@@ -140,83 +114,39 @@ const Category = () => {
   }, []);
 
   const handleCreateCategory = () => {
-  
-    createCategoryMutation.mutate({
+    if (!categoryData.name) return message.warning("Nomini kiriting!");
+    
+    // ParentId ni to'g'ri aniqlash
+    const payload = {
       ...categoryData,
-      parentId: parentIdToUse,
-    });
+      parentId: categoryData.parentId || selectedId || null,
+    };
+
+    createCategoryMutation.mutate(payload);
   };
 
   const handleUpdateCategory = () => {
-    if (!currentEditId) return message.error("Yangilash uchun ID topilmadi.");
+    if (!currentEditId) return;
     updateCategoryMutation.mutate({
       id: currentEditId,
       ...editingCategory,
     });
   };
 
-  const handleDelete = (id) => {
-    deleteCategoryMutation.mutate(id);
-  };
-
-  const handleToggleVisibility = (id, checked) => {
-    toggleVisibilityMutation.mutate({ id, isVisible: checked });
-  };
-
-  const handleGoToChild = (id) => {
-    setHistory((prev) => [...prev, selectedId]);
-    setSelectedId(id);
-  };
-
-  const handleGoBack = () => {
-    if (history.length > 0) {
-      const previousId = history.pop();
-      setSelectedId(previousId);
-      setHistory([...history]);
-    } else {
-      setSelectedId(null);
-    }
-  };
-
-  const openEditModal = (record) => {
-    setCurrentEditId(record.id);
-    setEditingCategory({
-      name: record.name,
-      imageUrl: record.imageUrl || "",
-      isVisible: record.isVisible,
-      order: record.order,
-      parentId: record.parent?.id || null,
-    });
-    setIsEditModalOpen(true);
-  };
-
   const transformToTreeData = (categories) => {
-    const buildTree = (cats) =>
-      cats.map((item) => ({
-        title: item.name,
-        value: item.id,
-        key: item.id,
-        children: item.children ? buildTree(item.children) : undefined,
-      }));
-    return buildTree(categories);
+    if (!isArray(categories)) return [];
+    return categories.map((item) => ({
+      title: item.name,
+      value: item.id,
+      key: item.id,
+      children: item.children ? transformToTreeData(item.children) : undefined,
+    }));
   };
 
   const columns = [
-    {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-    },
-    {
-      title: "Nomi",
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: "Tartib",
-      dataIndex: "order",
-      key: "order",
-    },
+    { title: "ID", dataIndex: "id", key: "id" },
+    { title: "Nomi", dataIndex: "name", key: "name" },
+    { title: "Tartib", dataIndex: "order", key: "order" },
     {
       title: "Ko'rinishi",
       dataIndex: "isVisible",
@@ -224,8 +154,8 @@ const Category = () => {
       render: (isVisible, record) => (
         <Switch
           checked={isVisible}
-          onChange={(checked) => handleToggleVisibility(record.id, checked)}
-          loading={toggleVisibilityMutation.isPending}
+          onChange={(checked) => updateCategoryMutation.mutate({ id: record.id, isVisible: checked })}
+          loading={updateCategoryMutation.isPending}
         />
       ),
     },
@@ -234,9 +164,12 @@ const Category = () => {
       key: "goToChild",
       render: (_, record) => (
         <ArrowRight
-          className="text-gray-600 cursor-pointer rounded-[10px] border p-1 hover:bg-gray-100 transition"
-          size={30}
-          onClick={() => handleGoToChild(record.id)}
+          className="cursor-pointer border p-1 hover:bg-gray-100 rounded"
+          size={28}
+          onClick={() => {
+            setHistory((prev) => [...prev, selectedId]);
+            setSelectedId(record.id);
+          }}
         />
       ),
     },
@@ -244,172 +177,106 @@ const Category = () => {
       title: "Harakatlar",
       key: "action",
       render: (_, record) => (
-        <div className="flex items-center">
-          <Popconfirm
-            title="O'chirishni tasdiqlaysizmi?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Ha"
-            cancelText="Yo'q"
-          >
-            <Trash
-              className="text-red-500 cursor-pointer rounded-[10px] border p-1 hover:bg-red-50 transition mr-2"
-              size={30}
-            />
+        <div className="flex gap-2">
+          <Popconfirm title="O'chirasizmi?" onConfirm={() => deleteCategoryMutation.mutate(record.id)}>
+            <Trash className="text-red-500 cursor-pointer border p-1" size={28} />
           </Popconfirm>
           <Edit
-            onClick={() => openEditModal(record)}
-            className="text-blue-500 cursor-pointer rounded-[10px] border p-1 hover:bg-blue-50 transition"
-            size={30}
+            className="text-blue-500 cursor-pointer border p-1"
+            size={28}
+            onClick={() => {
+              setCurrentEditId(record.id);
+              setEditingCategory({
+                name: record.name,
+                imageUrl: record.imageUrl || "",
+                isVisible: record.isVisible,
+                order: record.order,
+                parentId: record.parent?.id || record.parentId || null,
+              });
+              setIsEditModalOpen(true);
+            }}
           />
         </div>
       ),
     },
   ];
 
-  if (isLoading)
-    return (
-      <Spin
-        tip="Yuklanmoqda..."
-        size="large"
-        className="flex justify-center items-center h-screen"
-      />
-    );
-
   return (
-    <div>
+    <div className="p-4">
+      {/* Create Modal */}
       <ModalComponent
         title="Yangi kategoriya"
         isModalOpen={isCreateModalOpen}
         setIsModalOpen={setIsCreateModalOpen}
         handleFunc={handleCreateCategory}
         loading={createCategoryMutation.isPending || isUploading}
-      > 
-        <div className="grid gap-4 py-4">
+      >
+        <div className="flex flex-col gap-3">
           <label>Nomi</label>
           <InputComponent
             value={categoryData.name}
-            onChange={(e) =>
-              setCategoryData({ ...categoryData, name: e.target.value })
-            }
-            placeholder="Nomini kiriting"
+            onChange={(e) => setCategoryData({ ...categoryData, name: e.target.value })}
           />
-          <label>Parent</label>
+          <label>Parent (Kategoriya ichida bo'lsangiz avtomatik tanlanadi)</label>
           <TreeSelect
-            value={categoryData.parentId}
-            onChange={(value) =>
-              setCategoryData({ ...categoryData, parentId: value })
-            }
+            className="w-full"
+            value={categoryData.parentId || selectedId}
             treeData={transformToTreeData(categoryList)}
-            placeholder="Parent tanlang"
+            onChange={(v) => setCategoryData({ ...categoryData, parentId: v })}
             allowClear
-            style={{ width: "100%" }}
+            placeholder="Asosiy kategoriya"
           />
           <label>Rasm</label>
-          <FileUploadComponent
-            onFileSelect={(file) => handleFileUpload(file)}
-          />
-          {categoryData.imageUrl && (
-            <img
-              src={categoryData.imageUrl}
-              alt="Yuklangan"
-              style={{ maxWidth: "100px" }}
-            />
-          )}
-          <label>Ko'rinishi</label>
-          <Switch
-            checked={categoryData.isVisible}
-            onChange={(checked) =>
-              setCategoryData({ ...categoryData, isVisible: checked })
-            }
-          />
-          <label>Tartib</label>
-          <InputNumber
-            value={categoryData.order}
-            onChange={(value) =>
-              setCategoryData({ ...categoryData, order: value })
-            }
-          />
+          <FileUploadComponent onFileSelect={(file) => handleFileUpload(file)} />
+          {categoryData.imageUrl && <img src={categoryData.imageUrl} alt="preview" className="w-20 h-20 object-cover" />}
         </div>
       </ModalComponent>
 
+      {/* Edit Modal */}
       <ModalComponent
-        title={`Tahrirlash (${currentEditId})`}
+        title="Tahrirlash"
         isModalOpen={isEditModalOpen}
         setIsModalOpen={setIsEditModalOpen}
         handleFunc={handleUpdateCategory}
         loading={updateCategoryMutation.isPending || isUploading}
       >
-        <div className="grid gap-4 py-4">
-          <label>Nomi</label>
+        <div className="flex flex-col gap-3">
           <InputComponent
             value={editingCategory.name}
-            onChange={(e) =>
-              setEditingCategory({ ...editingCategory, name: e.target.value })
-            }
-            placeholder="Yangi nom"
+            onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
           />
-          <label>Parent</label>
           <TreeSelect
+            className="w-full"
             value={editingCategory.parentId}
-            onChange={(value) =>
-              setEditingCategory({ ...editingCategory, parentId: value })
-            }
             treeData={transformToTreeData(categoryList)}
-            placeholder="Yangi parent"
-            allowClear
-            style={{ width: "100%" }}
-          />
-          <label>Rasm</label>
-          <FileUploadComponent
-            onFileSelect={(file) => handleFileUpload(file, true)}
-          />
-          {editingCategory.imageUrl && (
-            <img
-              src={editingCategory.imageUrl}
-              alt="Joriy"
-              style={{ maxWidth: "100px" }}
-            />
-          )}
-          <label>Ko'rinishi</label>
-          <Switch
-            checked={editingCategory.isVisible}
-            onChange={(checked) =>
-              setEditingCategory({ ...editingCategory, isVisible: checked })
-            }
-          />
-          <label>Tartib</label>
-          <InputNumber
-            value={editingCategory.order}
-            onChange={(value) =>
-              setEditingCategory({ ...editingCategory, order: value })
-            }
+            onChange={(v) => setEditingCategory({ ...editingCategory, parentId: v })}
           />
         </div>
       </ModalComponent>
 
-      <div className="flex justify-between my-4">
-        <div className="flex items-center">
-          {history.length > 0 && (
-            <ArrowLeft
-              onClick={handleGoBack}
-              className="text-gray-600 cursor-pointer rounded-[10px] border p-1 hover:bg-gray-100 transition mr-2"
-              size={30}
-            />
-          )}
+      <div className="flex justify-between mb-4">
+        <div className="flex gap-2">
+          {history.length > 0 || selectedId !== null ? (
+            <Button 
+              icon={<ArrowLeft size={16} />} 
+              onClick={() => {
+                const prev = history[history.length - 1];
+                setSelectedId(prev !== undefined ? prev : null);
+                setHistory(history.slice(0, -1));
+              }}
+            >
+              Orqaga
+            </Button>
+          ) : null}
         </div>
-        <Button type="primary" onClick={() => setIsCreateModalOpen(true)}>
-          Qo'shish
-        </Button>
+        <Button type="primary" onClick={() => setIsCreateModalOpen(true)}>Qo'shish</Button>
       </div>
 
       <Table
-        page={page}
-        setPage={setPage}
-        totalPages={totalPages}
         dataSource={categoryList}
         columnDefs={columns}
-        rowKey="id"
         loading={isLoading}
+        rowKey="id"
       />
     </div>
   );
