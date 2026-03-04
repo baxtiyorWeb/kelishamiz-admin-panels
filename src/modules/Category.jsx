@@ -113,18 +113,22 @@ const Category = () => {
     }
   }, []);
 
-  const handleCreateCategory = () => {
-    if (!categoryData.name) return message.warning("Nomini kiriting!");
-    
-    // ParentId ni to'g'ri aniqlash
-    const payload = {
-      ...categoryData,
-      parentId: categoryData.parentId || selectedId || null,
-    };
+ const handleCreateCategory = () => {
+  // MUHIM: parentIdToUse o'zgaruvchisini aniqlab olamiz
+  const parentIdToUse = categoryData.parentId || selectedId || null;
 
-    createCategoryMutation.mutate(payload);
-  };
+  // Tekshirish uchun console'ga chiqaramiz
+  console.log("Yuborilayotgan payload:", { ...categoryData, parentId: parentIdToUse });
 
+  if (!categoryData.name) {
+    return message.warning("Kategoriya nomini kiriting!");
+  }
+
+  createCategoryMutation.mutate({
+    ...categoryData,
+    parentId: parentIdToUse,
+  });
+};
   const handleUpdateCategory = () => {
     if (!currentEditId) return;
     updateCategoryMutation.mutate({
