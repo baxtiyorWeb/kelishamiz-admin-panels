@@ -1,299 +1,219 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import React, { useState, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { get, isArray } from "lodash";
+import { Button, message, Popconfirm, Select, Spin } from "antd";
+import { Plus, Trash2 } from "lucide-react";
+
 import Table from "./../components/Table";
 import ModalComponent from "./../components/Modal";
-import CascaderComponent from "./../components/Cascader";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import api from "./../config/auth/api";
-import { get, isArray } from "lodash";
-import { Button, message, Popconfirm, Select } from "antd";
 import InputComponent from "../components/Input";
+import api from "./../config/auth/api";
 
 const Locations = () => {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
-  const [isOpenEditModal, setisOpenEditModal] = useState(false);
-  const [selectedParentId, setSelectedParentId] = useState(null);
-  const [isCreateRegion, setIsCreateRegion] = useState(false);
-  const [name, setName] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("region");
   const queryClient = useQueryClient();
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["products", page, pageSize, selectedLocation, selectedParentId],
+  
+  // States
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedLocationType, setSelectedLocationType] = useState("region"); // Filter uchun
+  const [filterRegionId, setFilterRegionId] = useState(null); // Tumanlarni filterlash uchun
+  
+  // Form States
+  const [createType, setCreateType] = useState("region"); // Modal ichidagi tur
+  const [name, setName] = useState("");
+  const [targetRegionId, setTargetRegionId] = useState(null);
+
+  // --- API QUERIES ---
+
+  // Asosiy jadval ma'lumotlari
+  const { data: locationsData, isLoading } = useQuery({
+    queryKey: ["locations", selectedLocationType, filterRegionId],
     queryFn: async () => {
-      if (!selectedLocation) {
-        throw new Error("Please select a location type (region/district)");
-      }
-
-      console.log(selectedParentId);
-
-      // Adjust the endpoint based on the selected location type
-      const endpoint =
-        selectedLocation === "region"
-          ? "/location/regions"
-          : `/location/districts/${
-              selectedParentId === undefined ? "" : selectedParentId || ""
-            }`;
-      // Fetch data from the appropriate endpoint
-
+      const endpoint = selectedLocationType === "region" 
+        ? "/location/regions" 
+        : `/location/districts/${filterRegionId || ""}`;
+      
       const response = await api.get(endpoint);
-      if (!response.status === 200 || !response.data) {
-        throw new Error("Network response was not ok");
-      }
-      return response.data;
+      // Interceptor content ichida qaytaradi
+      return response.data?.content || response.data || [];
     },
-    onError: (error) => {
-      console.error("Error fetching products:", error);
-    },
-    onSuccess: (data) => {
-      console.log("Products fetched successfully:", data);
-    },
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    retry: 2,
-    retryDelay: 1000,
   });
 
-  const { data: regions } = useQuery({
-    queryKey: ["regions"],
+  // Viloyatlar ro'yxati (Select'lar uchun)
+  const { data: regionsData } = useQuery({
+    queryKey: ["regions-list"],
     queryFn: async () => {
       const response = await api.get("/location/regions");
-      if (!response.status === 200 || !response.data) {
-        throw new Error("Network response was not ok");
-      }
-      return response.data;
+      return response.data?.content || response.data || [];
     },
   });
 
-  const regionItems = isArray(get(regions, "content", []))
-    ? get(regions, "content", [])
-    : [];
+  const locationList = useMemo(() => (isArray(locationsData) ? locationsData : []), [locationsData]);
+  const regionOptions = useMemo(() => {
+    const list = isArray(regionsData) ? regionsData : [];
+    return list.map(r => ({ label: r.name, value: r.id }));
+  }, [regionsData]);
 
-  const regionOptions = regionItems.map((region) => ({
-    label: region.name,
-    value: region.id,
-  }));
+  // --- MUTATIONS ---
 
-  const propertyItems = isArray(get(data, "content", []))
-    ? get(data, "content", [])
-    : [];
+  const handleLocationMutate = useMutation({
+    mutationFn: async (payload) => {
+      const endpoint = createType === "region" ? "/location/region" : "/location/district";
+      return api.post(endpoint, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["locations"]);
+      queryClient.invalidateQueries(["regions-list"]);
+      message.success("Muvaffaqiyatli qo'shildi! 🎉");
+      
+      // MODAL YOPILMAYDI, faqat nom tozalanadi
+      setName("");
+      // createType va targetRegionId saqlanib qoladi (ketma-ket qo'shish uchun)
+    },
+    onError: (error) => {
+      message.error(get(error, "response.data.message", "Xatolik yuz berdi"));
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (record) => {
+      const type = selectedLocationType === "region" ? "region" : "district";
+      return api.delete(`/location/${record.id}/${type}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["locations"]);
+      message.success("O'chirildi! 🗑️");
+    },
+  });
+
+  // --- HANDLERS ---
+
+  const handleSubmit = () => {
+    if (!name.trim()) return message.warning("Nomini kiriting!");
+    
+    const payload = { name: name.trim() };
+    if (createType === "district") {
+      if (!targetRegionId) return message.warning("Viloyatni tanlang!");
+      payload.regionId = targetRegionId;
+    }
+
+    handleLocationMutate.mutate(payload);
+  };
 
   const columns = [
+    { title: "ID", dataIndex: "id", key: "id", width: 80 },
+    { title: "Nomi", dataIndex: "name", key: "name" },
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
+      title: selectedLocationType === "region" ? "Tumanlar soni" : "Viloyat",
+      key: "info",
+      render: (_, record) => 
+        selectedLocationType === "region" 
+          ? (record.districts?.length || 0) 
+          : (record.region?.name || "—")
     },
     {
-      title: "Viloyat",
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: "Tumanlar",
-      key: "districts",
-      render: (_, record) =>
-        selectedLocation === "district" ? (
-          record?.region?.name
-        ) : (
-          <Select
-            defaultValue={record.districts?.[0]?.id}
-            style={{ width: 200 }}
-            placeholder="Select district"
-            options={record.districts?.map((district) => ({
-              label: district.name,
-              value: district.id,
-            }))}
-          />
-        ),
-    },
-    {
-      title: "Delete",
-      key: "delete",
+      title: "Harakat",
+      key: "action",
+      width: 100,
       render: (_, record) => (
-        <Popconfirm
-          title={`Are you sure you want to delete item with ID: ${record.id}?`}
-          onConfirm={() => handleDelete(record.id)}
-          okText="Yes"
-          cancelText="No"
-        >
-          <a>Delete</a>
+        <Popconfirm title="O'chirasizmi?" onConfirm={() => deleteMutation.mutate(record)}>
+          <Button type="text" danger icon={<Trash2 size={18} />} />
         </Popconfirm>
       ),
     },
   ];
 
-  const { mutate: deleteRegion } = useMutation({
-    mutationFn: async (id) => {
-      const endpoint =
-        selectedLocation === "region" ? `${id}/region` : `${id}/district`;
-      const response = await api.delete(`/location/${endpoint}`);
-      if (!response.status === 200) {
-        throw new Error("Failed to delete region");
-      }
-      return response.data;
-    },
-    onError: (error) => {
-      console.error("Error deleting region:", error);
-    },
-    onSuccess: () => {
-      const endpointMessage =
-        selectedLocation === "region" ? "region" : "district";
-      message.success(`${endpointMessage} deleted successfully`);
-      refetch();
-    },
-  });
-
-  const handleLocationMutate = useMutation({
-    mutationFn: async (data) => {
-      if (isCreateRegion) {
-        return api.post("/location/district", {
-          name: data.name,
-          regionId: selectedParentId,
-        });
-      } else {
-        return api.post("/location/region", data);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["products"]);
-      setisOpenEditModal(false);
-      setName("");
-      setSelectedParentId(null);
-      message.success("Category created successfully");
-    },
-    onError: (error) => {
-      console.error("Error creating category:", error);
-      message.error("Failed to create category");
-    },
-  });
-
-  const handleCreateCategory = () => {
-    handleLocationMutate.mutate({
-      name,
-    });
-  };
-
-  const buildCascaderOptions = (categories = []) => {
-    return categories.map((item) => ({
-      label: item.name,
-      value: item.id,
-      children: item.districts?.length
-        ? buildCascaderOptions(item.districts)
-        : undefined,
-    }));
-  };
-  const options = buildCascaderOptions(propertyItems);
-
-  const handleDelete = (id) => {
-    deleteRegion(id);
-  };
-
-  if (isError) {
-    return <div>Error fetching products.</div>;
-  }
-
   return (
-    <div>
-      <div className="flex space-x-5 justify-between">
-        <Select
-          style={{ width: "180px" }}
-          placeholder="Select location"
-          options={[
-            {
-              label: "Viloyatlar",
-              value: "region",
-            },
-            {
-              label: "tumanlar",
-              value: "district",
-            },
-          ]}
-          onChange={(value) => setSelectedLocation(value)}
-          className="mb-4"
-        />
-
-        {selectedLocation === "district" && (
+    <div className="p-4">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+        <div className="flex items-center gap-3">
           <Select
-            options={regionOptions}
-            onChange={(value) => setSelectedParentId(value)}
-            placeholder="Select region"
-            className="mb-4"
+            style={{ width: 150 }}
+            value={selectedLocationType}
+            options={[
+              { label: "Viloyatlar", value: "region" },
+              { label: "Tumanlar", value: "district" },
+            ]}
+            onChange={(val) => {
+              setSelectedLocationType(val);
+              setFilterRegionId(null);
+            }}
           />
-        )}
-        <div className="w-full">
-          <ModalComponent
-            handleFunc={handleCreateCategory}
-            setIsModalOpen={setisOpenEditModal}
-            isModalOpen={isOpenEditModal}
-          >
-            <div className="grid grid-cols-1 items-center gap-4">
-              <label htmlFor="type" className="text-left">
-                Type
-              </label>
+          
+          {selectedLocationType === "district" && (
+            <Select
+              style={{ width: 200 }}
+              placeholder="Viloyat bo'yicha filter"
+              allowClear
+              options={regionOptions}
+              onChange={(val) => setFilterRegionId(val)}
+            />
+          )}
+        </div>
+
+        <Button 
+          type="primary" 
+          icon={<Plus size={18} />} 
+          onClick={() => setIsModalOpen(true)}
+        >
+          Location qo'shish
+        </Button>
+      </div>
+
+      <Table
+        dataSource={locationList}
+        columnDefs={columns}
+        loading={isLoading}
+        rowKey="id"
+      />
+
+      <ModalComponent
+        title="Yangi joy qo'shish"
+        isModalOpen={isModalOpen}
+        setIsModalOpen={setIsModalOpen}
+        handleFunc={handleSubmit}
+        loading={handleLocationMutate.isPending}
+      >
+        <div className="space-y-4 py-4">
+          <div>
+            <label className="block mb-1 font-medium">Turini tanlang</label>
+            <Select
+              className="w-full"
+              value={createType}
+              onChange={(val) => setCreateType(val)}
+              options={[
+                { value: "region", label: "Viloyat qo'shish" },
+                { value: "district", label: "Tuman qo'shish" },
+              ]}
+            />
+          </div>
+
+          {createType === "district" && (
+            <div>
+              <label className="block mb-1 font-medium">Qaysi viloyatga?</label>
               <Select
-                style={{ width: "100%" }}
-                placeholder="Select type"
-                options={[
-                  { value: "region", label: "Tuman qo'shish" },
-                  { value: "district", label: "Viloyat qo'shish" },
-                ]}
-                onChange={(value) => setIsCreateRegion(value === "region")}
+                className="w-full"
+                placeholder="Viloyatni tanlang"
+                options={regionOptions}
+                value={targetRegionId}
+                onChange={(val) => setTargetRegionId(val)}
               />
             </div>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-1 items-center gap-4">
-                <label htmlFor="name" className="text-left">
-                  Name
-                </label>
-                <InputComponent
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
+          )}
 
-              {isCreateRegion && (
-                <div className="grid grid-cols-1 items-center gap-4">
-                  <label htmlFor="parent" className="text-left">
-                    Parent Category
-                  </label>
-                  <Select
-                    style={{ width: "100%" }}
-                    placeholder="Select parent category"
-                    options={options.map((option) => ({
-                      label: option.label,
-                      value: option.value,
-                    }))}
-                    onChange={(value) => setSelectedParentId(value)}
-                  />
-                </div>
-              )}
-            </div>
-          </ModalComponent>
-          <Button
-            className=" float-end"
-            type="primary"
-            onClick={() => {
-              setisOpenEditModal(true);
-              setName("");
-              setSelectedParentId(null);
-            }}
-          >
-            Location qo'shish
-          </Button>
+          <div>
+            <label className="block mb-1 font-medium">Nomi</label>
+            <InputComponent
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Masalan: Toshkent"
+            />
+          </div>
         </div>
-      </div>
-      <Table
-        dataSource={propertyItems}
-        columnDefs={columns}
-        isLoading={isLoading}
-        page={page}
-        pageSize={pageSize}
-        total={propertyItems?.total || 0}
-        setPage={setPage || 1}
-        locale={{ emptyText: "No data available" }}
-        setPageSize={setPageSize || 5}
-      />
+      </ModalComponent>
     </div>
   );
 };
