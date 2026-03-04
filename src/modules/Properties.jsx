@@ -87,7 +87,7 @@ const Properties = () => {
       // MODAL YOPILMAYDI, faqat inputlar tozalanadi
       setPropertyFormData({
         ...initialPropertyState,
-        categoryId: propertyFormData.categoryId // Oxirgi tanlangan kategoriya qolsin (qulaylik uchun)
+        categoryId: String(propertyFormData.categoryId) // Oxirgi tanlangan kategoriya qolsin (qulaylik uchun)
       });
     },
     onError: (err) => {
@@ -127,7 +127,7 @@ const Properties = () => {
     const payload = {
       name: name.trim(),
       type: type[0],
-      categoryId: categoryId,
+      categoryId: String(categoryId),
     };
 
     if (payload.type === "SELECT") {
