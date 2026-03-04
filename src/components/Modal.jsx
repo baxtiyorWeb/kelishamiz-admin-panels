@@ -1,12 +1,11 @@
 import { Modal } from "antd";
-
 const AppModal = ({
   isModalOpen = false,
   setIsModalOpen = () => false,
-  onOk, // handleFunc o'rniga onOk ishlatamiz (standart bo'yicha)
+  handleFunc, // Category'dan kelayotgan nom
   children,
   title = "",
-  confirmLoading = false, // Yuklanish holati uchun
+  loading = false, // Category'da 'loading' deb uzatilgan
 }) => {
   const handleCancel = () => {
     setIsModalOpen(false);
@@ -16,14 +15,14 @@ const AppModal = ({
     <Modal
       title={title}
       open={isModalOpen}
-      onOk={onOk} // Bu yerda setIsModalOpen(false) ni olib tashladik!
+      onOk={handleFunc} // Endi funksiya bog'landi!
       onCancel={handleCancel}
-      confirmLoading={confirmLoading}
-      destroyOnClose={true} // Modal yopilganda ichini tozalash uchun
+      confirmLoading={loading} // Yuklanish animatsiyasi uchun
+      destroyOnClose={true}
+      okText="Saqlash"
+      cancelText="Bekor qilish"
     >
       {children}
     </Modal>
   );
 };
-
-export default AppModal;
