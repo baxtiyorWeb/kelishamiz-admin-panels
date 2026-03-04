@@ -140,7 +140,7 @@ const Category = () => {
   }, []);
 
   const handleCreateCategory = () => {
-    const parentIdToUse = categoryData.parentId ?? selectedId;
+  
     createCategoryMutation.mutate({
       ...categoryData,
       parentId: parentIdToUse,
