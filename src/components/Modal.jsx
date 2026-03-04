@@ -26,3 +26,6 @@ const AppModal = ({
     </Modal>
   );
 };
+
+
+export default AppModal
