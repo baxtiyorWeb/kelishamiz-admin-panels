@@ -57,7 +57,7 @@ const Banners = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingBanner, setEditingBanner] = useState(null);
     const [fileList, setFileList] = useState([]);
-    
+
     // Filterlar holati
     const [filters, setFilters] = useState({
         placement: null,
@@ -80,44 +80,44 @@ const Banners = () => {
         }
     });
 
-  const bannerMutation = useMutation({
-    mutationFn: async ({ id, values }) => {
-        const formData = new FormData();
-        
-        // 1. Faylni qo'shish (Eng muhim joyi)
-        // values.file - bu Ant Design dan keladigan massiv
-        if (values.file && values.file[0] && values.file[0].originFileObj) {
-            formData.append("file", values.file[0].originFileObj);
-        }
+    const bannerMutation = useMutation({
+        mutationFn: async ({ id, values }) => {
+            const formData = new FormData();
 
-        // 2. Boshqa maydonlarni qo'shish
-        Object.entries(values).forEach(([key, value]) => {
-            // "file" ni qayta qo'shmaymiz, chunki yuqorida qo'shdik
-            if (key !== "file" && value !== undefined && value !== null) {
-                // Boolean qiymatlarni string "true"/"false" qilib yuborgan ma'qul
-                // Chunki FormData hamma narsani stringga aylantiradi
-                formData.append(key, value);
+            // 1. Faylni qo'shish (Eng muhim joyi)
+            // values.file - bu Ant Design dan keladigan massiv
+            if (values.file && values.file[0] && values.file[0].originFileObj) {
+                formData.append("file", values.file[0].originFileObj);
             }
-        });
 
-        const config = {
-            headers: { "Content-Type": "multipart/form-data" },
-        };
+            // 2. Boshqa maydonlarni qo'shish
+            Object.entries(values).forEach(([key, value]) => {
+                // "file" ni qayta qo'shmaymiz, chunki yuqorida qo'shdik
+                if (key !== "file" && value !== undefined && value !== null) {
+                    // Boolean qiymatlarni string "true"/"false" qilib yuborgan ma'qul
+                    // Chunki FormData hamma narsani stringga aylantiradi
+                    formData.append(key, value);
+                }
+            });
 
-        if (id) {
-            return api.patch(`/banners/${id}`, formData, config);
+            const config = {
+                headers: { "Content-Type": "multipart/form-data" },
+            };
+
+            if (id) {
+                return api.patch(`/banners/${id}`, formData, config);
+            }
+            return api.post("/banners", formData, config);
+        },
+        onSuccess: () => {
+            message.success(editingBanner ? "Banner yangilandi" : "Banner yaratildi");
+            handleCancel();
+            queryClient.invalidateQueries(["banners"]);
+        },
+        onError: (err) => {
+            message.error(err.response?.data?.message || "Xatolik yuz berdi");
         }
-        return api.post("/banners", formData, config);
-    },
-    onSuccess: () => {
-        message.success(editingBanner ? "Banner yangilandi" : "Banner yaratildi");
-        handleCancel();
-        queryClient.invalidateQueries(["banners"]);
-    },
-    onError: (err) => {
-        message.error(err.response?.data?.message || "Xatolik yuz berdi");
-    }
-});
+    });
 
     const deleteMutation = useMutation({
         mutationFn: (id) => api.delete(`/banners/${id}`),
@@ -254,20 +254,20 @@ const Banners = () => {
             <div className="bg-white p-6 rounded-xl shadow-sm">
                 <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
                     <h2 className="text-2xl font-bold m-0">Bannerlar</h2>
-                    
+
                     <Space wrap>
-                        <Select 
-                            placeholder="Joylashuv" 
-                            allowClear 
-                            style={{ width: 160 }} 
-                            onChange={v => setFilters(prev => ({...prev, placement: v}))}
+                        <Select
+                            placeholder="Joylashuv"
+                            allowClear
+                            style={{ width: 160 }}
+                            onChange={v => setFilters(prev => ({ ...prev, placement: v }))}
                             options={PLACEMENT_OPTIONS}
                         />
-                        <Select 
-                            placeholder="Platforma" 
-                            allowClear 
-                            style={{ width: 140 }} 
-                            onChange={v => setFilters(prev => ({...prev, platform: v}))}
+                        <Select
+                            placeholder="Platforma"
+                            allowClear
+                            style={{ width: 140 }}
+                            onChange={v => setFilters(prev => ({ ...prev, platform: v }))}
                             options={PLATFORM_OPTIONS}
                         />
                         <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => showModal()}>
@@ -350,9 +350,9 @@ const Banners = () => {
                             </Form.Item>
                         </Col>
                         <Col span={24}>
-                            <Form.Item 
-                                name="file" 
-                                label="Banner rasmi" 
+                            <Form.Item
+                                name="file"
+                                label="Banner rasmi"
                                 valuePropName="fileList"
                                 getValueFromEvent={e => Array.isArray(e) ? e : e?.fileList}
                                 rules={[{ required: !editingBanner, message: 'Rasm yuklang' }]}
