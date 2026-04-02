@@ -6,7 +6,7 @@ const CascaderComponent = ({ options, onChange }) => (
     options={options}
     onChange={onChange}
     expandTrigger="hover"
-    placeholder="Please select"
+    placeholder="Please selec\\t"
   />
 );
 export default CascaderComponent;

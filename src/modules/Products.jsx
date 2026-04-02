@@ -86,7 +86,7 @@ const Products = () => {
   const productItems = get(data, "content.data", []);
   const totalProducts = get(data, "content.total", 0);
   const currentPage = get(data, "content.page", 1);
-
+  
   // TOP statusini yangilash mutation
   const { mutate: updateProductTopStatus } = useMutation({
     mutationFn: async ({ id, isTop, topExpiresAt }) => {

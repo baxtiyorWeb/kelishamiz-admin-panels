@@ -80,36 +80,44 @@ const Banners = () => {
         }
     });
 
-    const bannerMutation = useMutation({
-        mutationFn: async ({ id, values }) => {
-            const formData = new FormData();
-            
-            // Faylni qo'shish
-            if (values.file?.[0]?.originFileObj) {
-                formData.append("file", values.file[0].originFileObj);
-            }
-
-            // Boshqa barcha maydonlarni qo'shish
-            Object.entries(values).forEach(([key, value]) => {
-                if (key !== "file" && value !== undefined && value !== null) {
-                    formData.append(key, value);
-                }
-            });
-
-            if (id) {
-                return api.patch(`/banners/${id}`, formData);
-            }
-            return api.post("/banners", formData);
-        },
-        onSuccess: () => {
-            message.success(editingBanner ? "Banner yangilandi" : "Banner yaratildi");
-            handleCancel();
-            queryClient.invalidateQueries(["banners"]);
-        },
-        onError: (err) => {
-            message.error(err.response?.data?.message || "Xatolik yuz berdi");
+  const bannerMutation = useMutation({
+    mutationFn: async ({ id, values }) => {
+        const formData = new FormData();
+        
+        // 1. Faylni qo'shish (Eng muhim joyi)
+        // values.file - bu Ant Design dan keladigan massiv
+        if (values.file && values.file[0] && values.file[0].originFileObj) {
+            formData.append("file", values.file[0].originFileObj);
         }
-    });
+
+        // 2. Boshqa maydonlarni qo'shish
+        Object.entries(values).forEach(([key, value]) => {
+            // "file" ni qayta qo'shmaymiz, chunki yuqorida qo'shdik
+            if (key !== "file" && value !== undefined && value !== null) {
+                // Boolean qiymatlarni string "true"/"false" qilib yuborgan ma'qul
+                // Chunki FormData hamma narsani stringga aylantiradi
+                formData.append(key, value);
+            }
+        });
+
+        const config = {
+            headers: { "Content-Type": "multipart/form-data" },
+        };
+
+        if (id) {
+            return api.patch(`/banners/${id}`, formData, config);
+        }
+        return api.post("/banners", formData, config);
+    },
+    onSuccess: () => {
+        message.success(editingBanner ? "Banner yangilandi" : "Banner yaratildi");
+        handleCancel();
+        queryClient.invalidateQueries(["banners"]);
+    },
+    onError: (err) => {
+        message.error(err.response?.data?.message || "Xatolik yuz berdi");
+    }
+});
 
     const deleteMutation = useMutation({
         mutationFn: (id) => api.delete(`/banners/${id}`),

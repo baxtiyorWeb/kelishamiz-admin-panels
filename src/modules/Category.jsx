@@ -11,14 +11,14 @@ import {
   Switch,
   Tooltip,
 } from "antd";
-import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Edit, 
-  Trash, 
-  Settings2, 
-  UploadCloud, 
-  Plus 
+import {
+  ArrowLeft,
+  ArrowRight,
+  Edit,
+  Trash,
+  Settings2,
+  UploadCloud,
+  Plus
 } from "lucide-react";
 
 import InputComponent from "./../components/Input";
@@ -59,11 +59,11 @@ const Category = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPropertyModalOpen, setIsPropertyModalOpen] = useState(false);
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
-
+  const [selectedBulkFile, setSelectedBulkFile] = useState(null);
   const [categoryData, setCategoryData] = useState(initialCategoryState);
   const [editingCategory, setEditingCategory] = useState(initialCategoryState);
   const [propertyData, setPropertyData] = useState(initialPropertyState);
-  
+
   const [selectedId, setSelectedId] = useState(null);
   const [activeCategoryIdForProp, setActiveCategoryIdForProp] = useState(null);
   const [history, setHistory] = useState([]);
@@ -126,7 +126,6 @@ const Category = () => {
     },
   });
 
-  // --- Handlers ---
   const handleFileUpload = useCallback(async (file, target = "create") => {
     const formData = new FormData();
     formData.append("file", file);
@@ -145,6 +144,24 @@ const Category = () => {
       setIsUploading(false);
     }
   }, []);
+
+  const bulkUploadMutation = useMutation({
+    mutationFn: async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return api.post("/category/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["categories"]);
+      message.success("Barcha kategoriyalar muvaffaqiyatli yuklandi! 🚀");
+      setIsBulkUploadModalOpen(false);
+    },
+    onError: (error) => {
+      message.error(get(error, "response.data.message", "Fayl yuklashda xato yuz berdi"));
+    },
+  });
 
   const handlePropertySubmit = () => {
     if (!propertyData.name) return message.warning("Xususiyat nomini kiriting!");
@@ -205,16 +222,16 @@ const Category = () => {
       render: (_, record) => (
         <div className="flex gap-2">
           <Tooltip title="Xususiyat qo'shish">
-            <Button 
-              icon={<Settings2 size={18} className="text-purple-600" />} 
+            <Button
+              icon={<Settings2 size={18} className="text-purple-600" />}
               onClick={() => {
                 setActiveCategoryIdForProp(record.id);
                 setIsPropertyModalOpen(true);
               }}
             />
           </Tooltip>
-          <Button 
-            icon={<Edit size={18} className="text-blue-500" />} 
+          <Button
+            icon={<Edit size={18} className="text-blue-500" />}
             onClick={() => {
               setCurrentEditId(record.id);
               setEditingCategory({
@@ -225,7 +242,7 @@ const Category = () => {
                 parentId: record.parent?.id || record.parentId || null,
               });
               setIsEditModalOpen(true);
-            }} 
+            }}
           />
           <Popconfirm title="O'chirasizmi?" onConfirm={() => deleteCategoryMutation.mutate(record.id)}>
             <Button danger icon={<Trash size={18} />} />
@@ -240,14 +257,14 @@ const Category = () => {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold">Kategoriyalar</h2>
         <div className="flex gap-2">
-          <Button 
-            icon={<UploadCloud size={18} />} 
+          <Button
+            icon={<UploadCloud size={18} />}
             onClick={() => setIsBulkUploadModalOpen(true)}
           >
             Fayl orqali yuklash
           </Button>
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             icon={<Plus size={18} />}
             onClick={() => setIsCreateModalOpen(true)}
           >
@@ -258,8 +275,8 @@ const Category = () => {
 
       <div className="flex mb-4">
         {(history.length > 0 || selectedId !== null) && (
-          <Button 
-            icon={<ArrowLeft size={16} />} 
+          <Button
+            icon={<ArrowLeft size={16} />}
             onClick={() => {
               const prev = history[history.length - 1];
               setSelectedId(prev !== undefined ? prev : null);
@@ -284,11 +301,11 @@ const Category = () => {
         isModalOpen={isCreateModalOpen}
         setIsModalOpen={setIsCreateModalOpen}
         handleFunc={() => {
-            if (!categoryData.name) return message.warning("Nomini kiriting!");
-            createCategoryMutation.mutate({
-                ...categoryData,
-                parentId: categoryData.parentId || selectedId || null,
-            });
+          if (!categoryData.name) return message.warning("Nomini kiriting!");
+          createCategoryMutation.mutate({
+            ...categoryData,
+            parentId: categoryData.parentId || selectedId || null,
+          });
         }}
         loading={createCategoryMutation.isPending || isUploading}
       >
@@ -361,21 +378,31 @@ const Category = () => {
         </div>
       </ModalComponent>
 
-      {/* --- Bulk Upload Modal --- */}
-      <ModalComponent
-        title="Fayl orqali yuklash (.xlsx, .csv)"
-        isModalOpen={isBulkUploadModalOpen}
-        setIsModalOpen={setIsBulkUploadModalOpen}
-        handleFunc={() => {
-            message.info("Faylni qayta ishlash boshlandi...");
-            setIsBulkUploadModalOpen(false);
-        }}
-      >
-        <div className="py-10 flex flex-col items-center border-2 border-dashed border-gray-300 rounded-lg">
-           <FileUploadComponent onFileSelect={(file) => console.log("Bulk file selected", file)} />
-           <p className="mt-2 text-gray-500 text-sm">Shablonni yuklab oling va to'ldirib qayta yuklang</p>
-        </div>
-      </ModalComponent>
+     {/* --- Bulk Upload Modal --- */}
+<ModalComponent
+  title="Fayl orqali yuklash (.xlsx, .csv)"
+  isModalOpen={isBulkUploadModalOpen}
+  setIsModalOpen={setIsBulkUploadModalOpen}
+  handleFunc={() => {
+    if (!selectedBulkFile) return message.warning("Avval faylni tanlang!");
+    bulkUploadMutation.mutate(selectedBulkFile);
+  }}
+  loading={bulkUploadMutation.isPending} // Yuklash vaqtida loading ko'rsatadi
+>
+  <div className="py-10 flex flex-col items-center border-2 border-dashed border-gray-300 rounded-lg">
+    <FileUploadComponent 
+      onFileSelect={(file) => setSelectedBulkFile(file)} 
+    />
+    {selectedBulkFile && (
+      <p className="mt-2 text-blue-600 font-medium italic">
+        Tanlangan fayl: {selectedBulkFile.name}
+      </p>
+    )}
+    <p className="mt-2 text-gray-500 text-sm">
+      Shablonni yuklab oling va to'ldirib qayta yuklang
+    </p>
+  </div>
+</ModalComponent>
 
       {/* --- Edit Modal --- */}
       <ModalComponent
