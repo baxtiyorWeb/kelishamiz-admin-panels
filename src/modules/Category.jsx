@@ -162,7 +162,7 @@ const CategoryPage = () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
       message.success("Xususiyat qo'shildi!");
       setInlinePropData(initProperty);
-      setIsAddingPropInline(false);
+      // setIsAddingPropInline(false);
     },
     onError: (e) => message.error(get(e, "response.data.message", "Xato")),
   });
