@@ -286,6 +286,71 @@ const CategoryPage = () => {
     }
   }, []);
 
+  // ─── SELECT option input: vergul bilan ajratilgan variantlarni parse qilish ───
+
+  const handleOptionInputChange = useCallback((value) => {
+    // Agar oxirgi belgi vergul bo'lsa — split qilib options ga qo'shamiz
+    if (value.endsWith(",")) {
+      const parts = value
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      if (parts.length === 0) {
+        setInlinePropData((p) => ({ ...p, optionInput: "" }));
+        return;
+      }
+
+      setInlinePropData((p) => {
+        const existing = new Set(p.options);
+        const newOpts = parts.filter((s) => !existing.has(s));
+        return { ...p, options: [...p.options, ...newOpts], optionInput: "" };
+      });
+    } else {
+      setInlinePropData((p) => ({ ...p, optionInput: value }));
+    }
+  }, []);
+
+  const handleOptionInputKeyDown = useCallback((e) => {
+    if (e.key === "Enter") {
+      // Enter bosilganda ham vergul orqali split
+      const value = inlinePropData.optionInput;
+      const parts = value
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      if (parts.length === 0) return;
+
+      setInlinePropData((p) => {
+        const existing = new Set(p.options);
+        const newOpts = parts.filter((s) => !existing.has(s));
+        return { ...p, options: [...p.options, ...newOpts], optionInput: "" };
+      });
+      e.preventDefault();
+    }
+    if (e.key === "Escape") {
+      setIsAddingPropInline(false);
+      setInlinePropData(initProperty);
+    }
+  }, [inlinePropData.optionInput]);
+
+  const handleAddOptionBtn = useCallback(() => {
+    const value = inlinePropData.optionInput;
+    const parts = value
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    if (parts.length === 0) return;
+
+    setInlinePropData((p) => {
+      const existing = new Set(p.options);
+      const newOpts = parts.filter((s) => !existing.has(s));
+      return { ...p, options: [...p.options, ...newOpts], optionInput: "" };
+    });
+  }, [inlinePropData.optionInput]);
+
   // Breadcrumb
   const breadcrumb = useMemo(() => {
     if (!allCategories || selectedId === null) return [];
@@ -631,26 +696,19 @@ const CategoryPage = () => {
 
                     {inlinePropData.type === "SELECT" && (
                       <div>
+                        {/* ─── O'zgartirilgan qism: vergul bilan ajratib kiritish ─── */}
+                        <Text type="secondary" style={{ fontSize: 10, display: "block", marginBottom: 4 }}>
+                          Variantlarni vergul bilan ajrating: <Text code style={{ fontSize: 10 }}>Apple, HP, ASUS</Text>
+                        </Text>
                         <div style={{ display: "flex", gap: 4 }}>
                           <Input
                             size="small"
-                            placeholder="Variant... Enter"
+                            placeholder="Apple, HP, ASUS, Lenovo..."
                             value={inlinePropData.optionInput}
-                            onChange={(e) => setInlinePropData((p) => ({ ...p, optionInput: e.target.value }))}
-                            onPressEnter={() => {
-                              const v = inlinePropData.optionInput.trim();
-                              if (!v || inlinePropData.options.includes(v)) return;
-                              setInlinePropData((p) => ({ ...p, options: [...p.options, v], optionInput: "" }));
-                            }}
+                            onChange={(e) => handleOptionInputChange(e.target.value)}
+                            onKeyDown={handleOptionInputKeyDown}
                           />
-                          <Button
-                            size="small"
-                            onClick={() => {
-                              const v = inlinePropData.optionInput.trim();
-                              if (!v || inlinePropData.options.includes(v)) return;
-                              setInlinePropData((p) => ({ ...p, options: [...p.options, v], optionInput: "" }));
-                            }}
-                          >+</Button>
+                          <Button size="small" onClick={handleAddOptionBtn}>+</Button>
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
                           {inlinePropData.options.map((o, i) => (
@@ -664,6 +722,7 @@ const CategoryPage = () => {
                             </Tag>
                           ))}
                         </div>
+                        {/* ─── O'zgartirilgan qism tugadi ─── */}
                       </div>
                     )}
 
