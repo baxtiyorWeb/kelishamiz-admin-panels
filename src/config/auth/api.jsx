@@ -3,8 +3,10 @@ import axios from "axios";
 // https://api.kelishamiz.uz
 // http://localhost:3030
 // https://kelishamiz-backend.vercel.app
+// DATABASE_URL=postgresql://neondb_owner:npg_BtUlLmPD9b3x@ep-blue-rice-ais4h6ju-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+// BLOB_READ_WRITE_TOKEN="vercel_blob_rw_YVRQ0JNej55w4lBB_gwzY60Qxq56C9XMccgMPuZ223Ig2gF"
 const api = axios.create({
-  baseURL: "https://api.kelishamiz.uz",
+  baseURL: "https://kelishamiz-backend.onrender.com",
   headers: {
     "Content-Type": "application/json",
   },
