@@ -1,4 +1,4 @@
-/* eslint-disable no-unsafe-optional-chaining */
+﻿/* eslint-disable no-unsafe-optional-chaining */
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -32,7 +32,7 @@ const processQueue = (error, token = null) => {
 
 api.interceptors.request.use(
   (config) => {
-    // Login yoki Register so‘rovlarida tokenni qo‘shish shart emas
+    // Login yoki Register soвЂrovlarida tokenni qoвЂshish shart emas
     if (
       config.url.includes("/auth/login") ||
       config.url.includes("/auth/register")
@@ -90,9 +90,7 @@ api.interceptors.response.use(
         }
 
         try {
-          const response = await api.get(
-            `/auth/refresh-token?=refreshToken${refreshToken}`
-          );
+          const response = await axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:3030"}/auth/refresh-token`, { headers: { Authorization: `Bearer ${refreshToken}` } });
 
           if (response.status === 200) {
             const {
@@ -134,3 +132,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+
