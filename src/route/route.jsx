@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+﻿import { Route, Routes } from "react-router-dom";
 import AppLayout from "../layout/layout";
 import AuthLayout from "../layout/AuthLayout";
 import PrivateRoute from "./PrivateRoute";
@@ -10,6 +10,8 @@ import Products from "../modules/Products";
 import Locations from "../modules/Locations";
 import Users from "../modules/Users";
 import Banners from "../modules/Banner";
+import Dashboard from "../modules/Dashboard";
+
 export const AppRouter = () => {
   return (
     <Routes>
@@ -22,6 +24,7 @@ export const AppRouter = () => {
         }
       ></Route>
       <Route path="/" element={<AppLayout />}>
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/categories" index element={<Category />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/profiles" element={<Profiles />} />

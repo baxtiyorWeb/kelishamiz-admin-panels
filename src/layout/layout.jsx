@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -6,22 +6,24 @@ import {
   ProductOutlined,
   ProfileOutlined,
   RocketOutlined,
+  DashboardOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, theme } from "antd";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { CiGrid32 } from "react-icons/ci";
-import { MapIcon, MapPinHouse, MapPinIcon, Users } from "lucide-react";
+import { MapIcon, Users } from "lucide-react";
 const { Header, Sider, Content } = Layout;
 const AppLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   useEffect(() => {
     if (window.location.pathname === "/") {
-      navigate("/categories");
+      navigate("/dashboard");
     }
   }, []);
 
@@ -34,6 +36,12 @@ const AppLayout = () => {
           mode="inline"
           selectedKeys={[location.pathname]}
           items={[
+            {
+              key: "/dashboard",
+              icon: <DashboardOutlined />,
+              label: "Statistika",
+              onClick: () => navigate("/dashboard"),
+            },
             {
               key: "/categories",
               icon: <CiGrid32 />,

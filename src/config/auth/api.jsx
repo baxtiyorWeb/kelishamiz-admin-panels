@@ -1,12 +1,9 @@
 /* eslint-disable no-unsafe-optional-chaining */
 import axios from "axios";
-// https://api.kelishamiz.uz
-// http://localhost:3030
-// https://kelishamiz-backend.vercel.app
-// DATABASE_URL=postgresql://neondb_owner:npg_BtUlLmPD9b3x@ep-blue-rice-ais4h6ju-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-// BLOB_READ_WRITE_TOKEN="vercel_blob_rw_YVRQ0JNej55w4lBB_gwzY60Qxq56C9XMccgMPuZ223Ig2gF"
+import { toast } from "react-toastify";
+
 const api = axios.create({
-  baseURL: "https://kelishamiz-backend.onrender.com",
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -125,6 +122,11 @@ api.interceptors.response.use(
           isRefreshing = false;
         }
       }
+    }
+    // Qo'shimcha qulaylik: Boshqa turdagi xatoliklar uchun global Toast xabarnomasi
+    if (error.response && error.response.status !== 401 && error.response.status !== 403) {
+      const msg = error.response?.data?.message || "Tizimda noma'lum xatolik yuz berdi!";
+      toast.error(msg);
     }
 
     return Promise.reject(error);
