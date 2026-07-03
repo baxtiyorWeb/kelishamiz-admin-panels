@@ -1,7 +1,7 @@
 ﻿import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "./../config/auth/api";
-import { Card, Col, Row, Statistic, Table, Tag, Space, Spin, Alert } from "antd";
+import { Card, Col, Row, Statistic, Table, Tag, Spin, Alert } from "antd";
 import {
   UserOutlined,
   MessageOutlined,
@@ -17,7 +17,7 @@ const Dashboard = () => {
     queryKey: ["dashboardStats"],
     queryFn: async () => {
       const response = await api.get("/analytics/dashboard");
-      return response.data;
+      return response.data?.content;
     },
     refetchInterval: 30000,
   });
@@ -27,7 +27,7 @@ const Dashboard = () => {
     queryKey: ["chatPairings"],
     queryFn: async () => {
       const response = await api.get("/analytics/chats");
-      return response.data;
+      return response.data?.content;
     },
     refetchInterval: 30000,
   });
@@ -37,14 +37,16 @@ const Dashboard = () => {
     queryKey: ["visitorTrend"],
     queryFn: async () => {
       const response = await api.get("/analytics/visitors");
-      return response.data;
+      return response.data?.content;
     },
   });
 
   if (statsLoading || chatsLoading || visitorsLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "400px" }}>
-        <Spin size="large" tip="Statistikalar yuklanmoqda..." />
+        <Spin size="large" tip="Statistikalar yuklanmoqda...">
+          <div style={{ padding: "50px" }} />
+        </Spin>
       </div>
     );
   }
@@ -128,7 +130,7 @@ const Dashboard = () => {
       {/* Cards Row */}
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
+          <Card variant="borderless" style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
             <Statistic
               title="Bugungi Noyob Tashriflar"
               value={stats?.todayVisitors || 0}
@@ -140,7 +142,7 @@ const Dashboard = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
+          <Card variant="borderless" style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
             <Statistic
               title="Jami Foydalanuvchilar"
               value={stats?.totalUsers || 0}
@@ -149,7 +151,7 @@ const Dashboard = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
+          <Card variant="borderless" style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
             <Statistic
               title="Jami E'lonlar"
               value={stats?.totalProducts || 0}
@@ -158,7 +160,7 @@ const Dashboard = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card bordered={false} style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
+          <Card variant="borderless" style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
             <Statistic
               title="Jami Chatlar"
               value={stats?.totalChats || 0}
@@ -171,7 +173,7 @@ const Dashboard = () => {
       {/* Charts & Graphs Row */}
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Card title="Oxirgi 30 kunlik tashriflar dinamikasi" bordered={false} style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
+          <Card title="Oxirgi 30 kunlik tashriflar dinamikasi" variant="borderless" style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
             {visitors && visitors.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: "180px", borderBottom: "1px solid #f0f0f0", paddingBottom: "8px" }}>
@@ -208,7 +210,7 @@ const Dashboard = () => {
       </Row>
 
       {/* Active Chats Pairing */}
-      <Card title="Barcha chat xonalari monitoringi (Kim kim bilan chatlashmoqda)" bordered={false} style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
+      <Card title="Barcha chat xonalari monitoringi (Kim kim bilan chatlashmoqda)" variant="borderless" style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
         <Table
           columns={columns}
           dataSource={chats || []}
