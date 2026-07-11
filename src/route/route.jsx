@@ -11,6 +11,7 @@ import Locations from "../modules/Locations";
 import Users from "../modules/Users";
 import Banners from "../modules/Banner";
 import Payments from "../modules/Payments";
+import UserDetail from "../modules/UserDetail";
 import Dashboard from "../modules/Dashboard";
 
 export const AppRouter = () => {
@@ -32,6 +33,7 @@ export const AppRouter = () => {
         <Route path="/products" element={<Products />} />
         <Route path="/locations" element={<Locations />} />
         <Route path="/users" element={<Users />} />
+        <Route path="/users/:id" element={<UserDetail />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/banners" element={<Banners />} />
       </Route>

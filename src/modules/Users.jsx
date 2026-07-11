@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Table from "./../components/Table";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "./../config/auth/api";
@@ -13,6 +14,7 @@ const UserRole = {
 };
 
 const Users = () => {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 

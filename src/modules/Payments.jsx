@@ -1,12 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "./../config/auth/api";
 import { get } from "lodash";
-import { message, Tag, Tooltip, Button } from "antd";
+import { message, Tag, Button } from "antd";
 import Table from "./../components/Table";
 import { ReloadOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 const Payments = () => {
+  const navigate = useNavigate();
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin_transactions"],
     queryFn: async () => {
@@ -22,7 +24,7 @@ const Payments = () => {
     },
   });
 
-  const transactions = get(data, "transactions", []);
+  const transactions = get(data, "content.transactions", []);
 
   const getStatusTag = (status) => {
     switch (status) {
@@ -55,8 +57,11 @@ const Payments = () => {
         const username = get(record, "user.username", "NOMA'LUM");
         const phone = get(record, "user.phone", "");
         return (
-          <div>
-            <div style={{ fontWeight: "bold" }}>{username}</div>
+          <div 
+            style={{ cursor: "pointer" }} 
+            onClick={() => navigate('/users/' + (record.userId || record.user?.id))}
+          >
+            <div style={{ fontWeight: "bold", color: "#A64AC9" }}>{username}</div>
             <div style={{ fontSize: "11px", color: "#8c8c8c" }}>{phone}</div>
           </div>
         );
