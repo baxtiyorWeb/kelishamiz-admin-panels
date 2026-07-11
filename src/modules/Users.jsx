@@ -100,6 +100,11 @@ const Users = () => {
       title: "ID",
       dataIndex: "id",
       key: "id",
+      render: (text) => (
+        <a style={{ fontWeight: "bold", color: "#A64AC9" }} onClick={() => navigate('/users/' + text)}>
+          {text}
+        </a>
+      ),
     },
     {
       title: "Telefon",
