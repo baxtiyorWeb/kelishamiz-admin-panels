@@ -41,7 +41,17 @@ const Dashboard = () => {
     },
   });
 
-  if (statsLoading || chatsLoading || visitorsLoading) {
+  // 4. Today's active users
+  const { data: activeUsers, isLoading: activeUsersLoading } = useQuery({
+    queryKey: ["todayActiveUsers"],
+    queryFn: async () => {
+      const response = await api.get("/analytics/active-users");
+      return response.data?.content;
+    },
+    refetchInterval: 30000,
+  });
+
+  if (statsLoading || chatsLoading || visitorsLoading || activeUsersLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "400px" }}>
         <Spin size="large" tip="Statistikalar yuklanmoqda...">
@@ -61,6 +71,55 @@ const Dashboard = () => {
       />
     );
   }
+
+  const activeUserColumns = [
+    {
+      title: "Foydalanuvchi",
+      key: "user",
+      render: (_, record) => (
+        <div>
+          <div style={{ fontWeight: "bold" }}>{record.username || "Noma'lum"}</div>
+          <div style={{ color: "#8c8c8c", fontSize: "12px" }}>{record.phone}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Birinchi faollik",
+      dataIndex: "visitedAt",
+      key: "visitedAt",
+      render: (date) => dayjs(date).format("YYYY-MM-DD HH:mm:ss"),
+    },
+    {
+      title: "Oxirgi faollik",
+      dataIndex: "lastActiveAt",
+      key: "lastActiveAt",
+      render: (date) => dayjs(date).format("YYYY-MM-DD HH:mm:ss"),
+    },
+    {
+      title: "Tashriflar soni",
+      dataIndex: "visitCount",
+      key: "visitCount",
+      render: (count) => <Tag color="blue">{count} marta</Tag>,
+    },
+    {
+      title: "Tizimda bo'lish vaqti (Bugun)",
+      dataIndex: "activeDuration",
+      key: "activeDuration",
+      render: (seconds) => {
+        if (!seconds) return <Tag color="default">0 soniya</Tag>;
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        
+        let timeStr = "";
+        if (hours > 0) timeStr += `${hours} soat `;
+        if (minutes > 0) timeStr += `${minutes} daqiqa `;
+        if (secs > 0 || timeStr === "") timeStr += `${secs} soniya`;
+        
+        return <Tag color="green">{timeStr.trim()}</Tag>;
+      },
+    },
+  ];
 
   const columns = [
     {
@@ -208,6 +267,17 @@ const Dashboard = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Today's Active Users */}
+      <Card title="Bugungi faol foydalanuvchilar va tizimda bo'lish vaqti" variant="borderless" style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
+        <Table
+          columns={activeUserColumns}
+          dataSource={activeUsers || []}
+          rowKey="userId"
+          pagination={{ pageSize: 5 }}
+          scroll={{ x: true }}
+        />
+      </Card>
 
       {/* Active Chats Pairing */}
       <Card title="Barcha chat xonalari monitoringi (Kim kim bilan chatlashmoqda)" variant="borderless" style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
