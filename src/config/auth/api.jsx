@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const api = axios.create({
-  baseURL: 'https://kelishamiz-backend.onrender.com",
+  baseURL: "https://kelishamiz-backend.onrender.com",
   headers: {
     "Content-Type": "application/json",
   },
