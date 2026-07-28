@@ -14,11 +14,30 @@ import {
   Tooltip,
   Button,
   Spin,
-  Descriptions, // Descriptions komponentini import qilish
-  Divider, // Ajratgich qo'shish uchun
+  Descriptions,
+  Divider,
 } from "antd";
 import dayjs from "dayjs";
 import { EyeOutlined } from "@ant-design/icons";
+
+const STATUS_LABELS = {
+  pending: "Kutilmoqda",
+  active: "Faol",
+  completed: "Yakunlangan",
+  rejected: "Rad etilgan",
+};
+
+const STATUS_COLORS = {
+  pending: "gold",
+  active: "green",
+  completed: "blue",
+  rejected: "red",
+};
+
+const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 const Products = () => {
   const [page, setPage] = useState(1);
@@ -26,6 +45,7 @@ const Products = () => {
   const [isTopModalOpen, setIsTopModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(null);
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [form] = Form.useForm();
 
   // Mahsulotlar ro'yxatini olish
@@ -41,7 +61,7 @@ const Products = () => {
         `/products?pageSize=${pageSize}&page=${page}`
       );
       console.log(response.data);
-      
+
       if (response.status !== 200 || !response.data) {
         throw new Error("Network response was not ok");
       }
@@ -65,7 +85,7 @@ const Products = () => {
     data: selectedProductData,
     isLoading: isSelectedProductLoading,
     isError: isSelectedProductError,
-    refetch: refetchSelectedProduct, // This refetch is probably not needed, as `enabled` handles fetching
+    refetch: refetchSelectedProduct,
   } = useQuery({
     queryKey: ["product", selectedProductId],
     queryFn: async () => {
@@ -86,7 +106,7 @@ const Products = () => {
   const productItems = get(data, "content.data", []);
   const totalProducts = get(data, "content.total", 0);
   const currentPage = get(data, "content.page", 1);
-  
+
   // TOP statusini yangilash mutation
   const { mutate: updateProductTopStatus } = useMutation({
     mutationFn: async ({ id, isTop, topExpiresAt }) => {
@@ -136,6 +156,37 @@ const Products = () => {
     },
   });
 
+  // Mahsulot statusini (pending/active/completed/rejected) yangilash mutation
+  const { mutate: updateProductStatus } = useMutation({
+    mutationFn: async ({ id, status }) => {
+      const response = await api.patch(`/products/${id}/status`, { status });
+      if (response.status !== 200 || !response.data) {
+        throw new Error("Failed to update product status");
+      }
+      return response.data;
+    },
+    onMutate: ({ id }) => {
+      setStatusUpdatingId(id);
+    },
+    onError: (error) => {
+      console.error("Error updating product status:", error);
+      const serverMessage = get(error, "response.data.message");
+      const errMsg = isArray(serverMessage)
+        ? serverMessage.join(", ")
+        : serverMessage || "Mahsulot statusini yangilashda xatolik yuz berdi.";
+      message.error(errMsg);
+      // Select eski qiymatga qaytishi uchun ro'yxatni qayta yuklaymiz
+      refetchProducts();
+    },
+    onSuccess: () => {
+      message.success("Mahsulot statusi muvaffaqiyatli yangilandi.");
+      refetchProducts();
+    },
+    onSettled: () => {
+      setStatusUpdatingId(null);
+    },
+  });
+
   // Mahsulotni o'chirish mutation
   const { mutate: deleteProduct } = useMutation({
     mutationFn: async (id) => {
@@ -162,6 +213,10 @@ const Products = () => {
 
   const handleUpdateProductIsPublish = (productId, value) => {
     updateProductPublishStatus({ id: productId, isPublished: value });
+  };
+
+  const handleUpdateProductStatus = (productId, status) => {
+    updateProductStatus({ id: productId, status });
   };
 
   const handleDelete = (id) => {
@@ -227,6 +282,34 @@ const Products = () => {
           <div className="truncate max-w-[80px]">{text}</div>
         </Tooltip>
       ),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status, record) => {
+        const currentStatus = status || "pending";
+        return (
+          <Select
+            style={{ width: 140 }}
+            value={currentStatus}
+            loading={statusUpdatingId === record.id}
+            disabled={statusUpdatingId === record.id}
+            onChange={(value) => handleUpdateProductStatus(record.id, value)}
+            optionLabelProp="label"
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <Select.Option
+                key={opt.value}
+                value={opt.value}
+                label={STATUS_LABELS[opt.value]}
+              >
+                <Tag color={STATUS_COLORS[opt.value]}>{opt.label}</Tag>
+              </Select.Option>
+            ))}
+          </Select>
+        );
+      },
     },
     {
       title: "Nashr qilingan",
@@ -479,6 +562,15 @@ const Products = () => {
 
             <Divider orientation="left">Holati va vaqt belgilari</Divider>
             <Descriptions bordered column={2} size="small">
+              <Descriptions.Item label="Status">
+                <Tag
+                  color={STATUS_COLORS[selectedProductData.status] || "default"}
+                >
+                  {STATUS_LABELS[selectedProductData.status] ||
+                    selectedProductData.status ||
+                    "N/A"}
+                </Tag>
+              </Descriptions.Item>
               <Descriptions.Item label="Nashr qilingan">
                 <Tag color={selectedProductData.isPublish ? "green" : "red"}>
                   {selectedProductData.isPublish ? "Ha" : "Yo'q"}
