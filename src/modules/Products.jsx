@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Table from "./../components/Table";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "./../config/auth/api";
 import { get, isArray } from "lodash";
 import {
@@ -18,7 +18,7 @@ import {
   Divider,
 } from "antd";
 import dayjs from "dayjs";
-import { EyeOutlined } from "@ant-design/icons";
+import { EyeOutlined, ThunderboltOutlined } from "@ant-design/icons";
 
 const STATUS_LABELS = {
   pending: "Kutilmoqda",
@@ -40,12 +40,15 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({
 }));
 
 const Products = () => {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [isTopModalOpen, setIsTopModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizeProgress, setOptimizeProgress] = useState(0);
   const [form] = Form.useForm();
 
   // Mahsulotlar ro'yxatini olish
@@ -246,6 +249,73 @@ const Products = () => {
     setSelectedProductId(null);
   };
 
+  /**
+   * Barcha mahsulot rasmlarini bir xil o'lcham va sifatga keltirish.
+   * Barcha sahifalardan rasmlarni oladi, /file/bulk-optimize endpointiga yuboradi.
+   */
+  const handleBulkOptimizeProductImages = useCallback(async () => {
+    setIsOptimizing(true);
+    setOptimizeProgress(0);
+
+    try {
+      // Barcha mahsulotlardan rasmlarni olish (bir nechta sahifa bo'lishi mumkin)
+      let allImageUrls = [];
+
+      // Joriy sahifadagi mahsulotlardan rasmlarni to'playmiz
+      const res = await api.get(`/products?pageSize=200&page=1`);
+      const items = get(res, "data.content.data", []);
+
+      items.forEach((product) => {
+        if (product.images && product.images.length > 0) {
+          product.images.forEach((img) => {
+            if (img.url) {
+              allImageUrls.push(img.url);
+            }
+          });
+        }
+      });
+
+      if (allImageUrls.length === 0) {
+        message.info("Optimizatsiya qilinadigan rasmli mahsulot topilmadi");
+        setIsOptimizing(false);
+        return;
+      }
+
+      // Duplikatlarni olib tashlash
+      allImageUrls = [...new Set(allImageUrls)];
+
+      // Backend endpointiga yuboramiz (3 tadan bo'laklarga bo'lib)
+      const chunkSize = 3;
+      let optimizedCount = 0;
+      const urlMap = {};
+
+      for (let i = 0; i < allImageUrls.length; i += chunkSize) {
+        const chunk = allImageUrls.slice(i, i + chunkSize);
+        try {
+          const optimRes = await api.post("/file/bulk-optimize", { urls: chunk });
+          const results = optimRes.data?.results || [];
+          results.forEach((r) => {
+            if (r.success) {
+              urlMap[r.originalUrl] = r.optimizedUrl;
+              optimizedCount++;
+            }
+          });
+        } catch (chunkErr) {
+          console.error("Chunk optimization error", chunkErr);
+        }
+        setOptimizeProgress(Math.round(((i + chunk.length) / allImageUrls.length) * 100));
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      message.success(`✅ ${optimizedCount} ta mahsulot rasmi optimize qilindi!`);
+    } catch (err) {
+      message.error(get(err, "response.data.message", "Optimizatsiya xatosi"));
+    } finally {
+      setIsOptimizing(false);
+      setOptimizeProgress(0);
+    }
+  }, [queryClient]);
+
   // Jadval ustunlari
   const columns = [
     {
@@ -442,7 +512,34 @@ const Products = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-semibold mb-4">Mahsulotlar Ro'yxati</h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <h1 className="text-2xl font-semibold" style={{ margin: 0 }}>Mahsulotlar Ro'yxati</h1>
+        <Popconfirm
+          title="Barcha mahsulot rasmlarini optimize qilish?"
+          description={
+            <div style={{ maxWidth: 280 }}>
+              <p style={{ margin: 0, fontSize: 12 }}>Barcha rasmlar bir xil o'lcham (max 1200×1200), WebP format va optimal sifatga keltiriladi.</p>
+              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>Past internet uchun ham tez ochilishi ta'minlanadi.</p>
+            </div>
+          }
+          onConfirm={handleBulkOptimizeProductImages}
+          okText="Ha, optimize qil"
+          cancelText="Bekor"
+          disabled={isOptimizing}
+        >
+          <Button
+            icon={<ThunderboltOutlined />}
+            loading={isOptimizing}
+            style={{
+              background: isOptimizing ? undefined : "#fff7e6",
+              borderColor: "#fa8c16",
+              color: "#fa8c16"
+            }}
+          >
+            {isOptimizing ? `Optimize qilinmoqda... ${optimizeProgress}%` : "Rasmlarni Optimize"}
+          </Button>
+        </Popconfirm>
+      </div>
       <Table
         dataSource={productItems}
         columnDefs={columns}

@@ -1,7 +1,7 @@
 ﻿/* eslint-disable no-unsafe-optional-chaining */
 import axios from "axios";
 import { toast } from "react-toastify";
-
+// http://localhost:3030
 const api = axios.create({
   baseURL: "https://kelishamiz-backend.onrender.com",
   headers: {

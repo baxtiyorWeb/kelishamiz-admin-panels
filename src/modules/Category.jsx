@@ -21,6 +21,7 @@ import {
   Divider,
   Form,
   Upload,
+  Progress,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -34,6 +35,7 @@ import {
   CheckOutlined,
   FolderOpenOutlined,
   InboxOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import api from "../config/auth/api";
 
@@ -91,6 +93,11 @@ const CategoryPage = () => {
   const [currentEditId,   setCurrentEditId]   = useState(null);
   const [bulkFile,        setBulkFile]        = useState(null);
   const [isUploading,     setIsUploading]     = useState(false);
+
+  // Image optimize state
+  const [isOptimizing,    setIsOptimizing]    = useState(false);
+  const [optimizeProgress, setOptimizeProgress] = useState(0);
+  const [optimizeResult,   setOptimizeResult]   = useState(null);
 
   // ─── Queries ──────────────────────────────────────────────────────────────
 
@@ -285,6 +292,72 @@ const CategoryPage = () => {
       setIsUploading(false);
     }
   }, []);
+
+  /**
+   * Barcha kategoriya rasmlarini bir xil o'lcham va sifatga keltirish.
+   * /file/bulk-optimize endpointiga URL ro'yxatini yuboradi.
+   * Har bir kategoriyaning imageUrl ni yangi optimizatsiya qilingan URL bilan yangilaydi.
+   */
+  const handleBulkOptimizeImages = useCallback(async () => {
+    // Barcha kategoriyalarni olish
+    let allCats = [];
+    try {
+      const res = await api.get("/category");
+      allCats = res.data?.content || res.data || [];
+    } catch {
+      message.error("Kategoriyalar ro'yxatini olishda xato!");
+      return;
+    }
+
+    // Rasmi bor kategoriyalarni ajratish
+    const withImages = allCats.filter((c) => c.imageUrl && c.imageUrl.trim());
+    if (withImages.length === 0) {
+      message.info("Optimizatsiya qilinadigan rasmli kategoriya topilmadi");
+      return;
+    }
+
+    setIsOptimizing(true);
+    setOptimizeProgress(0);
+    setOptimizeResult(null);
+
+    try {
+      const urls = withImages.map((c) => c.imageUrl);
+      
+      const chunkSize = 3; // Har bir so'rovda 3 tadan yuboramiz
+      let successCount = 0;
+      let failedCount = 0;
+
+      for (let i = 0; i < urls.length; i += chunkSize) {
+        const chunk = urls.slice(i, i + chunkSize);
+        try {
+          const res = await api.post("/file/bulk-optimize", { urls: chunk });
+          const results = res.data?.results || [];
+          successCount += results.filter((r) => r.success).length;
+          failedCount += results.filter((r) => !r.success).length;
+        } catch (chunkErr) {
+          console.error("Chunk optimization error", chunkErr);
+          failedCount += chunk.length;
+        }
+        setOptimizeProgress(Math.round(((i + chunk.length) / urls.length) * 100));
+      }
+
+      setOptimizeResult({
+        total: urls.length,
+        success: successCount,
+        failed: failedCount,
+        updated: successCount,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories-all"] });
+
+      message.success(`✅ ${successCount} ta kategoriya rasmi muvaffaqiyatli optimize qilindi!`);
+    } catch (err) {
+      message.error(get(err, "response.data.message", "Optimizatsiya xatosi"));
+    } finally {
+      setIsOptimizing(false);
+    }
+  }, [queryClient]);
 
   // ─── SELECT option input: vergul bilan ajratilgan variantlarni parse qilish ───
 
@@ -491,6 +564,27 @@ const CategoryPage = () => {
         </Space>
         <Space>
           <Button icon={<UploadOutlined />} onClick={() => setIsBulkModalOpen(true)}>Excel yuklash</Button>
+          <Popconfirm
+            title={`Barcha kategoriya rasmlarini optimize qilish?`}
+            description={
+              <div style={{ maxWidth: 280 }}>
+                <p style={{ margin: 0, fontSize: 12 }}>Barcha rasmlar bir xil o'lcham (max 1200×1200), WebP format va optimal sifatga keltiriladi.</p>
+                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>Past internet uchun ham tez ochilishi ta'minlanadi.</p>
+              </div>
+            }
+            onConfirm={handleBulkOptimizeImages}
+            okText="Ha, optimize qil"
+            cancelText="Bekor"
+            disabled={isOptimizing}
+          >
+            <Button
+              icon={<ThunderboltOutlined />}
+              loading={isOptimizing}
+              style={{ background: isOptimizing ? undefined : "#fff7e6", borderColor: "#fa8c16", color: "#fa8c16" }}
+            >
+              {isOptimizing ? `Optimize qilinmoqda... ${optimizeProgress}%` : "Rasmlarni Optimize"}
+            </Button>
+          </Popconfirm>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateModalOpen(true)}>Yangi kategoriya</Button>
         </Space>
       </div>
