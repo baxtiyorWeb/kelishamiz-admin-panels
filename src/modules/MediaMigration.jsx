@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Button, Card, Progress, Tag, Modal, Alert, Space } from "antd";
+import { Button, Card, Progress, Tag, Modal, Alert } from "antd";
 import {
   CloudSyncOutlined,
   CheckCircleOutlined,
@@ -78,6 +78,30 @@ export default function MediaMigration() {
     });
   };
 
+  const handleCleanOrphans = () => {
+    Modal.confirm({
+      title: "Keraksiz (Orphan) Rasmlarni Tozalash",
+      content:
+        "Bunny Storage da saqlangan, lekin bazada (mahsulot, banner, kategoriya yoki profilda) hech qayerda ishlatilmayotgan eskirgan va ortiqcha rasmlar o'chiriladi. Xotirani tozalashni tasdiqlaysizmi?",
+      okText: "Ha, Tozalash",
+      cancelText: "Bekor Qilish",
+      okType: "danger",
+      onOk: async () => {
+        setLoading(true);
+        try {
+          const res = await api.post("/file/clean-orphans");
+          const msg = res.data?.message || "Orphan rasmlar tozalandi!";
+          Modal.success({ title: "Natija", content: msg });
+          await fetchStatus();
+        } catch (err) {
+          console.error("Clean error:", err);
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -90,7 +114,21 @@ export default function MediaMigration() {
             Barcha Vercel/tashqi rasmlarni Bunny.net Storage & Pull Zone ga xavfsiz va rate limit siz avto-ko'chirish
           </p>
         </div>
-        <div>
+        <div className="flex items-center gap-3">
+          <Button
+            danger
+            size="large"
+            loading={loading}
+            onClick={handleCleanOrphans}
+            style={{
+              height: "46px",
+              paddingHorizontal: "20px",
+              borderRadius: "10px",
+              fontWeight: "600",
+            }}
+          >
+            Keraksiz Rasmlarni Tozalash
+          </Button>
           <Button
             type="primary"
             size="large"
