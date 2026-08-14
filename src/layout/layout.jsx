@@ -9,6 +9,7 @@ import {
   DashboardOutlined,
   CreditCardOutlined,
   CloudSyncOutlined,
+  NotificationOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -79,6 +80,12 @@ const AppLayout = () => {
               icon: <Users />,
               label: "Foydalanuvchilar",
               onClick: () => navigate("/users"),
+            },
+            {
+              key: "/notifications",
+              icon: <NotificationOutlined />,
+              label: "Xabarnomalar",
+              onClick: () => navigate("/notifications"),
             },
             {
               key: "/payments",
