@@ -399,33 +399,30 @@ const Banners = () => {
                             </Form.Item>
                         </Col>
 
-                        {!isVideoValue && (
-                            <Col span={24}>
-                                <Form.Item
-                                    name="file"
-                                    label="Banner rasmi"
-                                    valuePropName="fileList"
-                                    getValueFromEvent={e => Array.isArray(e) ? e : e?.fileList}
-                                    rules={[{ required: !editingBanner && !isVideoValue, message: 'Rasm yuklang' }]}
+                        <Col span={24}>
+                            <Form.Item
+                                name="file"
+                                label={isVideoValue ? "Banner Muqova Rasmi (Cover Image / Thumbnail)" : "Banner Rasmi"}
+                                valuePropName="fileList"
+                                getValueFromEvent={e => Array.isArray(e) ? e : e?.fileList}
+                            >
+                                <Upload
+                                    listType="picture-card"
+                                    maxCount={1}
+                                    beforeUpload={() => false}
+                                    fileList={fileList}
+                                    onChange={({ fileList }) => setFileList(fileList)}
+                                    accept="image/*"
                                 >
-                                    <Upload
-                                        listType="picture-card"
-                                        maxCount={1}
-                                        beforeUpload={() => false}
-                                        fileList={fileList}
-                                        onChange={({ fileList }) => setFileList(fileList)}
-                                        accept="image/*"
-                                    >
-                                        {fileList.length < 1 && (
-                                            <div>
-                                                <UploadOutlined />
-                                                <div style={{ marginTop: 8 }}>Yuklash</div>
-                                            </div>
-                                        )}
-                                    </Upload>
-                                </Form.Item>
-                            </Col>
-                        )}
+                                    {fileList.length < 1 && (
+                                        <div>
+                                            <UploadOutlined />
+                                            <div style={{ marginTop: 8 }}>Yuklash</div>
+                                        </div>
+                                    )}
+                                </Upload>
+                            </Form.Item>
+                        </Col>
                     </Row>
                 </Form>
             </Modal>
