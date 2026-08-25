@@ -4,7 +4,8 @@ import Table from "./../components/Table";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "./../config/auth/api";
 import { get, isArray } from "lodash";
-import { message, Popconfirm, Tooltip, Select, Tag } from "antd";
+import { message, Popconfirm, Tooltip, Select, Tag, Button } from "antd";
+import { SendOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 
@@ -212,6 +213,33 @@ const Users = () => {
 
   return (
     <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
+        <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>
+          Foydalanuvchilar ro'yxati
+        </h2>
+        <Button
+          type="primary"
+          icon={<SendOutlined />}
+          onClick={() => navigate("/notifications")}
+          style={{
+            background: "#6345ED",
+            borderColor: "#6345ED",
+            borderRadius: 8,
+            height: 38,
+            fontWeight: 500,
+          }}
+        >
+          Barchaga xabar yuborish
+        </Button>
+      </div>
+
       <Table
         dataSource={userItems}
         columnDefs={columns}

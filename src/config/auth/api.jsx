@@ -12,7 +12,7 @@ const api = axios.create({
 
 export const getAccessToken = () => localStorage.getItem("accessToken");
 export const getRefreshToken = () => localStorage.getItem("refreshToken");
-
+// ok
 const setAccessToken = (token) => localStorage.setItem("accessToken", token);
 const setRefreshToken = (token) => localStorage.setItem("refreshToken", token);
 
