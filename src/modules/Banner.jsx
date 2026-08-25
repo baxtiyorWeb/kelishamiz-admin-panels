@@ -19,6 +19,7 @@ import {
     Card,
     Row,
     Col,
+    Divider,
 } from "antd";
 import {
     PlusOutlined,
@@ -31,10 +32,11 @@ import {
     InstagramOutlined,
     SendOutlined,
     StarOutlined,
+    VideoCameraOutlined,
+    PlayCircleOutlined,
 } from "@ant-design/icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "./../config/auth/api";
-import dayjs from "dayjs";
 
 const PLACEMENT_OPTIONS = [
     { value: "home_hero", label: "Bosh sahifa (Katta banner)" },
@@ -53,6 +55,7 @@ const PLATFORM_OPTIONS = [
 const Banners = () => {
     const queryClient = useQueryClient();
     const [form] = Form.useForm();
+    const isVideoValue = Form.useWatch("isVideo", form);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingBanner, setEditingBanner] = useState(null);
@@ -67,7 +70,7 @@ const Banners = () => {
 
     // --- API So'rovlari ---
 
-    const { data: banners = [], isPending: isLoading, isError } = useQuery({
+    const { data: banners = [], isPending: isLoading } = useQuery({
         queryKey: ["banners", filters],
         queryFn: async () => {
             const params = new URLSearchParams();
@@ -84,18 +87,12 @@ const Banners = () => {
         mutationFn: async ({ id, values }) => {
             const formData = new FormData();
 
-            // 1. Faylni qo'shish (Eng muhim joyi)
-            // values.file - bu Ant Design dan keladigan massiv
             if (values.file && values.file[0] && values.file[0].originFileObj) {
                 formData.append("file", values.file[0].originFileObj);
             }
 
-            // 2. Boshqa maydonlarni qo'shish
             Object.entries(values).forEach(([key, value]) => {
-                // "file" ni qayta qo'shmaymiz, chunki yuqorida qo'shdik
                 if (key !== "file" && value !== undefined && value !== null) {
-                    // Boolean qiymatlarni string "true"/"false" qilib yuborgan ma'qul
-                    // Chunki FormData hamma narsani stringga aylantiradi
                     formData.append(key, value);
                 }
             });
@@ -159,35 +156,49 @@ const Banners = () => {
         return {
             total: list.length,
             active: list.filter(b => b.isActive).length,
-            featured: list.filter(b => b.isFeatured).length,
+            videoBanners: list.filter(b => b.isVideo).length,
             views: list.reduce((a, b) => a + (b.views || 0), 0)
         };
     }, [banners]);
 
     const columns = [
-        { title: "ID", dataIndex: "id", key: "id", width: 70 },
+        { title: "ID", dataIndex: "id", key: "id", width: 60 },
         {
-            title: "Rasm",
-            dataIndex: "imageUrl",
-            key: "imageUrl",
-            width: 120,
-            render: (url) => <Image src={url} width={80} className="rounded object-cover" fallback="https://via.placeholder.com/80x40?text=No+Image" />
+            title: "Media",
+            key: "media",
+            width: 110,
+            render: (_, r) => (
+                r.isVideo ? (
+                    <Tag color="purple" icon={<PlayCircleOutlined />}>
+                        Video {r.videoDuration ? `(${r.videoDuration})` : ""}
+                    </Tag>
+                ) : (
+                    <Image src={r.imageUrl} width={70} height={40} className="rounded object-cover" fallback="https://via.placeholder.com/80x40?text=No+Image" />
+                )
+            )
         },
         {
             title: "Sarlavha",
             dataIndex: "title",
             key: "title",
-            render: (t) => <Tooltip title={t}><span className="font-medium">{t || "---"}</span></Tooltip>
+            render: (t, r) => (
+                <div>
+                    <Tooltip title={t}><span className="font-medium">{t || "---"}</span></Tooltip>
+                    {r.isVideo && <div className="text-xs text-purple-600 font-semibold flex items-center gap-1 mt-0.5"><VideoCameraOutlined /> Video Banner</div>}
+                </div>
+            )
         },
         {
-            title: "Platforma",
-            dataIndex: "platform",
-            key: "platform",
-            render: (p) => {
-                const opt = PLATFORM_OPTIONS.find(o => o.value === p);
-                const colors = { youtube: "red", telegram: "blue", facebook: "geekblue", instagram: "purple" };
-                return p ? <Tag icon={opt?.icon} color={colors[p]}>{p.toUpperCase()}</Tag> : <Tag>N/A</Tag>;
-            }
+            title: "Ijtimoiy tarmoqlar",
+            key: "socials",
+            render: (_, r) => (
+                <Space size={4} wrap>
+                    {r.youtubeUrl && <Tag icon={<YoutubeOutlined />} color="red">YouTube</Tag>}
+                    {r.instagramUrl && <Tag icon={<InstagramOutlined />} color="magenta">Instagram</Tag>}
+                    {r.telegramUrl && <Tag icon={<SendOutlined />} color="blue">Telegram</Tag>}
+                    {r.facebookUrl && <Tag icon={<FacebookOutlined />} color="geekblue">Facebook</Tag>}
+                </Space>
+            )
         },
         {
             title: "Joylashuv",
@@ -231,17 +242,17 @@ const Banners = () => {
             <Row gutter={[16, 16]} className="mb-6">
                 <Col xs={24} sm={12} lg={6}>
                     <Card bordered={false} className="shadow-sm">
-                        <Statistic title="Jami" value={stats.total} prefix={<PlusOutlined />} />
+                        <Statistic title="Jami Bannerlar" value={stats.total} prefix={<PlusOutlined />} />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
                     <Card bordered={false} className="shadow-sm">
-                        <Statistic title="Faol" value={stats.active} valueStyle={{ color: '#3f8600' }} />
+                        <Statistic title="Faol Bannerlar" value={stats.active} valueStyle={{ color: '#3f8600' }} />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
                     <Card bordered={false} className="shadow-sm">
-                        <Statistic title="Premium" value={stats.featured} prefix={<StarOutlined />} valueStyle={{ color: '#cf1322' }} />
+                        <Statistic title="Video Bannerlar" value={stats.videoBanners} prefix={<VideoCameraOutlined />} valueStyle={{ color: '#722ed1' }} />
                     </Card>
                 </Col>
                 <Col xs={24} sm={12} lg={6}>
@@ -253,7 +264,7 @@ const Banners = () => {
 
             <div className="bg-white p-6 rounded-xl shadow-sm">
                 <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-                    <h2 className="text-2xl font-bold m-0">Bannerlar</h2>
+                    <h2 className="text-2xl font-bold m-0">Bannerlar Boshqaruvi</h2>
 
                     <Space wrap>
                         <Select
@@ -271,7 +282,7 @@ const Banners = () => {
                             options={PLATFORM_OPTIONS}
                         />
                         <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => showModal()}>
-                            Qo'shish
+                            Yangi Banner Qo'shish
                         </Button>
                     </Space>
                 </div>
@@ -294,14 +305,14 @@ const Banners = () => {
                 onCancel={handleCancel}
                 onOk={() => form.submit()}
                 confirmLoading={bannerMutation.isPending}
-                width={650}
+                width={700}
                 centered
             >
                 <Form
                     form={form}
                     layout="vertical"
                     onFinish={onFinish}
-                    initialValues={{ isActive: true, isFeatured: false, order: 0, placement: "home_hero" }}
+                    initialValues={{ isActive: true, isVideo: false, isFeatured: false, order: 0, placement: "home_hero" }}
                 >
                     <Row gutter={16}>
                         <Col span={24}>
@@ -311,51 +322,89 @@ const Banners = () => {
                         </Col>
                         <Col span={24}>
                             <Form.Item name="description" label="Tavsif">
-                                <Input.TextArea rows={2} />
+                                <Input.TextArea rows={2} placeholder="Banner batafsil matni" />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
-                            <Form.Item name="platform" label="Platforma">
-                                <Select options={PLATFORM_OPTIONS} placeholder="Tanlang" />
+
+                        <Col span={8}>
+                            <Form.Item name="isVideo" label="Video Banner" valuePropName="checked">
+                                <Switch checkedChildren="Video" unCheckedChildren="Rasm" />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
-                            <Form.Item name="brand" label="Brend/Do'kon">
-                                <Input placeholder="Masalan: Apple" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={24}>
-                            <Form.Item name="linkUrl" label="Yo'naltirish havolasi (URL)" rules={[{ type: 'url', message: 'URL xato' }]}>
-                                <Input placeholder="https://..." />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="placement" label="Joylashuv" rules={[{ required: true }]}>
-                                <Select options={PLACEMENT_OPTIONS} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="order" label="Tartib">
-                                <InputNumber className="w-full" min={0} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={6}>
+                        <Col span={8}>
                             <Form.Item name="isActive" label="Faol" valuePropName="checked">
                                 <Switch size="small" />
                             </Form.Item>
                         </Col>
-                        <Col span={6}>
+                        <Col span={8}>
                             <Form.Item name="isFeatured" label="Premium" valuePropName="checked">
                                 <Switch size="small" />
                             </Form.Item>
                         </Col>
+
+                        {isVideoValue && (
+                            <>
+                                <Col span={24}>
+                                    <Divider style={{ margin: '8px 0 16px 0' }}>Video sozlamalari</Divider>
+                                </Col>
+                                <Col span={16}>
+                                    <Form.Item name="videoUrl" label="Video URL (MP4 / HLS)" rules={[{ required: isVideoValue, message: "Video URL kiritish shart" }]}>
+                                        <Input placeholder="https://example.com/banner-video.mp4" prefix={<VideoCameraOutlined />} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={8}>
+                                    <Form.Item name="videoDuration" label="Davomiyligi">
+                                        <Input placeholder="00:15" />
+                                    </Form.Item>
+                                </Col>
+
+                                <Col span={24}>
+                                    <Divider style={{ margin: '8px 0 16px 0' }}>Ijtimoiy Tarmoq Havolalari (Modal uchun)</Divider>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="youtubeUrl" label="YouTube URL">
+                                        <Input prefix={<YoutubeOutlined style={{ color: '#ff4d4f' }} />} placeholder="https://youtube.com/watch?v=..." />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="instagramUrl" label="Instagram URL">
+                                        <Input prefix={<InstagramOutlined style={{ color: '#ff4081' }} />} placeholder="https://instagram.com/p/..." />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="telegramUrl" label="Telegram URL">
+                                        <Input prefix={<SendOutlined style={{ color: '#1890ff' }} />} placeholder="https://t.me/..." />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="facebookUrl" label="Facebook URL">
+                                        <Input prefix={<FacebookOutlined style={{ color: '#2f54eb' }} />} placeholder="https://facebook.com/..." />
+                                    </Form.Item>
+                                </Col>
+                            </>
+                        )}
+
+                        <Col span={24}>
+                            <Divider style={{ margin: '8px 0 16px 0' }}>Umumiy sozlamalar</Divider>
+                        </Col>
+
+                        <Col span={16}>
+                            <Form.Item name="linkUrl" label="Yo'naltirish havolasi (Asosiy URL)">
+                                <Input placeholder="https://..." />
+                            </Form.Item>
+                        </Col>
+                        <Col span={8}>
+                            <Form.Item name="placement" label="Joylashuv" rules={[{ required: true }]}>
+                                <Select options={PLACEMENT_OPTIONS} />
+                            </Form.Item>
+                        </Col>
+
                         <Col span={24}>
                             <Form.Item
                                 name="file"
-                                label="Banner rasmi"
+                                label={isVideoValue ? "Banner Muqova Rasmi (Cover Image / Thumbnail)" : "Banner Rasmi"}
                                 valuePropName="fileList"
                                 getValueFromEvent={e => Array.isArray(e) ? e : e?.fileList}
-                                rules={[{ required: !editingBanner, message: 'Rasm yuklang' }]}
                             >
                                 <Upload
                                     listType="picture-card"

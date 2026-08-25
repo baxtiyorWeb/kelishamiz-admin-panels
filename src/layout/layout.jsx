@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -8,6 +8,8 @@ import {
   RocketOutlined,
   DashboardOutlined,
   CreditCardOutlined,
+  CloudSyncOutlined,
+  NotificationOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, theme } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -80,6 +82,12 @@ const AppLayout = () => {
               onClick: () => navigate("/users"),
             },
             {
+              key: "/notifications",
+              icon: <NotificationOutlined />,
+              label: "Xabarnomalar",
+              onClick: () => navigate("/notifications"),
+            },
+            {
               key: "/payments",
               icon: <CreditCardOutlined />,
               label: "To'lovlar",
@@ -90,6 +98,12 @@ const AppLayout = () => {
               icon: <RocketOutlined />,
               label: "Bannerlar",
               onClick: () => navigate("/banners"),
+            },
+            {
+              key: "/migration",
+              icon: <CloudSyncOutlined />,
+              label: "Bunny Migratsiya",
+              onClick: () => navigate("/migration"),
             },
           ]}
         />

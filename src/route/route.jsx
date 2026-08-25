@@ -1,4 +1,4 @@
-﻿import { Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import AppLayout from "../layout/layout";
 import AuthLayout from "../layout/AuthLayout";
 import PrivateRoute from "./PrivateRoute";
@@ -13,6 +13,8 @@ import Banners from "../modules/Banner";
 import Payments from "../modules/Payments";
 import UserDetail from "../modules/UserDetail";
 import Dashboard from "../modules/Dashboard";
+import MediaMigration from "../modules/MediaMigration";
+import BroadcastNotification from "../modules/BroadcastNotification";
 
 export const AppRouter = () => {
   return (
@@ -34,8 +36,10 @@ export const AppRouter = () => {
         <Route path="/locations" element={<Locations />} />
         <Route path="/users" element={<Users />} />
         <Route path="/users/:id" element={<UserDetail />} />
+        <Route path="/notifications" element={<BroadcastNotification />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/banners" element={<Banners />} />
+        <Route path="/migration" element={<MediaMigration />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>
