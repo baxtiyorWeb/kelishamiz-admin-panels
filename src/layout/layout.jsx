@@ -18,6 +18,7 @@ import {
   AppstoreOutlined,
   EnvironmentOutlined,
   TeamOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, theme, Space, Tag, Popconfirm } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -162,6 +163,12 @@ const AppLayout = () => {
               icon: <DeleteOutlined />,
               label: "Account Deletion Center",
               onClick: () => navigate("/deletions"),
+            },
+            {
+              key: "/security-policies",
+              icon: <SafetyCertificateOutlined />,
+              label: "Xavfsizlik Hujjatlari",
+              onClick: () => navigate("/security-policies"),
             },
             {
               key: "/audit-logs",

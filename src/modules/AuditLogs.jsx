@@ -16,7 +16,7 @@ const AuditLogs = () => {
       const res = await api.get('/admin/audit-logs', {
         params: { page, limit: pageSize, search },
       });
-      return res.data;
+      return res.data?.content || res.data;
     },
   });
 
