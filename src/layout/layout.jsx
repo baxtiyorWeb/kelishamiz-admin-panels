@@ -10,12 +10,19 @@ import {
   CreditCardOutlined,
   CloudSyncOutlined,
   NotificationOutlined,
+  ShopOutlined,
+  AlertOutlined,
+  HistoryOutlined,
+  DeleteOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
-import { Button, Layout, Menu, theme } from "antd";
+import { Button, Layout, Menu, theme, Space, Tag, Popconfirm } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { CiGrid32 } from "react-icons/ci";
 import { MapIcon, Users } from "lucide-react";
+
 const { Header, Sider, Content } = Layout;
+
 const AppLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
@@ -30,10 +37,42 @@ const AppLayout = () => {
     }
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    window.location.href = "/auth/login";
+  };
+
   return (
     <Layout className="min-h-screen">
-      <Sider trigger={null} collapsible collapsed={collapsed}>
-        <div className="demo-logo-vertical" />
+      <Sider trigger={null} collapsible collapsed={collapsed} width={240}>
+        <div style={{ padding: "16px", display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "8px",
+            background: "linear-gradient(135deg, #722ed1, #1890ff)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            fontWeight: "bold",
+            fontSize: "18px"
+          }}>
+            K
+          </div>
+          {!collapsed && (
+            <div>
+              <div style={{ color: "#fff", fontWeight: "bold", fontSize: "15px", lineHeight: 1.2 }}>
+                KELISHAMIZ
+              </div>
+              <div style={{ color: "#8c8c8c", fontSize: "10px", fontWeight: "bold" }}>
+                OPERATIONS CENTER
+              </div>
+            </div>
+          )}
+        </div>
+
         <Menu
           theme="dark"
           mode="inline"
@@ -42,8 +81,26 @@ const AppLayout = () => {
             {
               key: "/dashboard",
               icon: <DashboardOutlined />,
-              label: "Statistika",
+              label: "Boshqaruv & Telemetriya",
               onClick: () => navigate("/dashboard"),
+            },
+            {
+              key: "/products",
+              icon: <ProductFilled />,
+              label: "E'lonlar & Moderatsiya",
+              onClick: () => navigate("/products"),
+            },
+            {
+              key: "/shops",
+              icon: <ShopOutlined />,
+              label: "Do'konlar (Shops)",
+              onClick: () => navigate("/shops"),
+            },
+            {
+              key: "/reports",
+              icon: <AlertOutlined />,
+              label: "Shikoyatlar & Moderatsiya",
+              onClick: () => navigate("/reports"),
             },
             {
               key: "/categories",
@@ -58,28 +115,22 @@ const AppLayout = () => {
               onClick: () => navigate("/properties"),
             },
             {
+              key: "/users",
+              icon: <Users style={{ width: 16, height: 16 }} />,
+              label: "Foydalanuvchilar",
+              onClick: () => navigate("/users"),
+            },
+            {
               key: "/profiles",
               icon: <ProfileOutlined />,
-              label: "profillar",
+              label: "Profillar",
               onClick: () => navigate("/profiles"),
             },
             {
-              key: "/products",
-              icon: <ProductFilled />,
-              label: "mahsulotlar",
-              onClick: () => navigate("/products"),
-            },
-            {
               key: "/locations",
-              icon: <MapIcon />,
-              label: "joylashuvlar",
+              icon: <MapIcon style={{ width: 16, height: 16 }} />,
+              label: "Joylashuvlar",
               onClick: () => navigate("/locations"),
-            },
-            {
-              key: "/users",
-              icon: <Users />,
-              label: "Foydalanuvchilar",
-              onClick: () => navigate("/users"),
             },
             {
               key: "/notifications",
@@ -102,24 +153,52 @@ const AppLayout = () => {
             {
               key: "/migration",
               icon: <CloudSyncOutlined />,
-              label: "Bunny Migratsiya",
+              label: "Bunny CDN Xotira",
               onClick: () => navigate("/migration"),
+            },
+            {
+              key: "/deletions",
+              icon: <DeleteOutlined />,
+              label: "Account Deletion Center",
+              onClick: () => navigate("/deletions"),
+            },
+            {
+              key: "/audit-logs",
+              icon: <HistoryOutlined />,
+              label: "Audit Tarixi",
+              onClick: () => navigate("/audit-logs"),
             },
           ]}
         />
       </Sider>
+
       <Layout>
-        <Header style={{ padding: 0, background: colorBgContainer }}>
+        <Header style={{ padding: "0 24px", background: colorBgContainer, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
             style={{
               fontSize: "16px",
-              width: 64,
-              height: 64,
+              width: 44,
+              height: 44,
             }}
           />
+
+          <Space size="large">
+            <Tag color="success">🟢 System Operational</Tag>
+            <Popconfirm
+              title="Tizimdan chiqish"
+              description="Haqiqatan ham Admin paneldan chiqmoqchimisiz?"
+              onConfirm={handleLogout}
+              okText="Ha, chiqish"
+              cancelText="Bekor qilish"
+            >
+              <Button type="text" danger icon={<LogoutOutlined />}>
+                Chiqish
+              </Button>
+            </Popconfirm>
+          </Space>
         </Header>
         <Content
           style={{
@@ -136,4 +215,5 @@ const AppLayout = () => {
     </Layout>
   );
 };
+
 export default AppLayout;
