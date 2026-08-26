@@ -15,6 +15,10 @@ import UserDetail from "../modules/UserDetail";
 import Dashboard from "../modules/Dashboard";
 import MediaMigration from "../modules/MediaMigration";
 import BroadcastNotification from "../modules/BroadcastNotification";
+import Shops from "../modules/Shops";
+import Reports from "../modules/Reports";
+import AuditLogs from "../modules/AuditLogs";
+import AccountDeletions from "../modules/AccountDeletions";
 
 export const AppRouter = () => {
   return (
@@ -26,13 +30,14 @@ export const AppRouter = () => {
             <AppLayout />
           </PrivateRoute>
         }
-      ></Route>
-      <Route path="/" element={<AppLayout />}>
+      >
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/categories" index element={<Category />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/shops" element={<Shops />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/categories" element={<Category />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/profiles" element={<Profiles />} />
-        <Route path="/products" element={<Products />} />
         <Route path="/locations" element={<Locations />} />
         <Route path="/users" element={<Users />} />
         <Route path="/users/:id" element={<UserDetail />} />
@@ -40,6 +45,8 @@ export const AppRouter = () => {
         <Route path="/payments" element={<Payments />} />
         <Route path="/banners" element={<Banners />} />
         <Route path="/migration" element={<MediaMigration />} />
+        <Route path="/deletions" element={<AccountDeletions />} />
+        <Route path="/audit-logs" element={<AuditLogs />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>
