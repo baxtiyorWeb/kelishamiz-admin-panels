@@ -34,7 +34,7 @@ const Shops = () => {
       const res = await api.get('/admin/shops', {
         params: { page, limit: pageSize, search },
       });
-      return res.data;
+      return res.data?.content || res.data;
     },
   });
 
@@ -104,6 +104,26 @@ const Shops = () => {
       key: 'category',
       render: (_, record) => (
         <Tag color="purple">{record.category?.nameUz || record.category?.name || 'Umumiy'}</Tag>
+      ),
+    },
+    {
+      title: 'Manzil / Ish vaqti',
+      key: 'address',
+      render: (_, record) => (
+        <div style={{ fontSize: '12px' }}>
+          <div><span title="Manzil">📍</span> {record.address || 'Kiritilmagan'}</div>
+          <div style={{ color: '#8c8c8c' }}><span title="Ish vaqti">🕒</span> {record.workingHours || 'Noma\'lum'}</div>
+        </div>
+      ),
+    },
+    {
+      title: 'Statistika',
+      key: 'stats',
+      render: (_, record) => (
+        <Space direction="vertical" size={0} style={{ fontSize: '12px' }}>
+          <div><span title="Reyting">⭐</span> {record.rating || '0.0'} ({record.reviewsCount || 0} sharh)</div>
+          <div><span title="Obunachilar">👥</span> {record.followersCount || 0} obunachi</div>
+        </Space>
       ),
     },
     {
