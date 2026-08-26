@@ -122,12 +122,12 @@ const Dashboard = () => {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = seconds % 60;
-        
+
         let timeStr = "";
         if (hours > 0) timeStr += `${hours} soat `;
         if (minutes > 0) timeStr += `${minutes} daqiqa `;
         if (secs > 0 || timeStr === "") timeStr += `${secs} soniya`;
-        
+
         return <Tag color="green">{timeStr.trim()}</Tag>;
       },
     },
@@ -244,9 +244,9 @@ const Dashboard = () => {
       {/* Charts & Graphs Row */}
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Card 
-            title="Tashriflar dinamikasi" 
-            variant="borderless" 
+          <Card
+            title="Tashriflar dinamikasi"
+            variant="borderless"
             style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}
             extra={
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -255,9 +255,9 @@ const Dashboard = () => {
                   <Option value="week">Haftalik</Option>
                   <Option value="month">Oylik</Option>
                 </Select>
-                <RangePicker 
-                  value={dateRange} 
-                  onChange={setDateRange} 
+                <RangePicker
+                  value={dateRange}
+                  onChange={setDateRange}
                   allowClear={false}
                 />
               </div>
@@ -268,7 +268,7 @@ const Dashboard = () => {
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: "180px", borderBottom: "1px solid #f0f0f0", paddingBottom: "8px" }}>
                   {visitors.map((v, idx) => {
                     const heightPercent = (v.count / maxVisitors) * 100;
-                    
+
                     const prevCount = idx > 0 ? visitors[idx - 1].count : v.count;
                     let changeText = "0% (o'zgarmadi)";
                     let changeColor = "#8c8c8c";
