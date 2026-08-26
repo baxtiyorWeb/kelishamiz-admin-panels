@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  ProductFilled,
-  ProductOutlined,
-  ProfileOutlined,
+  TagsOutlined,
+  ControlOutlined,
+  IdcardOutlined,
   RocketOutlined,
   DashboardOutlined,
   CreditCardOutlined,
@@ -15,11 +15,12 @@ import {
   HistoryOutlined,
   DeleteOutlined,
   LogoutOutlined,
+  AppstoreOutlined,
+  EnvironmentOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, theme, Space, Tag, Popconfirm } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { CiGrid32 } from "react-icons/ci";
-import { MapIcon, Users } from "lucide-react";
 
 const { Header, Sider, Content } = Layout;
 
@@ -86,7 +87,7 @@ const AppLayout = () => {
             },
             {
               key: "/products",
-              icon: <ProductFilled />,
+              icon: <TagsOutlined />,
               label: "E'lonlar & Moderatsiya",
               onClick: () => navigate("/products"),
             },
@@ -104,31 +105,31 @@ const AppLayout = () => {
             },
             {
               key: "/categories",
-              icon: <CiGrid32 />,
+              icon: <AppstoreOutlined />,
               label: "Kategoriyalar",
               onClick: () => navigate("/categories"),
             },
             {
               key: "/properties",
-              icon: <ProductOutlined />,
+              icon: <ControlOutlined />,
               label: "Xususiyatlar",
               onClick: () => navigate("/properties"),
             },
             {
               key: "/users",
-              icon: <Users style={{ width: 16, height: 16 }} />,
+              icon: <TeamOutlined />,
               label: "Foydalanuvchilar",
               onClick: () => navigate("/users"),
             },
             {
               key: "/profiles",
-              icon: <ProfileOutlined />,
+              icon: <IdcardOutlined />,
               label: "Profillar",
               onClick: () => navigate("/profiles"),
             },
             {
               key: "/locations",
-              icon: <MapIcon style={{ width: 16, height: 16 }} />,
+              icon: <EnvironmentOutlined />,
               label: "Joylashuvlar",
               onClick: () => navigate("/locations"),
             },

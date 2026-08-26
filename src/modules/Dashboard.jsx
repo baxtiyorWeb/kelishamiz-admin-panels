@@ -1,7 +1,9 @@
-﻿import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "./../config/auth/api";
-import { Card, Col, Row, Statistic, Table, Tag, Spin, Alert } from "antd";
+import { Card, Col, Row, Statistic, Table, Tag, Spin, Alert, Tooltip, DatePicker, Select } from "antd";
+const { RangePicker } = DatePicker;
+const { Option } = Select;
 import {
   UserOutlined,
   MessageOutlined,
@@ -12,7 +14,6 @@ import {
 import dayjs from "dayjs";
 
 const Dashboard = () => {
-  // 1. Overall stats
   const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery({
     queryKey: ["dashboardStats"],
     queryFn: async () => {
@@ -32,11 +33,21 @@ const Dashboard = () => {
     refetchInterval: 30000,
   });
 
+  const [dateRange, setDateRange] = useState([
+    dayjs().subtract(30, 'day'),
+    dayjs()
+  ]);
+  const [interval, setInterval] = useState("day");
+
   // 3. Visitor trend
   const { data: visitors, isLoading: visitorsLoading } = useQuery({
-    queryKey: ["visitorTrend"],
+    queryKey: ["visitorTrend", dateRange[0]?.toISOString(), dateRange[1]?.toISOString(), interval],
     queryFn: async () => {
-      const response = await api.get("/analytics/visitors");
+      let url = `/analytics/visitors?interval=${interval}`;
+      if (dateRange[0] && dateRange[1]) {
+        url += `&startDate=${dateRange[0].toISOString()}&endDate=${dateRange[1].toISOString()}`;
+      }
+      const response = await api.get(url);
       return response.data?.content;
     },
   });
@@ -110,12 +121,12 @@ const Dashboard = () => {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = seconds % 60;
-        
+
         let timeStr = "";
         if (hours > 0) timeStr += `${hours} soat `;
         if (minutes > 0) timeStr += `${minutes} daqiqa `;
         if (secs > 0 || timeStr === "") timeStr += `${secs} soniya`;
-        
+
         return <Tag color="green">{timeStr.trim()}</Tag>;
       },
     },
@@ -232,32 +243,84 @@ const Dashboard = () => {
       {/* Charts & Graphs Row */}
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Card title="Oxirgi 30 kunlik tashriflar dinamikasi" variant="borderless" style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}>
+          <Card
+            title="Tashriflar dinamikasi"
+            variant="borderless"
+            style={{ boxShadow: "0 1px 2px 0 rgba(0,0,0,0.03)" }}
+            extra={
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Select value={interval} onChange={setInterval} style={{ width: 120 }}>
+                  <Option value="day">Kunlik</Option>
+                  <Option value="week">Haftalik</Option>
+                  <Option value="month">Oylik</Option>
+                </Select>
+                <RangePicker
+                  value={dateRange}
+                  onChange={setDateRange}
+                  allowClear={false}
+                />
+              </div>
+            }
+          >
             {visitors && visitors.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: "180px", borderBottom: "1px solid #f0f0f0", paddingBottom: "8px" }}>
                   {visitors.map((v, idx) => {
                     const heightPercent = (v.count / maxVisitors) * 100;
-                    return (
-                      <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, position: "relative" }} title={`Sana: ${v.date}\nTashriflar: ${v.count}`}>
-                        <div
-                          style={{
-                            width: "60%",
-                            backgroundColor: "#1890ff",
-                            height: `${Math.max(heightPercent, 6)}%`,
-                            borderTopLeftRadius: "2px",
-                            borderTopRightRadius: "2px",
-                            transition: "height 0.3s ease",
-                            cursor: "pointer"
-                          }}
-                        ></div>
+
+                    const prevCount = idx > 0 ? visitors[idx - 1].count : v.count;
+                    let changeText = "0% (o'zgarmadi)";
+                    let changeColor = "#8c8c8c";
+                    if (idx > 0 && prevCount > 0) {
+                      const diff = v.count - prevCount;
+                      const percent = ((Math.abs(diff) / prevCount) * 100).toFixed(1);
+                      if (diff > 0) {
+                        changeText = `+${percent}% 📈 (ko'tarildi)`;
+                        changeColor = "#52c41a";
+                      } else if (diff < 0) {
+                        changeText = `-${percent}% 📉 (tushdi)`;
+                        changeColor = "#f5222d";
+                      }
+                    } else if (idx > 0 && prevCount === 0 && v.count > 0) {
+                      changeText = `+100% 📈 (ko'tarildi)`;
+                      changeColor = "#52c41a";
+                    }
+
+                    const tooltipContent = (
+                      <div>
+                        <div><strong>Sana:</strong> {v.date}</div>
+                        <div><strong>Tashriflar:</strong> {v.count} ta</div>
+                        {idx > 0 && (
+                          <div style={{ color: changeColor, marginTop: '4px' }}>
+                            <strong>O'zgarish:</strong> {changeText}
+                          </div>
+                        )}
                       </div>
+                    );
+
+                    return (
+                      <Tooltip key={idx} title={tooltipContent} color="#fff" overlayInnerStyle={{ color: '#000' }}>
+                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", flex: 1, height: "100%", position: "relative" }}>
+                          <div style={{ fontSize: '10px', color: '#595959', marginBottom: '4px', fontWeight: 'bold' }}>{v.count}</div>
+                          <div
+                            style={{
+                              width: "60%",
+                              backgroundColor: "#1890ff",
+                              height: `${Math.max(heightPercent, 2)}%`,
+                              borderTopLeftRadius: "2px",
+                              borderTopRightRadius: "2px",
+                              transition: "height 0.3s ease",
+                              cursor: "pointer"
+                            }}
+                          ></div>
+                        </div>
+                      </Tooltip>
                     );
                   })}
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#8c8c8c" }}>
                   <span>{visitors[0]?.date}</span>
-                  <span>Oxirgi 30 kun</span>
+                  <span>{interval === 'day' ? 'Kunlik' : interval === 'week' ? 'Haftalik' : 'Oylik'} statistika</span>
                   <span>{visitors[visitors.length - 1]?.date}</span>
                 </div>
               </div>
@@ -273,7 +336,7 @@ const Dashboard = () => {
         <Table
           columns={activeUserColumns}
           dataSource={activeUsers || []}
-          rowKey="userId"
+          rowKey="id"
           pagination={{ pageSize: 5 }}
           scroll={{ x: true }}
         />
