@@ -79,8 +79,8 @@ const SecurityPolicies = () => {
       dataIndex: 'language',
       key: 'language',
       render: (lang) => (
-        <Tag icon={<GlobalOutlined />} color={lang === 'uz' ? 'green' : 'cyan'}>
-          {lang === 'uz' ? "O'zbekcha (UZ)" : 'English (EN)'}
+        <Tag icon={<GlobalOutlined />} color={lang === 'uz' ? 'green' : lang === 'ru' ? 'orange' : 'cyan'}>
+          {lang === 'uz' ? "O'zbekcha (UZ)" : lang === 'ru' ? 'Русский (RU)' : 'English (EN)'}
         </Tag>
       ),
     },
@@ -117,10 +117,10 @@ const SecurityPolicies = () => {
       <Card variant="borderless">
         <Title level={3} style={{ margin: 0 }}>
           <SafetyCertificateOutlined style={{ color: '#722ed1', marginRight: 10 }} />
-          Platforma Xavfsizlik va Huquqiy Hujjatlari Boshqaruvi
+          Platforma Xavfsizlik va Huquqiy Hujjatlari Boshqaruvi (3 Tilda)
         </Title>
         <Paragraph type="secondary" style={{ marginTop: 8, marginBottom: 0 }}>
-          Ushbu modul orqali Mobil ilova va Veb-saytdagi Maxfiylik Siyosati (Privacy Policy) hamda Foydalanish Shartlari (Terms of Service) matnlarini O'zbek va Ingliz tillarida tahrirlashingiz mumkin.
+          Ushbu modul orqali Mobil ilova va Veb-saytdagi Maxfiylik Siyosati hamda Foydalanish Shartlari matnlarini 3 tilda (O'zbek, Rus va Ingliz) tahrirlashingiz mumkin.
         </Paragraph>
       </Card>
 
@@ -163,6 +163,7 @@ const SecurityPolicies = () => {
             <Form.Item name="language" label="Til" style={{ flex: 1, margin: 0 }}>
               <Select disabled>
                 <Option value="uz">O'zbekcha (UZ)</Option>
+                <Option value="ru">Русский (RU)</Option>
                 <Option value="en">English (EN)</Option>
               </Select>
             </Form.Item>
