@@ -14,7 +14,6 @@ import {
 import dayjs from "dayjs";
 
 const Dashboard = () => {
-  // 1. Overall stats
   const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery({
     queryKey: ["dashboardStats"],
     queryFn: async () => {
