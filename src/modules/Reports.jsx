@@ -101,11 +101,17 @@ const Reports = () => {
     {
       title: 'Yuboruvchi',
       key: 'reporter',
-      render: (_, record) => (
-        <span>
-          {record.reporter ? `@${record.reporter.username} (ID #${record.reporter.id})` : `User #${record.reporterId || 'Anonim'}`}
-        </span>
-      ),
+      render: (_, record) => {
+        if (!record.reporter) return <span>User #{record.reporterId || 'Anonim'}</span>;
+        const { username, phone, id } = record.reporter;
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontWeight: 'bold' }}>{username}</span>
+            <span style={{ color: '#8c8c8c', fontSize: '12px' }}>{phone || 'Tel kiritilmagan'}</span>
+            <span style={{ color: '#bfbfbf', fontSize: '11px' }}>ID #{id}</span>
+          </div>
+        );
+      },
     },
     {
       title: 'Holat',
