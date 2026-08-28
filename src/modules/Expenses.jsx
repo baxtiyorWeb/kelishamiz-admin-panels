@@ -139,16 +139,16 @@ const Expenses = () => {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value) => [`$${Math.abs(value).toFixed(4)}`, 'Miqdor']}
                       labelFormatter={(label) => `Sana: ${label}`}
                     />
                     <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="amount" 
-                      stroke="#1890ff" 
-                      name="Miqdor" 
+                    <Line
+                      type="monotone"
+                      dataKey="amount"
+                      stroke="#1890ff"
+                      name="Miqdor"
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
@@ -165,38 +165,38 @@ const Expenses = () => {
         </Col>
 
         <Col xs={24} lg={8}>
-           <Card title="Infratuzilma" bordered={false} className="shadow-sm h-full">
-              <div className="flex items-center mb-4">
-                 <GlobalOutlined className="text-2xl text-blue-500 mr-4" />
-                 <div>
-                    <div className="text-gray-500 text-sm">CDN Bandwidth (Taxminiy)</div>
-                    <div className="text-lg font-semibold">Tahlil qilinmoqda...</div>
-                 </div>
+          <Card title="Infratuzilma" bordered={false} className="shadow-sm h-full">
+            <div className="flex items-center mb-4">
+              <GlobalOutlined className="text-2xl text-blue-500 mr-4" />
+              <div>
+                <div className="text-gray-500 text-sm">CDN Bandwidth (Taxminiy)</div>
+                <div className="text-lg font-semibold">Tahlil qilinmoqda...</div>
               </div>
-              <div className="flex items-center">
-                 <DatabaseOutlined className="text-2xl text-purple-500 mr-4" />
-                 <div>
-                    <div className="text-gray-500 text-sm">Xotira (Storage)</div>
-                    <div className="text-lg font-semibold">Tahlil qilinmoqda...</div>
-                 </div>
+            </div>
+            <div className="flex items-center">
+              <DatabaseOutlined className="text-2xl text-purple-500 mr-4" />
+              <div>
+                <div className="text-gray-500 text-sm">Xotira (Storage)</div>
+                <div className="text-lg font-semibold">Tahlil qilinmoqda...</div>
               </div>
-              <div className="mt-6">
-                <Alert 
-                  message="API Token orqali" 
-                  description="Barcha ma'lumotlar bevosita provayderlardan real vaqtda olinmoqda." 
-                  type="info" 
-                  showIcon 
-                />
-              </div>
-           </Card>
+            </div>
+            <div className="mt-6">
+              <Alert
+                message="API Token orqali"
+                description="Barcha ma'lumotlar bevosita provayderlardan real vaqtda olinmoqda."
+                type="info"
+                showIcon
+              />
+            </div>
+          </Card>
         </Col>
       </Row>
 
       <Card title="To'lov va Harajatlar Tarixi" bordered={false} className="shadow-sm mt-8">
-        <Table 
-          columns={tableColumns} 
-          dataSource={billingRecords} 
-          rowKey={(record) => record.Id || Math.random().toString()} 
+        <Table
+          columns={tableColumns}
+          dataSource={billingRecords}
+          rowKey={(record) => record.Id || Math.random().toString()}
           pagination={{ pageSize: 10 }}
           scroll={{ x: 'max-content' }}
         />
