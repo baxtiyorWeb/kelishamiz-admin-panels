@@ -19,6 +19,7 @@ import Shops from "../modules/Shops";
 import Reports from "../modules/Reports";
 import AuditLogs from "../modules/AuditLogs";
 import AccountDeletions from "../modules/AccountDeletions";
+import Expenses from "../modules/Expenses";
 
 export const AppRouter = () => {
   return (
@@ -47,6 +48,7 @@ export const AppRouter = () => {
         <Route path="/migration" element={<MediaMigration />} />
         <Route path="/deletions" element={<AccountDeletions />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
+        <Route path="/expenses" element={<Expenses />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>

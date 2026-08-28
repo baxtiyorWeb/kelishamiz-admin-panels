@@ -18,6 +18,7 @@ import {
   AppstoreOutlined,
   EnvironmentOutlined,
   TeamOutlined,
+  WalletOutlined,
 } from "@ant-design/icons";
 import { Button, Layout, Menu, theme, Space, Tag, Popconfirm } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -168,6 +169,12 @@ const AppLayout = () => {
               icon: <HistoryOutlined />,
               label: "Audit Tarixi",
               onClick: () => navigate("/audit-logs"),
+            },
+            {
+              key: "/expenses",
+              icon: <WalletOutlined />,
+              label: "Loyiha Harajatlari",
+              onClick: () => navigate("/expenses"),
             },
           ]}
         />
