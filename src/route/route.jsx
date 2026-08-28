@@ -19,11 +19,8 @@ import Shops from "../modules/Shops";
 import Reports from "../modules/Reports";
 import AuditLogs from "../modules/AuditLogs";
 import AccountDeletions from "../modules/AccountDeletions";
-<<<<<<< HEAD
 import Expenses from "../modules/Expenses";
-=======
 import SecurityPolicies from "../modules/SecurityPolicies";
->>>>>>> c0ecd46105d9fc311942301c8676b394e39439b4
 
 export const AppRouter = () => {
   return (
