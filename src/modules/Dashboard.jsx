@@ -23,7 +23,6 @@ const Dashboard = () => {
     refetchInterval: 30000,
   });
 
-  // 2. Chat pairings
   const { data: chats, isLoading: chatsLoading } = useQuery({
     queryKey: ["chatPairings"],
     queryFn: async () => {
@@ -290,6 +289,7 @@ const Dashboard = () => {
                       <div>
                         <div><strong>Sana:</strong> {v.date}</div>
                         <div><strong>Tashriflar:</strong> {v.count} ta</div>
+                        <div><strong>Ro'yxatdan o'tganlar:</strong> {v.registeredCount || 0} ta</div>
                         {idx > 0 && (
                           <div style={{ color: changeColor, marginTop: '4px' }}>
                             <strong>O'zgarish:</strong> {changeText}
@@ -301,7 +301,10 @@ const Dashboard = () => {
                     return (
                       <Tooltip key={idx} title={tooltipContent} color="#fff" overlayInnerStyle={{ color: '#000' }}>
                         <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center", flex: 1, height: "100%", position: "relative" }}>
-                          <div style={{ fontSize: '10px', color: '#595959', marginBottom: '4px', fontWeight: 'bold' }}>{v.count}</div>
+                          <div style={{ fontSize: '10px', color: '#595959', marginBottom: '4px', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            {v.registeredCount > 0 && <span style={{ color: '#faad14', fontSize: '9px', marginBottom: '2px' }}>+{v.registeredCount}</span>}
+                            <span>{v.count}</span>
+                          </div>
                           <div
                             style={{
                               width: "60%",
