@@ -18,11 +18,8 @@ import {
   AppstoreOutlined,
   EnvironmentOutlined,
   TeamOutlined,
-<<<<<<< HEAD
   WalletOutlined,
-=======
   SafetyCertificateOutlined,
->>>>>>> c0ecd46105d9fc311942301c8676b394e39439b4
 } from "@ant-design/icons";
 import { Button, Layout, Menu, theme, Space, Tag, Popconfirm } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
