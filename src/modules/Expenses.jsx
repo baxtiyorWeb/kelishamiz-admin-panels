@@ -105,7 +105,7 @@ const Expenses = () => {
             <Statistic
               title="Joriy Balans (Bunny.net)"
               value={balance}
-              precision={2}
+              precision={5}
               prefix="$"
               valueStyle={{ color: balance < 5 ? '#cf1322' : '#3f8600' }}
               suffix={balance < 5 ? <ArrowDownOutlined /> : <ArrowUpOutlined />}
