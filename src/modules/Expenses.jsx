@@ -49,8 +49,9 @@ const Expenses = () => {
   }
 
   const bunnyData = data?.bunny || {};
+  const usageData = data?.usage || null;
   const balance = bunnyData.Balance || 0;
-  const thisMonthCharges = bunnyData.ThisMonthCharges || 0;
+  const thisMonthCharges = usageData?.estimatedTotalCost || bunnyData.ThisMonthCharges || 0;
   const billingRecords = bunnyData.BillingRecords || [];
 
   // Recharts uchun datani tayyorlash
@@ -170,14 +171,18 @@ const Expenses = () => {
               <GlobalOutlined className="text-2xl text-blue-500 mr-4" />
               <div>
                 <div className="text-gray-500 text-sm">CDN Bandwidth (Taxminiy)</div>
-                <div className="text-lg font-semibold">Tahlil qilinmoqda...</div>
+                <div className="text-lg font-semibold">
+                  {usageData ? `${usageData.gbBandwidth.toFixed(4)} GB ($${usageData.estimatedBandwidthCost.toFixed(4)})` : 'Tahlil qilinmoqda...'}
+                </div>
               </div>
             </div>
             <div className="flex items-center">
               <DatabaseOutlined className="text-2xl text-purple-500 mr-4" />
               <div>
                 <div className="text-gray-500 text-sm">Xotira (Storage)</div>
-                <div className="text-lg font-semibold">Tahlil qilinmoqda...</div>
+                <div className="text-lg font-semibold">
+                  {usageData ? `${usageData.gbStorage.toFixed(4)} GB ($${usageData.estimatedStorageCost.toFixed(4)})` : 'Tahlil qilinmoqda...'}
+                </div>
               </div>
             </div>
             <div className="mt-6">
