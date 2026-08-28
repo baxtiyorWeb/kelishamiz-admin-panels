@@ -24,7 +24,7 @@ const Expenses = () => {
     const fetchExpenses = async () => {
       try {
         const response = await api.get('/expenses/summary');
-        setData(response.data);
+        setData(response.data.content || response.data);
       } catch (err) {
         console.error("Failed to fetch expenses:", err);
         setError('Harajatlar haqida ma`lumot olishda xatolik yuz berdi.');
