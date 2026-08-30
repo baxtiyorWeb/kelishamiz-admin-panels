@@ -1,46 +1,165 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --teal-50: #f0fdfa;
-  --teal-100: #ccfbf1;
-  --teal-200: #99f6e4;
-  --teal-300: #5eead4;
-  --teal-400: #2dd4bf;
-  --teal-500: #14b8a6;
-  --teal-600: #0d9488;
-  --teal-700: #0f766e;
-  --teal-800: #115e59;
-  --teal-900: #134e4a;
-  --teal-950: #042f2e;
+  --primary: #6345ed;
+  --primary-hover: #795ef5;
+  --primary-active: #5034d6;
+  --primary-light: #f3f0ff;
+  
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-  color: #333;
-  background-color: #f9f9f9;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--text-main);
+  background-color: var(--bg-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-button {
-  cursor: pointer;
+/* Glassmorphism & Modern Card Classes */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
+.modern-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease-in-out;
 }
+
+.modern-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.02);
+}
+
+.gradient-header {
+  background: linear-gradient(135deg, #6345ed 0%, #8b5cf6 50%, #3b82f6 100%);
+}
+
+.stat-badge-up {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.stat-badge-down {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+/* Ant Design Table & Component Customizations */
+.ant-table-wrapper .ant-table {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding: 14px 16px !important;
+  font-size: 13.5px !important;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr:hover > td {
+  background: #f8faff !important;
+}
+
+.ant-card {
+  border-radius: 14px !important;
+}
+
+.ant-btn {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+}
+
+.ant-btn-primary {
+  background: #6345ed !important;
+  box-shadow: 0 2px 4px rgba(99, 69, 237, 0.2) !important;
+}
+
+.ant-btn-primary:hover {
+  background: #795ef5 !important;
+}
+
+.ant-tag {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  padding: 2px 8px !important;
+}
+
+/* Modern Ant Design Pagination Pills */
+.ant-pagination .ant-pagination-item {
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.ant-pagination .ant-pagination-item:hover {
+  border-color: #6345ed !important;
+  color: #6345ed !important;
+  background-color: #f5f3ff !important;
+}
+
+.ant-pagination .ant-pagination-item-active {
+  background: #6345ed !important;
+  border-color: #6345ed !important;
+  box-shadow: 0 4px 10px rgba(99, 69, 237, 0.25) !important;
+}
+
+.ant-pagination .ant-pagination-item-active a {
+  color: #ffffff !important;
+}
+
+.ant-pagination .ant-select-selector {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  border-color: #e2e8f0 !important;
+}
+

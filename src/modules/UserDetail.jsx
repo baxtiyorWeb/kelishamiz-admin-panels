@@ -17,13 +17,21 @@ import {
   Radio,
   Switch,
   Space,
+  Tabs,
+  Descriptions,
+  Table,
 } from "antd";
-import Table from "./../components/Table";
 import {
   ArrowLeftOutlined,
   UserOutlined,
   SendOutlined,
   StopOutlined,
+  PhoneOutlined,
+  DollarOutlined,
+  ShoppingOutlined,
+  CreditCardOutlined,
+  SafetyCertificateOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -51,7 +59,7 @@ const UserDetail = () => {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["user_details", id],
     queryFn: async () => {
-      const response = await api.get("/users/" + id + "/details");
+      const response = await api.get(`/users/${id}/details`);
       if (response.status !== 200 || !response.data) {
         throw new Error("Failed to fetch user details");
       }
@@ -99,7 +107,7 @@ const UserDetail = () => {
 
   if (isLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "400px" }}>
+      <div className="flex justify-center items-center min-h-[400px]">
         <Spin size="large" tip="Foydalanuvchi ma'lumotlari yuklanmoqda..." />
       </div>
     );
@@ -107,10 +115,10 @@ const UserDetail = () => {
 
   if (!user) {
     return (
-      <div style={{ padding: "20px", textAlign: "center" }}>
-        <h3>Foydalanuvchi topilmadi</h3>
+      <div className="p-8 text-center bg-white rounded-2xl border border-slate-100 shadow-sm">
+        <h3 className="text-lg font-bold text-slate-800 mb-4">Foydalanuvchi topilmadi</h3>
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/users")}>
-          Ortga qaytish
+          Foydalanuvchilar ro'yxatiga qaytish
         </Button>
       </div>
     );
@@ -124,9 +132,11 @@ const UserDetail = () => {
       render: (images) => {
         const firstImg = get(images, "[0]", null);
         return firstImg ? (
-          <img src={firstImg} alt="product" style={{ width: "45px", height: "45px", objectFit: "cover", borderRadius: "8px" }} />
+          <img src={firstImg} alt="" className="w-11 h-11 object-cover rounded-xl border border-slate-200" />
         ) : (
-          <div style={{ width: "45px", height: "45px", background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "8px" }}>N/A</div>
+          <div className="w-11 h-11 bg-slate-100 flex items-center justify-center text-xs text-slate-400 font-bold rounded-xl">
+            N/A
+          </div>
         );
       },
     },
@@ -134,26 +144,30 @@ const UserDetail = () => {
       title: "E'lon nomi",
       dataIndex: "title",
       key: "title",
-      render: (text) => <span style={{ fontWeight: "bold" }}>{text}</span>,
+      render: (text) => <span className="font-bold text-slate-800 text-sm">{text}</span>,
     },
     {
       title: "Kategoriya",
       dataIndex: ["category", "name"],
       key: "category",
+      render: (cat) => <Tag color="purple">{cat || "N/A"}</Tag>,
     },
     {
       title: "Narx",
       dataIndex: "price",
       key: "price",
-      render: (price) => <span>{Number(price || 0).toLocaleString("uz-UZ")} UZS</span>,
+      render: (price) => (
+        <span className="font-extrabold text-slate-900">
+          {Number(price || 0).toLocaleString("uz-UZ")} UZS
+        </span>
+      ),
     },
     {
       title: "Holati",
       dataIndex: "published",
       key: "published",
-      render: (published) => (
-        published ? <Tag color="green">FAOLLASHTIRILGAN</Tag> : <Tag color="gold">KUTILMOQDA</Tag>
-      ),
+      render: (pub) =>
+        pub ? <Tag color="success">Faol</Tag> : <Tag color="warning">Kutilmoqda</Tag>,
     },
   ];
 
@@ -162,7 +176,7 @@ const UserDetail = () => {
       title: "Tranzaksiya ID",
       dataIndex: "paymeTransactionId",
       key: "paymeTransactionId",
-      render: (text) => <span style={{ fontFamily: "monospace" }}>{text}</span>,
+      render: (text) => <span className="font-mono text-xs font-bold text-slate-600">#{text}</span>,
     },
     {
       title: "Summa",
@@ -170,126 +184,122 @@ const UserDetail = () => {
       key: "amount",
       render: (amount) => {
         const sum = Number(amount || 0) / 100;
-        return <span style={{ fontWeight: "bold", color: "#10b981" }}>{sum.toLocaleString("uz-UZ")} UZS</span>;
+        return <span className="font-extrabold text-emerald-600">{sum.toLocaleString("uz-UZ")} UZS</span>;
       },
     },
     {
       title: "Sana",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (text) => {
-        const date = new Date(text);
-        return <span>{date.toLocaleDateString("uz-UZ")} {date.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}</span>;
-      },
+      render: (text) => dayjs(text).format("YYYY-MM-DD HH:mm"),
     },
     {
       title: "Holati",
       dataIndex: "status",
       key: "status",
       render: (status) => {
-        if (status === "success") return <Tag color="green">MUVAFFAQIYATLI</Tag>;
-        if (status === "pending") return <Tag color="gold">KUTILMOQDA</Tag>;
-        return <Tag color="red">{status?.toUpperCase()}</Tag>;
+        if (status === "success") return <Tag color="success">MUVAFFAQIYATLI</Tag>;
+        if (status === "pending") return <Tag color="warning">KUTILMOQDA</Tag>;
+        return <Tag color="error">{status?.toUpperCase()}</Tag>;
       },
     },
   ];
 
   return (
-    <div style={{ padding: "10px 0" }}>
-      <Button 
-        icon={<ArrowLeftOutlined />} 
-        onClick={() => navigate(-1)} 
-        style={{ marginBottom: "20px" }}
-      >
-        Ortga
-      </Button>
+    <div className="flex flex-col gap-6">
+      {/* Top Header */}
+      <div className="flex items-center justify-between">
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/users")}
+          className="!rounded-xl font-bold"
+        >
+          Foydalanuvchilar Ro'yxatiga Qaytish
+        </Button>
+        <div className="flex items-center gap-2">
+          <Tag color="blue" className="!rounded-full px-3 py-1 font-bold">
+            ID: #{user.id}
+          </Tag>
+          <Tag color={user.role === "ADMIN" ? "red" : "geekblue"} className="!rounded-full px-3 py-1 font-bold">
+            {user.role}
+          </Tag>
+        </div>
+      </div>
 
-      <Row gap={[16, 16]} gutter={16}>
-        {/* Profile Details Card */}
+      <Row gutter={[20, 20]}>
+        {/* Left Profile Card */}
         <Col xs={24} lg={8}>
-          <Card 
-            title="Foydalanuvchi Profili" 
-            bordered={false} 
-            style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.03)", borderRadius: "12px" }}
-          >
-            <div style={{ textAlign: "center", marginBottom: "20px" }}>
-              <Avatar size={80} src={get(user, "profile.avatar")} icon={<UserOutlined />} />
-              <h3 style={{ marginTop: "12px", marginBottom: "2px", fontWeight: "bold", fontSize: "18px" }}>
-                {get(user, "profile.fullName") || user.username}
-              </h3>
-              <Space style={{ marginTop: 6 }} wrap>
-                <Tag color={user.role === "ADMIN" ? "red" : "blue"}>{user.role}</Tag>
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-5">
+            <div className="flex flex-col items-center text-center pb-4 border-b border-slate-100">
+              <Avatar
+                size={84}
+                src={get(user, "profile.avatar")}
+                icon={<UserOutlined />}
+                className="bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-black text-2xl shadow-md"
+              >
+                {(user.username || "U")[0]?.toUpperCase()}
+              </Avatar>
+              <h2 className="text-xl font-black text-slate-900 mt-3 m-0">
+                {get(user, "profile.fullName") || user.username || "Ismsiz"}
+              </h2>
+              <div className="text-xs text-slate-400 font-mono mt-1 flex items-center gap-1">
+                <PhoneOutlined /> {user.phone || "Telefon yo'q"}
+              </div>
+              <div className="mt-3 flex gap-1.5 flex-wrap justify-center">
                 {user.isBlocked ? (
-                  <Tag color="error">
-                    Bloklangan {user.blockedUntil ? `(${dayjs(user.blockedUntil).format('MM-DD HH:mm')})` : '(Doimiy)'}
+                  <Tag color="error" className="!rounded-full font-bold">
+                    🚫 Bloklangan
                   </Tag>
                 ) : (
-                  <Tag color="success">Faol</Tag>
-                )}
-                {user.isSpam && (
-                  <Tag color="volcano">
-                    Spam {user.spamUntil ? `(${dayjs(user.spamUntil).format('MM-DD HH:mm')})` : ''}
+                  <Tag color="success" className="!rounded-full font-bold">
+                    🟢 Faol Akkaunt
                   </Tag>
                 )}
-              </Space>
+                {user.isSpam && (
+                  <Tag color="warning" className="!rounded-full font-bold">
+                    ⚠️ Spam Belgisi
+                  </Tag>
+                )}
+              </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f5f5f5", paddingBottom: "8px" }}>
-                <span style={{ color: "#8c8c8c" }}>Foydalanuvchi ID:</span>
-                <span style={{ fontWeight: "bold" }}>#{user.id}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f5f5f5", paddingBottom: "8px" }}>
-                <span style={{ color: "#8c8c8c" }}>Telefon:</span>
-                <span style={{ fontWeight: "bold" }}>{user.phone || "Kiritilmagan"}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f5f5f5", paddingBottom: "8px" }}>
-                <span style={{ color: "#8c8c8c" }}>Username:</span>
-                <span style={{ fontWeight: "bold" }}>{user.username}</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f5f5f5", paddingBottom: "8px" }}>
-                <span style={{ color: "#8c8c8c" }}>Balans:</span>
-                <span style={{ fontWeight: "bold", color: "#10b981", fontSize: "15px" }}>
+            {/* User Meta Data */}
+            <div className="flex flex-col gap-3 text-xs">
+              <div className="flex justify-between py-1 border-b border-slate-50">
+                <span className="text-slate-400 font-medium">Hamyon Balansi:</span>
+                <span className="font-black text-emerald-600 text-sm">
                   {Number(user.balance || 0).toLocaleString("uz-UZ")} UZS
                 </span>
               </div>
-              {user.banReason && (
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f5f5f5", paddingBottom: "8px" }}>
-                  <span style={{ color: "#cf1322" }}>Blok sababi:</span>
-                  <span style={{ fontWeight: 600, color: "#cf1322" }}>{user.banReason}</span>
-                </div>
-              )}
-              {user.spamReason && (
-                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f5f5f5", paddingBottom: "8px" }}>
-                  <span style={{ color: "#ad6800" }}>Spam sababi:</span>
-                  <span style={{ fontWeight: 600, color: "#ad6800" }}>{user.spamReason}</span>
-                </div>
-              )}
-              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f5f5f5", paddingBottom: "8px" }}>
-                <span style={{ color: "#8c8c8c" }}>Viloyat / Tuman:</span>
-                <span style={{ fontWeight: "bold" }}>
+              <div className="flex justify-between py-1 border-b border-slate-50">
+                <span className="text-slate-400 font-medium">Username:</span>
+                <span className="font-semibold text-slate-700">@{user.username || "yo'q"}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-50">
+                <span className="text-slate-400 font-medium">Hudud:</span>
+                <span className="font-semibold text-slate-700">
                   {get(user, "profile.region.name", "N/A")} / {get(user, "profile.district.name", "N/A")}
                 </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", paddingBottom: "8px" }}>
-                <span style={{ color: "#8c8c8c" }}>Manzil:</span>
-                <span style={{ fontWeight: "bold" }}>{get(user, "profile.address") || "Kiritilmagan"}</span>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-400 font-medium">Manzil:</span>
+                <span className="font-semibold text-slate-700">{get(user, "profile.address") || "Kiritilmagan"}</span>
               </div>
             </div>
 
-            <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+            {/* Actions */}
+            <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
               <Button
                 type="primary"
                 icon={<SendOutlined />}
-                style={{ background: "#6345ED", borderColor: "#6345ED", borderRadius: 8 }}
                 onClick={() => setMsgModalOpen(true)}
+                className="!rounded-xl font-bold h-10"
               >
-                Foydalanuvchiga Xabar Yuborish
+                Xabarnoma Yuborish
               </Button>
               <Button
                 danger
                 icon={<StopOutlined />}
-                style={{ borderRadius: 8 }}
                 onClick={() => {
                   setModIsBlocked(Boolean(user.isBlocked));
                   setModBanReason(user.banReason || "");
@@ -297,42 +307,61 @@ const UserDetail = () => {
                   setModSpamReason(user.spamReason || "");
                   setModModalOpen(true);
                 }}
+                className="!rounded-xl font-bold h-10"
               >
-                Bloklash / Spam Boshqaruvi
+                Intizomiy Boshqaruv (Ban / Spam)
               </Button>
             </div>
-          </Card>
+          </div>
         </Col>
 
-        {/* User Listings & Transactions */}
+        {/* Right Content Tabs */}
         <Col xs={24} lg={16}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {/* Products Table */}
-            <Card title={"Foydalanuvchi e'lonlari (" + products.length + ")"} bordered={false} style={{ borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-              <Table 
-                dataSource={products} 
-                columns={productColumns} 
-                rowKey="id" 
-                pagination={{ pageSize: 5 }} 
-              />
-            </Card>
-
-            {/* Transactions Table */}
-            <Card title={"To'lovlar tarixi (" + transactions.length + ")"} bordered={false} style={{ borderRadius: "12px", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-              <Table 
-                dataSource={transactions} 
-                columns={transactionColumns} 
-                rowKey="id" 
-                pagination={{ pageSize: 5 }} 
-              />
-            </Card>
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <Tabs
+              defaultActiveKey="1"
+              items={[
+                {
+                  key: "1",
+                  label: (
+                    <span className="font-bold flex items-center gap-1.5">
+                      <ShoppingOutlined /> E'lonlar ({products.length})
+                    </span>
+                  ),
+                  children: (
+                    <Table
+                      dataSource={products}
+                      columns={productColumns}
+                      rowKey="id"
+                      pagination={{ pageSize: 5 }}
+                    />
+                  ),
+                },
+                {
+                  key: "2",
+                  label: (
+                    <span className="font-bold flex items-center gap-1.5">
+                      <CreditCardOutlined /> To'lovlar Tarixi ({transactions.length})
+                    </span>
+                  ),
+                  children: (
+                    <Table
+                      dataSource={transactions}
+                      columns={transactionColumns}
+                      rowKey="id"
+                      pagination={{ pageSize: 5 }}
+                    />
+                  ),
+                },
+              ]}
+            />
           </div>
         </Col>
       </Row>
 
-      {/* Direct Message Modal */}
+      {/* Message Modal */}
       <Modal
-        title={`Xabar yuborish: @${user.username || user.phone}`}
+        title={`📩 Xabar: @${user.username || user.phone}`}
         open={msgModalOpen}
         onCancel={() => setMsgModalOpen(false)}
         onOk={() => {
@@ -348,23 +377,17 @@ const UserDetail = () => {
         }}
         confirmLoading={sendMsgMutation.isPending}
         okText="Yuborish"
-        cancelText="Bekor qilish"
+        cancelText="Bekor"
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
-          <div>
-            <label style={{ fontWeight: "bold", display: "block", marginBottom: 4 }}>Sarlavha:</label>
-            <Input value={directMsgTitle} onChange={(e) => setDirectMsgTitle(e.target.value)} />
-          </div>
-          <div>
-            <label style={{ fontWeight: "bold", display: "block", marginBottom: 4 }}>Xabar matni:</label>
-            <Input.TextArea rows={4} value={directMsgBody} onChange={(e) => setDirectMsgBody(e.target.value)} />
-          </div>
+        <div className="flex flex-col gap-3 mt-4">
+          <Input value={directMsgTitle} onChange={(e) => setDirectMsgTitle(e.target.value)} placeholder="Sarlavha" />
+          <Input.TextArea rows={4} value={directMsgBody} onChange={(e) => setDirectMsgBody(e.target.value)} placeholder="Xabar matni..." />
         </div>
       </Modal>
 
-      {/* User Moderation Modal */}
+      {/* Moderation Modal */}
       <Modal
-        title={`Foydalanuvchi intizomiy holati (@${user.username || user.phone})`}
+        title={`🛡️ Intizomiy Holat (@${user.username || user.phone})`}
         open={modModalOpen}
         onCancel={() => setModModalOpen(false)}
         onOk={() => {
@@ -374,14 +397,12 @@ const UserDetail = () => {
             else if (modBlockDuration === "3d") blockedUntil = new Date(Date.now() + 72 * 3600 * 1000).toISOString();
             else if (modBlockDuration === "7d") blockedUntil = new Date(Date.now() + 168 * 3600 * 1000).toISOString();
             else if (modBlockDuration === "30d") blockedUntil = new Date(Date.now() + 720 * 3600 * 1000).toISOString();
-            else if (modBlockDuration === "permanent") blockedUntil = null;
           }
 
           let spamUntil = null;
           if (modIsSpam) {
             if (modSpamDuration === "24h") spamUntil = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
             else if (modSpamDuration === "7d") spamUntil = new Date(Date.now() + 168 * 3600 * 1000).toISOString();
-            else if (modSpamDuration === "permanent") spamUntil = null;
           }
 
           moderationMutation.mutate({
@@ -400,19 +421,18 @@ const UserDetail = () => {
         }}
         confirmLoading={moderationMutation.isPending}
         okText="Saqlash"
-        cancelText="Bekor qilish"
-        width={560}
+        cancelText="Bekor"
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 12 }}>
-          <div style={{ background: "#fff1f0", padding: 12, borderRadius: 8, border: "1px solid #ffa39e" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontWeight: "bold", color: "#cf1322" }}>🚫 Foydalanuvchini Bloklash</span>
+        <div className="flex flex-col gap-4 mt-4">
+          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200">
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-bold text-rose-700">🚫 Foydalanuvchini Bloklash</span>
               <Switch checked={modIsBlocked} onChange={setModIsBlocked} />
             </div>
             {modIsBlocked && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+              <div className="flex flex-col gap-3 mt-3">
                 <Radio.Group value={modBlockDuration} onChange={(e) => setModBlockDuration(e.target.value)}>
-                  <Radio.Button value="24h">24 soat</Radio.Button>
+                  <Radio.Button value="24h">24s</Radio.Button>
                   <Radio.Button value="3d">3 kun</Radio.Button>
                   <Radio.Button value="7d">7 kun</Radio.Button>
                   <Radio.Button value="30d">30 kun</Radio.Button>
@@ -423,30 +443,20 @@ const UserDetail = () => {
             )}
           </div>
 
-          <div style={{ background: "#fffbe6", padding: 12, borderRadius: 8, border: "1px solid #ffe58f" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontWeight: "bold", color: "#ad6800" }}>⚠️ Spam Belgisi (Cheklov)</span>
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-bold text-amber-700">⚠️ Spam Belgisi</span>
               <Switch checked={modIsSpam} onChange={setModIsSpam} />
             </div>
             {modIsSpam && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+              <div className="flex flex-col gap-3 mt-3">
                 <Radio.Group value={modSpamDuration} onChange={(e) => setModSpamDuration(e.target.value)}>
-                  <Radio.Button value="24h">24 soat</Radio.Button>
+                  <Radio.Button value="24h">24s</Radio.Button>
                   <Radio.Button value="7d">7 kun</Radio.Button>
                   <Radio.Button value="permanent">Doimiy</Radio.Button>
                 </Radio.Group>
                 <Input placeholder="Spam sababi..." value={modSpamReason} onChange={(e) => setModSpamReason(e.target.value)} />
               </div>
-            )}
-          </div>
-
-          <div style={{ background: "#f6ffed", padding: 12, borderRadius: 8, border: "1px solid #b7eb8f" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontWeight: "bold", color: "#237804" }}>🔔 Bildirishnoma Jo‘natish</span>
-              <Switch checked={modSendNotif} onChange={setModSendNotif} />
-            </div>
-            {modSendNotif && (
-              <Input.TextArea rows={2} value={modNotifText} onChange={(e) => setModNotifText(e.target.value)} placeholder="Foydalanuvchiga yuboriladigan izoh..." />
             )}
           </div>
         </div>
