@@ -1,106 +1,105 @@
-"use client";
-
-import React, { useState, useCallback, useMemo, useRef } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState, useMemo, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { get, isArray } from "lodash";
+import api from "../config/auth/api";
 import {
-  Button,
-  Popconfirm,
-  message,
-  Switch,
-  Modal,
-  Select,
-  Input,
-  InputNumber,
   Table,
-  Tag,
-  Tooltip,
-  Space,
-  Typography,
-  Breadcrumb,
-  Divider,
+  Button,
+  Modal,
   Form,
-  Upload,
-  Progress,
+  Input,
+  Select,
+  Switch,
+  message,
+  Popconfirm,
+  Tag,
+  Space,
+  Tooltip,
+  Breadcrumb,
+  InputNumber,
+  Row,
+  Col,
+  Image,
 } from "antd";
 import {
-  ArrowLeftOutlined,
-  RightOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  SettingOutlined,
-  UploadOutlined,
-  PlusOutlined,
-  CloseOutlined,
-  CheckOutlined,
-  FolderOpenOutlined,
-  InboxOutlined,
-  ThunderboltOutlined,
-} from "@ant-design/icons";
-import api from "../config/auth/api";
-
-const { Text, Title } = Typography;
-
-// ─── Constants ────────────────────────────────────────────────────────────────
+  Folder,
+  FolderPlus,
+  Layers,
+  Settings2,
+  Sparkles,
+  Zap,
+  Upload,
+  ArrowLeft,
+  Check,
+  X,
+  Trash2,
+  Edit3,
+  ChevronRight,
+  Plus,
+  Search,
+  Sliders,
+  CheckCircle2,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  FolderOpen,
+} from "lucide-react";
 
 const PROPERTY_TYPES = [
-  { value: "STRING",  label: "Matn",           short: "STR",  color: "blue" },
-  { value: "INTEGER", label: "Butun son",       short: "INT",  color: "purple" },
-  { value: "DOUBLE",  label: "O'nlik son",      short: "DBL",  color: "gold" },
-  { value: "BOOLEAN", label: "Ha / Yo'q",       short: "BOOL", color: "green" },
-  { value: "SELECT",  label: "Tanlov ro'yxati", short: "SEL",  color: "red" },
+  { value: "STRING", label: "Matn (String)", short: "ABC", color: "blue", bg: "bg-blue-50 text-blue-700" },
+  { value: "INTEGER", label: "Butun son (Integer)", short: "123", color: "purple", bg: "bg-purple-50 text-purple-700" },
+  { value: "DOUBLE", label: "O'nlik son (Double)", short: "0.0", color: "gold", bg: "bg-amber-50 text-amber-700" },
+  { value: "BOOLEAN", label: "Ha / Yo'q (Boolean)", short: "Y/N", color: "green", bg: "bg-emerald-50 text-emerald-700" },
+  { value: "SELECT", label: "Tanlovli ro'yxat (Select)", short: "List", color: "red", bg: "bg-rose-50 text-rose-700" },
 ];
 
-const initCategory = { name: "", imageUrl: "", parentId: null, isVisible: true, order: 0 };
-const initProperty = { name: "", type: "STRING", options: [], optionInput: "" };
+const initCategory = {
+  name: "",
+  imageUrl: "",
+  isVisible: true,
+  order: 0,
+  parentId: null,
+};
 
-// ─── Component ────────────────────────────────────────────────────────────────
+const initProperty = {
+  name: "",
+  type: "STRING",
+  options: [],
+  optionInput: "",
+};
 
 const CategoryPage = () => {
   const queryClient = useQueryClient();
 
-  // Navigation
-  const [selectedId, setSelectedId]     = useState(null);
-  const [history, setHistory]           = useState([]);
-
-  // Selected category for properties panel
+  const [selectedId, setSelectedId] = useState(null);
+  const [history, setHistory] = useState([]);
   const [selectedCatForProps, setSelectedCatForProps] = useState(null);
+  const [searchFilter, setSearchFilter] = useState("");
 
-  // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen,   setIsEditModalOpen]   = useState(false);
-  const [isBulkModalOpen,   setIsBulkModalOpen]   = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
-  // Inline add row – categories
+  const [categoryData, setCategoryData] = useState(initCategory);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [currentEditId, setCurrentEditId] = useState(null);
+
   const [isAddingInline, setIsAddingInline] = useState(false);
-  const [inlineName,     setInlineName]     = useState("");
-
-  // Inline add row – properties
-  const [isAddingPropInline, setIsAddingPropInline] = useState(false);
-  const [inlinePropData, setInlinePropData] = useState(initProperty);
-
-  // Inline edit – category row
-  const [inlineEditId,   setInlineEditId]   = useState(null);
+  const [inlineName, setInlineName] = useState("");
+  const [inlineEditId, setInlineEditId] = useState(null);
   const [inlineEditName, setInlineEditName] = useState("");
 
-  // Inline edit – property row
-  const [inlinePropEditId,   setInlinePropEditId]   = useState(null);
+  const [isAddingPropInline, setIsAddingPropInline] = useState(false);
+  const [inlinePropData, setInlinePropData] = useState(initProperty);
+  const [inlinePropEditId, setInlinePropEditId] = useState(null);
   const [inlinePropEditName, setInlinePropEditName] = useState("");
 
-  // Forms
-  const [categoryData,    setCategoryData]    = useState(initCategory);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [currentEditId,   setCurrentEditId]   = useState(null);
-  const [bulkFile,        setBulkFile]        = useState(null);
-  const [isUploading,     setIsUploading]     = useState(false);
+  const [bulkFile, setBulkFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  // Image optimize state
-  const [isOptimizing,    setIsOptimizing]    = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeProgress, setOptimizeProgress] = useState(0);
-  const [optimizeResult,   setOptimizeResult]   = useState(null);
 
-  // ─── Queries ──────────────────────────────────────────────────────────────
-
+  // Queries
   const { data, isLoading } = useQuery({
     queryKey: ["categories", selectedId],
     queryFn: async () => {
@@ -128,38 +127,57 @@ const CategoryPage = () => {
     enabled: !!selectedCatForProps?.id,
   });
 
-  // ─── Mutations ────────────────────────────────────────────────────────────
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const all = isArray(allCategories) ? allCategories : [];
+    const rootCats = all.filter((c) => !c.parentId);
+    const subCats = all.filter((c) => c.parentId);
+    const visibleCount = all.filter((c) => c.isVisible).length;
+    const withProps = all.reduce((acc, c) => acc + (c.properties?.length || 0), 0);
 
+    return {
+      total: all.length,
+      root: rootCats.length,
+      sub: subCats.length,
+      visible: visibleCount,
+      propsCount: withProps,
+    };
+  }, [allCategories]);
+
+  // Mutations
   const createMutation = useMutation({
     mutationFn: (payload) => api.post("/category", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      message.success("Kategoriya qo'shildi!");
+      queryClient.invalidateQueries({ queryKey: ["categories-all"] });
+      message.success("Kategoriya muvaffaqiyatli qo'shildi!");
       setCategoryData(initCategory);
       setIsCreateModalOpen(false);
       setInlineName("");
       setIsAddingInline(false);
     },
-    onError: (e) => message.error(get(e, "response.data.message", "Xato yuz berdi")),
+    onError: (e) => message.error(get(e, "response.data.message", "Xatolik yuz berdi")),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, ...body }) => api.put(`/category/${id}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories-all"] });
       setIsEditModalOpen(false);
       setInlineEditId(null);
       message.success("Yangilandi!");
     },
-    onError: (e) => message.error(get(e, "response.data.message", "Xato")),
+    onError: (e) => message.error(get(e, "response.data.message", "Xatolik yuz berdi")),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/category/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories-all"] });
       if (selectedCatForProps) setSelectedCatForProps(null);
-      message.success("O'chirildi!");
+      message.success("Kategoriya o'chirildi!");
     },
   });
 
@@ -167,11 +185,12 @@ const CategoryPage = () => {
     mutationFn: (payload) => api.post("/property", payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories-all"] });
       message.success("Xususiyat qo'shildi!");
       setInlinePropData(initProperty);
-      // setIsAddingPropInline(false);
     },
-    onError: (e) => message.error(get(e, "response.data.message", "Xato")),
+    onError: (e) => message.error(get(e, "response.data.message", "Xatolik")),
   });
 
   const updatePropertyMutation = useMutation({
@@ -181,13 +200,14 @@ const CategoryPage = () => {
       setInlinePropEditId(null);
       message.success("Xususiyat yangilandi!");
     },
-    onError: (e) => message.error(get(e, "response.data.message", "Xato")),
+    onError: (e) => message.error(get(e, "response.data.message", "Xatolik")),
   });
 
   const deletePropertyMutation = useMutation({
     mutationFn: (id) => api.delete(`/property/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["properties"] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
       message.success("Xususiyat o'chirildi!");
     },
   });
@@ -202,20 +222,23 @@ const CategoryPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      message.success("Import muvaffaqiyatli!");
+      queryClient.invalidateQueries({ queryKey: ["categories-all"] });
+      message.success("Excel orqali import muvaffaqiyatli yakunlandi!");
       setIsBulkModalOpen(false);
       setBulkFile(null);
     },
     onError: (e) => message.error(get(e, "response.data.message", "Fayl xatosi")),
   });
 
-  // ─── Handlers ─────────────────────────────────────────────────────────────
-
-  const handleDrill = useCallback((cat) => {
-    setHistory((prev) => [...prev, selectedId]);
-    setSelectedId(cat.id);
-    setSelectedCatForProps(null);
-  }, [selectedId]);
+  // Handlers
+  const handleDrill = useCallback(
+    (cat) => {
+      setHistory((prev) => [...prev, selectedId]);
+      setSelectedId(cat.id);
+      setSelectedCatForProps(null);
+    },
+    [selectedId]
+  );
 
   const handleBack = useCallback(() => {
     const prev = history[history.length - 1];
@@ -230,9 +253,12 @@ const CategoryPage = () => {
     createMutation.mutate({ name, imageUrl: "", parentId: selectedId, isVisible: true, order: 0 });
   }, [inlineName, selectedId, createMutation]);
 
-  const handleToggleVisibility = useCallback((cat, checked) => {
-    updateMutation.mutate({ id: cat.id, isVisible: checked });
-  }, [updateMutation]);
+  const handleToggleVisibility = useCallback(
+    (cat, checked) => {
+      updateMutation.mutate({ id: cat.id, isVisible: checked });
+    },
+    [updateMutation]
+  );
 
   const handleOpenEdit = useCallback((cat) => {
     setCurrentEditId(cat.id);
@@ -240,27 +266,17 @@ const CategoryPage = () => {
     setIsEditModalOpen(true);
   }, []);
 
-  const handleRowDoubleClick = useCallback((cat) => {
-    setInlineEditId(cat.id);
-    setInlineEditName(cat.name);
-  }, []);
-
-  const handleInlineEditSave = useCallback((cat) => {
-    const name = inlineEditName.trim();
-    if (!name) { setInlineEditId(null); return; }
-    updateMutation.mutate({ id: cat.id, ...cat, name });
-  }, [inlineEditName, updateMutation]);
-
-  const handlePropDoubleClick = useCallback((prop) => {
-    setInlinePropEditId(prop.id);
-    setInlinePropEditName(prop.name);
-  }, []);
-
-  const handlePropInlineEditSave = useCallback((prop) => {
-    const name = inlinePropEditName.trim();
-    if (!name) { setInlinePropEditId(null); return; }
-    updatePropertyMutation.mutate({ id: prop.id, name });
-  }, [inlinePropEditName, updatePropertyMutation]);
+  const handleInlineEditSave = useCallback(
+    (cat) => {
+      const name = inlineEditName.trim();
+      if (!name) {
+        setInlineEditId(null);
+        return;
+      }
+      updateMutation.mutate({ id: cat.id, ...cat, name });
+    },
+    [inlineEditName, updateMutation]
+  );
 
   const handleAddPropInline = useCallback(() => {
     if (!selectedCatForProps) return;
@@ -281,25 +297,24 @@ const CategoryPage = () => {
     form.append("file", file);
     setIsUploading(true);
     try {
-      const res = await api.post("/file/upload", form, { headers: { "Content-Type": "multipart/form-data" } });
+      const res = await api.post("/file/upload", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       const url = res.data?.content?.url || "";
-      if (target === "edit") setEditingCategory((prev) => prev ? { ...prev, imageUrl: url } : prev);
-      else setCategoryData((prev) => ({ ...prev, imageUrl: url }));
+      if (target === "edit") {
+        setEditingCategory((prev) => (prev ? { ...prev, imageUrl: url } : prev));
+      } else {
+        setCategoryData((prev) => ({ ...prev, imageUrl: url }));
+      }
       message.success("Rasm yuklandi!");
     } catch {
-      message.error("Rasm yuklashda xato!");
+      message.error("Rasm yuklashda xatolik yuz berdi!");
     } finally {
       setIsUploading(false);
     }
   }, []);
 
-  /**
-   * Barcha kategoriya rasmlarini bir xil o'lcham va sifatga keltirish.
-   * /file/bulk-optimize endpointiga URL ro'yxatini yuboradi.
-   * Har bir kategoriyaning imageUrl ni yangi optimizatsiya qilingan URL bilan yangilaydi.
-   */
   const handleBulkOptimizeImages = useCallback(async () => {
-    // Barcha kategoriyalarni olish
     let allCats = [];
     try {
       const res = await api.get("/category");
@@ -309,7 +324,6 @@ const CategoryPage = () => {
       return;
     }
 
-    // Rasmi bor kategoriyalarni ajratish
     const withImages = allCats.filter((c) => c.imageUrl && c.imageUrl.trim());
     if (withImages.length === 0) {
       message.info("Optimizatsiya qilinadigan rasmli kategoriya topilmadi");
@@ -318,14 +332,11 @@ const CategoryPage = () => {
 
     setIsOptimizing(true);
     setOptimizeProgress(0);
-    setOptimizeResult(null);
 
     try {
       const urls = withImages.map((c) => c.imageUrl);
-      
-      const chunkSize = 3; // Har bir so'rovda 3 tadan yuboramiz
+      const chunkSize = 3;
       let successCount = 0;
-      let failedCount = 0;
 
       for (let i = 0; i < urls.length; i += chunkSize) {
         const chunk = urls.slice(i, i + chunkSize);
@@ -333,24 +344,14 @@ const CategoryPage = () => {
           const res = await api.post("/file/bulk-optimize", { urls: chunk });
           const results = res.data?.results || [];
           successCount += results.filter((r) => r.success).length;
-          failedCount += results.filter((r) => !r.success).length;
         } catch (chunkErr) {
           console.error("Chunk optimization error", chunkErr);
-          failedCount += chunk.length;
         }
         setOptimizeProgress(Math.round(((i + chunk.length) / urls.length) * 100));
       }
 
-      setOptimizeResult({
-        total: urls.length,
-        success: successCount,
-        failed: failedCount,
-        updated: successCount,
-      });
-
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["categories-all"] });
-
       message.success(`✅ ${successCount} ta kategoriya rasmi muvaffaqiyatli optimize qilindi!`);
     } catch (err) {
       message.error(get(err, "response.data.message", "Optimizatsiya xatosi"));
@@ -359,72 +360,6 @@ const CategoryPage = () => {
     }
   }, [queryClient]);
 
-  // ─── SELECT option input: vergul bilan ajratilgan variantlarni parse qilish ───
-
-  const handleOptionInputChange = useCallback((value) => {
-    // Agar oxirgi belgi vergul bo'lsa — split qilib options ga qo'shamiz
-    if (value.endsWith(",")) {
-      const parts = value
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      if (parts.length === 0) {
-        setInlinePropData((p) => ({ ...p, optionInput: "" }));
-        return;
-      }
-
-      setInlinePropData((p) => {
-        const existing = new Set(p.options);
-        const newOpts = parts.filter((s) => !existing.has(s));
-        return { ...p, options: [...p.options, ...newOpts], optionInput: "" };
-      });
-    } else {
-      setInlinePropData((p) => ({ ...p, optionInput: value }));
-    }
-  }, []);
-
-  const handleOptionInputKeyDown = useCallback((e) => {
-    if (e.key === "Enter") {
-      // Enter bosilganda ham vergul orqali split
-      const value = inlinePropData.optionInput;
-      const parts = value
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      if (parts.length === 0) return;
-
-      setInlinePropData((p) => {
-        const existing = new Set(p.options);
-        const newOpts = parts.filter((s) => !existing.has(s));
-        return { ...p, options: [...p.options, ...newOpts], optionInput: "" };
-      });
-      e.preventDefault();
-    }
-    if (e.key === "Escape") {
-      setIsAddingPropInline(false);
-      setInlinePropData(initProperty);
-    }
-  }, [inlinePropData.optionInput]);
-
-  const handleAddOptionBtn = useCallback(() => {
-    const value = inlinePropData.optionInput;
-    const parts = value
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    if (parts.length === 0) return;
-
-    setInlinePropData((p) => {
-      const existing = new Set(p.options);
-      const newOpts = parts.filter((s) => !existing.has(s));
-      return { ...p, options: [...p.options, ...newOpts], optionInput: "" };
-    });
-  }, [inlinePropData.optionInput]);
-
-  // Breadcrumb
   const breadcrumb = useMemo(() => {
     if (!allCategories || selectedId === null) return [];
     const trail = [];
@@ -438,17 +373,35 @@ const CategoryPage = () => {
 
   const typeInfo = (type) => PROPERTY_TYPES.find((t) => t.value === type);
 
-  // ─── Table Columns ────────────────────────────────────────────────────────
+  const filteredCategoryList = useMemo(() => {
+    if (!searchFilter.trim()) return categoryList;
+    const q = searchFilter.toLowerCase();
+    return categoryList.filter((c) => c.name?.toLowerCase().includes(q) || c.id?.toString().includes(q));
+  }, [categoryList, searchFilter]);
 
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
-      width: 60,
-      render: (id) => <Text type="secondary" style={{ fontFamily: "monospace", fontSize: 12 }}>#{id}</Text>,
+      width: 65,
+      render: (id) => <span className="font-mono text-xs font-bold text-slate-400">#{id}</span>,
     },
     {
-      title: "Nomi",
+      title: "Ikonka",
+      dataIndex: "imageUrl",
+      width: 65,
+      render: (img) => (
+        <div className="w-10 h-10 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shadow-xs">
+          {img ? (
+            <img src={img} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <Folder className="w-5 h-5 text-indigo-400" />
+          )}
+        </div>
+      ),
+    },
+    {
+      title: "Kategoriya Nomi",
       dataIndex: "name",
       render: (name, cat) => {
         if (inlineEditId === cat.id) {
@@ -460,26 +413,33 @@ const CategoryPage = () => {
               onChange={(e) => setInlineEditName(e.target.value)}
               onPressEnter={() => handleInlineEditSave(cat)}
               onBlur={() => handleInlineEditSave(cat)}
-              onKeyDown={(e) => { if (e.key === "Escape") setInlineEditId(null); }}
-              style={{ width: 180 }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setInlineEditId(null);
+              }}
+              className="w-48 !rounded-xl"
             />
           );
         }
         return (
-          <div onDoubleClick={() => handleRowDoubleClick(cat)} style={{ cursor: "text" }}>
-            <Text strong>{name}</Text>
-            {cat.parent && <div><Text type="secondary" style={{ fontSize: 11 }}>↳ {cat.parent.name}</Text></div>}
-            <Text type="secondary" style={{ fontSize: 10, display: "block" }}>
-              (2x bosing — tahrirlash)
-            </Text>
+          <div
+            onDoubleClick={() => {
+              setInlineEditId(cat.id);
+              setInlineEditName(cat.name);
+            }}
+            className="cursor-text"
+          >
+            <div className="font-extrabold text-slate-900 text-sm hover:text-indigo-600 transition-colors">
+              {name}
+            </div>
+            {cat.parent && <div className="text-[11px] text-slate-400 mt-0.5">↳ {cat.parent.name}</div>}
           </div>
         );
       },
     },
     {
-      title: "Ko'rinish",
+      title: "Ko'rinishi",
       dataIndex: "isVisible",
-      width: 90,
+      width: 95,
       render: (val, cat) => (
         <Switch
           checked={val}
@@ -492,122 +452,238 @@ const CategoryPage = () => {
     {
       title: "Xususiyatlar",
       dataIndex: "properties",
-      width: 110,
+      width: 120,
       render: (props) =>
-        props?.length > 0
-          ? <Tag color="blue" icon={<SettingOutlined />}>{props.length} ta</Tag>
-          : <Text type="secondary" style={{ fontSize: 12 }}>—</Text>,
+        props?.length > 0 ? (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+            <Sliders className="w-3 h-3 text-purple-500" />
+            <span>{props.length} ta</span>
+          </span>
+        ) : (
+          <span className="text-slate-400 text-xs">—</span>
+        ),
     },
     {
-      title: "Tartib",
-      dataIndex: "order",
-      width: 70,
-      render: (v) => <Text type="secondary" style={{ fontSize: 12 }}>{v}</Text>,
-    },
-    {
-      title: "Harakatlar",
+      title: "Amallar",
       width: 140,
       render: (_, cat) => (
-        <Space size={2}>
-          <Tooltip title="Tahrirlash (modal)">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={(e) => { e.stopPropagation(); handleOpenEdit(cat); }}
-            />
+        <div className="flex items-center gap-1">
+          <Tooltip title="Tahrirlash">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenEdit(cat);
+              }}
+              className="w-7 h-7 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 flex items-center justify-center transition-all cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </button>
           </Tooltip>
-          <Tooltip title="Xususiyatlar">
-            <Button
-              type="text"
-              size="small"
-              icon={<SettingOutlined />}
-              style={selectedCatForProps?.id === cat.id ? { color: "#1677ff", background: "#e6f4ff" } : {}}
-              onClick={(e) => { e.stopPropagation(); setSelectedCatForProps(cat); }}
-            />
+
+          <Tooltip title="Xususiyatlar konstruktori">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedCatForProps(cat);
+              }}
+              className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                selectedCatForProps?.id === cat.id
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600"
+              }`}
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+            </button>
           </Tooltip>
+
           <Popconfirm
-            title="Bu kategoriyani o'chirmoqchimisiz?"
+            title="Kategoriyani o'chirishga ishonchingiz komilmi?"
             onConfirm={() => deleteMutation.mutate(cat.id)}
             okText="Ha"
             cancelText="Yo'q"
+            okButtonProps={{ danger: true }}
           >
-            <Tooltip title="O'chirish">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()} />
-            </Tooltip>
+            <button
+              type="button"
+              onClick={(e) => e.stopPropagation()}
+              className="w-7 h-7 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </Popconfirm>
-          <Tooltip title="Ichiga kirish">
-            <Button
-              type="text"
-              size="small"
-              icon={<RightOutlined />}
-              onClick={(e) => { e.stopPropagation(); handleDrill(cat); }}
-            />
+
+          <Tooltip title="Ichki bo'limlariga kirish">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDrill(cat);
+              }}
+              className="w-7 h-7 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </Tooltip>
-        </Space>
+        </div>
       ),
     },
   ];
 
-  // ─── Render ───────────────────────────────────────────────────────────────
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#f5f5f5" }}>
-
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", background: "#fff", borderBottom: "1px solid #f0f0f0", flexWrap: "wrap", gap: 8 }}>
-        <Space>
+    <div className="flex flex-col gap-6">
+      {/* Top Header Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-3">
           {history.length > 0 && (
-            <Button size="small" icon={<ArrowLeftOutlined />} onClick={handleBack}>Orqaga</Button>
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Orqaga</span>
+            </button>
           )}
-          <Title level={5} style={{ margin: 0 }}>Kategoriyalar</Title>
-          <Tag color="default">{categoryList.length} ta</Tag>
-        </Space>
-        <Space>
-          <Button icon={<UploadOutlined />} onClick={() => setIsBulkModalOpen(true)}>Excel yuklash</Button>
-          <Popconfirm
-            title={`Barcha kategoriya rasmlarini optimize qilish?`}
-            description={
-              <div style={{ maxWidth: 280 }}>
-                <p style={{ margin: 0, fontSize: 12 }}>Barcha rasmlar bir xil o'lcham (max 1200×1200), WebP format va optimal sifatga keltiriladi.</p>
-                <p style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>Past internet uchun ham tez ochilishi ta'minlanadi.</p>
+          <div>
+            <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <FolderOpen className="w-4 h-4" />
               </div>
-            }
+              Kategoriyalar & Dinamik Xususiyatlar Studio
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Kategoriyalar ierarxiyasi, media ikonkalari va har bir bo'lim uchun dinamik parametrlar konstruktori.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsBulkModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold text-xs transition-all cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Excel Import</span>
+          </button>
+
+          <Popconfirm
+            title="Barcha kategoriya rasmlarini CDN ga optimize qilish?"
             onConfirm={handleBulkOptimizeImages}
-            okText="Ha, optimize qil"
+            okText="Optimize"
             cancelText="Bekor"
             disabled={isOptimizing}
           >
-            <Button
-              icon={<ThunderboltOutlined />}
-              loading={isOptimizing}
-              style={{ background: isOptimizing ? undefined : "#fff7e6", borderColor: "#fa8c16", color: "#fa8c16" }}
+            <button
+              type="button"
+              disabled={isOptimizing}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
             >
-              {isOptimizing ? `Optimize qilinmoqda... ${optimizeProgress}%` : "Rasmlarni Optimize"}
-            </Button>
+              <Zap className="w-4 h-4 text-amber-600 fill-amber-600" />
+              <span>{isOptimizing ? `Optimize... ${optimizeProgress}%` : "⚡ Rasmlarni Optimize"}</span>
+            </button>
           </Popconfirm>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateModalOpen(true)}>Yangi kategoriya</Button>
-        </Space>
+
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition-all active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Yangi Kategoriya</span>
+          </button>
+        </div>
       </div>
 
-      <div style={{ padding: "6px 16px", background: "#fff", borderBottom: "1px solid #f0f0f0" }}>
+      {/* KPI Cards Bar */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Bo'limlar</div>
+              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Barcha darajadagi kategoriyalar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Folder className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                Faol Bo'limlar
+              </div>
+              <div className="text-2xl font-black text-emerald-600 mt-1">{stats.visible} ta</div>
+              <div className="text-[11px] text-emerald-600/70 mt-0.5">Saytda ochiq ko'rinadiganlar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
+                Ichki Bo'limlar
+              </div>
+              <div className="text-2xl font-black text-purple-600 mt-1">{stats.sub} ta</div>
+              <div className="text-[11px] text-purple-600/70 mt-0.5">2 va 3-darajali podkategoriyalar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+              <Layers className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                Dinamik Parametrlar
+              </div>
+              <div className="text-2xl font-black text-amber-600 mt-1">{stats.propsCount} ta</div>
+              <div className="text-[11px] text-amber-600/70 mt-0.5">Biriktirilgan parametrlar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Sliders className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Breadcrumb path toolbar */}
+      <div className="px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-xs flex items-center justify-between flex-wrap gap-3">
         <Breadcrumb
           items={[
             {
               title: (
                 <span
-                  style={{ cursor: "pointer", color: "#1677ff" }}
-                  onClick={() => { setSelectedId(null); setHistory([]); setSelectedCatForProps(null); }}
+                  className="cursor-pointer font-bold text-indigo-600 flex items-center gap-1 text-xs"
+                  onClick={() => {
+                    setSelectedId(null);
+                    setHistory([]);
+                    setSelectedCatForProps(null);
+                  }}
                 >
-                  Barcha kategoriyalar
+                  <Folder className="w-3.5 h-3.5" />
+                  Asosiy Bo'limlar
                 </span>
               ),
             },
             ...breadcrumb.map((c, i) => ({
-              title: i === breadcrumb.length - 1
-                ? <Text strong style={{ fontSize: 12 }}>{c.name}</Text>
-                : (
+              title:
+                i === breadcrumb.length - 1 ? (
+                  <span className="font-extrabold text-slate-800 text-xs">{c.name}</span>
+                ) : (
                   <span
-                    style={{ cursor: "pointer", color: "#1677ff", fontSize: 12 }}
+                    className="cursor-pointer text-indigo-600 text-xs font-semibold"
                     onClick={() => {
                       const newHistory = breadcrumb.slice(0, i).map((b) => b.id);
                       newHistory.unshift(null);
@@ -622,71 +698,105 @@ const CategoryPage = () => {
             })),
           ]}
         />
+
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Bo'lim nomi bo'yicha..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-medium text-slate-800 outline-none focus:border-indigo-600 w-48 transition-all"
+          />
+        </div>
       </div>
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden", }}>
-
-        <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column",  }}>
+      {/* 2-Column Studio: Left Table & Right Property Studio */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left Categories Table */}
+        <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col">
           <Table
-            size="small"
+            size="middle"
             loading={isLoading}
-            dataSource={categoryList}
+            dataSource={filteredCategoryList}
             columns={columns}
             rowKey="id"
             pagination={false}
             onRow={(cat) => ({
               onClick: () => setSelectedCatForProps(cat),
-              style: {
-                background: selectedCatForProps?.id === cat.id ? "#e6f4ff" : undefined,
-                cursor: "pointer",
-                transition: "background 0.15s",
-              },
+              className: `cursor-pointer transition-colors ${
+                selectedCatForProps?.id === cat.id ? "!bg-indigo-50/70" : "hover:!bg-slate-50"
+              }`,
             })}
-            style={{ flex: 1 }}
-            scroll={{ y: "calc(100vh - 200px)" }}
-            footer={() => (
+            footer={() =>
               isAddingInline ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0" }}>
-                  <Input
+                <div className="flex items-center gap-2 py-1">
+                  <input
                     autoFocus
-                    size="small"
+                    type="text"
                     value={inlineName}
-                    placeholder="Kategoriya nomini kiriting... (Enter — saqlash, Esc — bekor)"
+                    placeholder="Kategoriya nomini kiriting... (Enter — saqlash)"
                     onChange={(e) => setInlineName(e.target.value)}
-                    onPressEnter={handleInlineAdd}
-                    onKeyDown={(e) => { if (e.key === "Escape") { setIsAddingInline(false); setInlineName(""); } }}
-                    style={{ flex: 1 }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleInlineAdd();
+                      if (e.key === "Escape") {
+                        setIsAddingInline(false);
+                        setInlineName("");
+                      }
+                    }}
+                    className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 text-xs outline-none focus:border-indigo-600"
                   />
-                  <Button size="small" type="primary" icon={<CheckOutlined />} onClick={handleInlineAdd} loading={createMutation.isPending} />
-                  <Button size="small" icon={<CloseOutlined />} onClick={() => { setIsAddingInline(false); setInlineName(""); }} />
+                  <button
+                    type="button"
+                    onClick={handleInlineAdd}
+                    className="w-7 h-7 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center cursor-pointer"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingInline(false);
+                      setInlineName("");
+                    }}
+                    className="w-7 h-7 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               ) : (
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  style={{ color: "#1677ff", padding: 0, fontSize: 12 }}
+                <button
+                  type="button"
                   onClick={() => setIsAddingInline(true)}
+                  className="inline-flex items-center gap-1 text-indigo-600 font-bold text-xs hover:underline cursor-pointer p-1"
                 >
-                  Yangi kategoriya qo'shish
-                </Button>
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Yangi qator tezkor qo'shish</span>
+                </button>
               )
-            )}
+            }
           />
         </div>
 
-        <div style={{ width: 300, height: "430px", borderLeft: "1px solid #f0f0f0", background: "#fff", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Right Dynamic Property Studio */}
+        <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex flex-col justify-between overflow-hidden">
           {selectedCatForProps ? (
-            <>
-              <div style={{ padding: "10px 14px", borderBottom: "1px solid #f0f0f0", background: "#fafafa" }}>
-                <Text type="secondary" style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Xususiyatlar</Text>
-                <div><Text strong>{selectedCatForProps.name}</Text></div>
+            <div className="flex flex-col gap-4 h-full">
+              <div className="border-b border-slate-100 pb-3">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <Sliders className="w-3.5 h-3.5 text-indigo-500" />
+                  Dinamik Parametrlar
+                </div>
+                <div className="text-base font-black text-slate-900 mt-1">
+                  {selectedCatForProps.name}
+                </div>
               </div>
 
-              <div style={{ flex: 1, overflowY: "auto" }}>
+              {/* Properties List */}
+              <div className="flex flex-col gap-2.5 overflow-y-auto max-h-[380px] pr-1">
                 {(!properties || properties.length === 0) && !propsLoading && (
-                  <div style={{ padding: "24px 16px", textAlign: "center", color: "#bbb", fontSize: 12 }}>
-                    Hali xususiyat yo'q
+                  <div className="text-center py-10 text-slate-400 text-xs italic">
+                    Ushbu kategoriya uchun hali parametrlar biriktirilmagan.
                   </div>
                 )}
                 {properties?.map((prop) => {
@@ -694,220 +804,211 @@ const CategoryPage = () => {
                   return (
                     <div
                       key={prop.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 8,
-                        padding: "8px 14px",
-                        borderBottom: "1px solid #f5f5f5",
-                        transition: "background 0.15s",
-                      }}
-                      className="prop-row"
+                      className="p-3 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-between gap-2 shadow-2xs"
                     >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {inlinePropEditId === prop.id ? (
-                          <Input
-                            autoFocus
-                            size="small"
-                            value={inlinePropEditName}
-                            onChange={(e) => setInlinePropEditName(e.target.value)}
-                            onPressEnter={() => handlePropInlineEditSave(prop)}
-                            onBlur={() => handlePropInlineEditSave(prop)}
-                            onKeyDown={(e) => { if (e.key === "Escape") setInlinePropEditId(null); }}
-                          />
-                        ) : (
-                          <div onDoubleClick={() => handlePropDoubleClick(prop)} style={{ cursor: "text" }}>
-                            <Text style={{ fontSize: 13 }}>{prop.name}</Text>
-                            <Text type="secondary" style={{ fontSize: 10, display: "block" }}>(2x bosing — tahrirlash)</Text>
-                          </div>
-                        )}
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
-                          <Tag color={info?.color} style={{ fontSize: 10, padding: "0 4px", lineHeight: "16px" }}>{info?.short}</Tag>
+                      <div className="min-w-0">
+                        <div className="font-extrabold text-slate-800 text-xs truncate">{prop.name}</div>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-extrabold ${info?.bg || "bg-slate-200 text-slate-700"}`}>
+                            {info?.short} • {info?.label}
+                          </span>
                           {prop.options?.length > 0 && (
-                            <Text type="secondary" style={{ fontSize: 10 }}>
-                              {prop.options.slice(0, 3).join(", ")}{prop.options.length > 3 ? "..." : ""}
-                            </Text>
+                            <span className="text-[10px] text-slate-500 truncate max-w-[120px]">
+                              {prop.options.slice(0, 2).join(", ")}
+                              {prop.options.length > 2 ? "..." : ""}
+                            </span>
                           )}
                         </div>
                       </div>
-                      <Space size={2}>
-                        <Tooltip title="Tahrirlash">
-                          <Button
-                            type="text"
-                            size="small"
-                            icon={<EditOutlined />}
-                            onClick={() => handlePropDoubleClick(prop)}
-                          />
-                        </Tooltip>
-                        <Popconfirm
-                          title="O'chirasizmi?"
-                          onConfirm={() => deletePropertyMutation.mutate(prop.id)}
-                          okText="Ha"
-                          cancelText="Yo'q"
+                      <Popconfirm
+                        title="O'chirishga ishonchingiz komilmi?"
+                        onConfirm={() => deletePropertyMutation.mutate(prop.id)}
+                        okText="Ha"
+                        cancelText="Yo'q"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <button
+                          type="button"
+                          className="w-7 h-7 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
                         >
-                          <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-                        </Popconfirm>
-                      </Space>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </Popconfirm>
                     </div>
                   );
                 })}
               </div>
 
-              <div style={{ borderTop: "1px solid #f0f0f0", padding: "10px 14px", background: "#fafafa" }}>
-                {isAddingPropInline ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <Input
-                      autoFocus
-                      size="small"
-                      placeholder="Xususiyat nomi..."
-                      value={inlinePropData.name}
-                      onChange={(e) => setInlinePropData((p) => ({ ...p, name: e.target.value }))}
-                      onKeyDown={(e) => { if (e.key === "Escape") { setIsAddingPropInline(false); setInlinePropData(initProperty); } }}
+              {/* Fast Add Property */}
+              <div className="border-t border-slate-100 pt-3 flex flex-col gap-2.5">
+                <input
+                  type="text"
+                  placeholder="Yangi parametr (Masalan: Xotira, Rangi)..."
+                  value={inlinePropData.name}
+                  onChange={(e) => setInlinePropData((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:border-indigo-600"
+                />
+                <Select
+                  size="small"
+                  value={inlinePropData.type}
+                  onChange={(t) => setInlinePropData((p) => ({ ...p, type: t }))}
+                  options={PROPERTY_TYPES}
+                  className="w-full !rounded-xl"
+                />
+
+                {inlinePropData.type === "SELECT" && (
+                  <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 flex flex-col gap-2">
+                    <span className="text-[10px] font-bold text-slate-600">
+                      Variantlarni vergul bilan yozing: <code className="text-indigo-600">128GB, 256GB</code>
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="128GB, 256GB, 512GB..."
+                      value={inlinePropData.optionInput}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val.endsWith(",")) {
+                          const parts = val.split(",").map((s) => s.trim()).filter(Boolean);
+                          setInlinePropData((p) => ({
+                            ...p,
+                            options: [...new Set([...p.options, ...parts])],
+                            optionInput: "",
+                          }));
+                        } else {
+                          setInlinePropData((p) => ({ ...p, optionInput: val }));
+                        }
+                      }}
+                      className="px-2 py-1 text-xs rounded-lg border border-slate-300 outline-none"
                     />
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4 }}>
-                      {PROPERTY_TYPES.map((t) => (
-                        <button
-                          key={t.value}
-                          onClick={() => setInlinePropData((p) => ({ ...p, type: t.value, options: [], optionInput: "" }))}
-                          style={{
-                            fontSize: 11,
-                            padding: "4px 6px",
-                            borderRadius: 4,
-                            border: "1px solid",
-                            cursor: "pointer",
-                            textAlign: "left",
-                            background: inlinePropData.type === t.value ? "#1677ff" : "#fff",
-                            borderColor: inlinePropData.type === t.value ? "#1677ff" : "#d9d9d9",
-                            color: inlinePropData.type === t.value ? "#fff" : "#555",
-                            transition: "all 0.15s",
-                          }}
+                    <div className="flex flex-wrap gap-1">
+                      {inlinePropData.options.map((o, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-700 flex items-center gap-1"
                         >
-                          <span style={{ fontWeight: 600 }}>{t.short}</span>
-                          <span style={{ display: "block", fontSize: 10, opacity: 0.75 }}>{t.label}</span>
-                        </button>
+                          {o}
+                          <X
+                            className="w-2.5 h-2.5 text-slate-400 hover:text-rose-500 cursor-pointer"
+                            onClick={() =>
+                              setInlinePropData((p) => ({
+                                ...p,
+                                options: p.options.filter((_, i) => i !== idx),
+                              }))
+                            }
+                          />
+                        </span>
                       ))}
                     </div>
-
-                    {inlinePropData.type === "SELECT" && (
-                      <div>
-                        {/* ─── O'zgartirilgan qism: vergul bilan ajratib kiritish ─── */}
-                        <Text type="secondary" style={{ fontSize: 10, display: "block", marginBottom: 4 }}>
-                          Variantlarni vergul bilan ajrating: <Text code style={{ fontSize: 10 }}>Apple, HP, ASUS</Text>
-                        </Text>
-                        <div style={{ display: "flex", gap: 4 }}>
-                          <Input
-                            size="small"
-                            placeholder="Apple, HP, ASUS, Lenovo..."
-                            value={inlinePropData.optionInput}
-                            onChange={(e) => handleOptionInputChange(e.target.value)}
-                            onKeyDown={handleOptionInputKeyDown}
-                          />
-                          <Button size="small" onClick={handleAddOptionBtn}>+</Button>
-                        </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                          {inlinePropData.options.map((o, i) => (
-                            <Tag
-                              key={i}
-                              closable
-                              onClose={() => setInlinePropData((p) => ({ ...p, options: p.options.filter((_, idx) => idx !== i) }))}
-                              style={{ fontSize: 10 }}
-                            >
-                              {o}
-                            </Tag>
-                          ))}
-                        </div>
-                        {/* ─── O'zgartirilgan qism tugadi ─── */}
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <Button size="small" type="primary" icon={<CheckOutlined />} loading={createPropertyMutation.isPending} onClick={handleAddPropInline} style={{ flex: 1 }}>
-                        Qo'shish
-                      </Button>
-                      <Button size="small" icon={<CloseOutlined />} onClick={() => { setIsAddingPropInline(false); setInlinePropData(initProperty); }} />
-                    </div>
                   </div>
-                ) : (
-                  <Button
-                    type="link"
-                    size="small"
-                    icon={<PlusOutlined />}
-                    style={{ color: "#1677ff", padding: 0, fontSize: 12 }}
-                    onClick={() => setIsAddingPropInline(true)}
-                  >
-                    Yangi xususiyat qo'shish
-                  </Button>
                 )}
+
+                <button
+                  type="button"
+                  disabled={createPropertyMutation.isPending}
+                  onClick={handleAddPropInline}
+                  className="w-full py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Xususiyatni Biriktirish</span>
+                </button>
               </div>
-            </>
+            </div>
           ) : (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "#bbb", padding: "0 24px", textAlign: "center" }}>
-              <SettingOutlined style={{ fontSize: 32 }} />
-              <Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>Kategoriya tanlang</Text>
-              <Text type="secondary" style={{ fontSize: 12 }}>Jadvaldan kategoriya ustiga bosing va unga xususiyatlar qo'shing</Text>
+            <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
+              <div className="w-14 h-14 rounded-3xl bg-slate-100 text-slate-400 flex items-center justify-center mb-3">
+                <Settings2 className="w-7 h-7" />
+              </div>
+              <div className="font-extrabold text-slate-800 text-sm">Bo'lim Tanlanmagan</div>
+              <div className="text-xs text-slate-400 mt-1 max-w-[200px]">
+                Jadvaldan istalgan kategoriya ustiga bosing va uning xususiyatlarini tahrirlang.
+              </div>
             </div>
           )}
         </div>
       </div>
 
-
+      {/* Create Modal */}
       <Modal
-        title="Yangi kategoriya"
+        title={
+          <div className="flex items-center gap-2">
+            <FolderPlus className="w-5 h-5 text-indigo-600" />
+            <span className="font-black text-slate-900">Yangi Kategoriya Qo'shish</span>
+          </div>
+        }
         open={isCreateModalOpen}
         onCancel={() => setIsCreateModalOpen(false)}
         onOk={() => {
-          if (!categoryData.name.trim()) { message.warning("Nomini kiriting!"); return; }
-          createMutation.mutate({ ...categoryData, parentId: categoryData.parentId || selectedId });
+          if (!categoryData.name.trim()) {
+            message.warning("Nomini kiriting!");
+            return;
+          }
+          createMutation.mutate({
+            ...categoryData,
+            parentId: categoryData.parentId || selectedId,
+          });
         }}
         confirmLoading={createMutation.isPending || isUploading}
         okText="Qo'shish"
         cancelText="Bekor"
         width={480}
+        className="!rounded-3xl"
       >
-        <Form layout="vertical" style={{ marginTop: 8 }}>
+        <Form layout="vertical" className="mt-4">
           <Form.Item label="Nomi *">
             <Input
               value={categoryData.name}
               onChange={(e) => setCategoryData({ ...categoryData, name: e.target.value })}
               placeholder="Masalan: Elektronika"
+              className="!rounded-xl h-11 font-semibold"
             />
           </Form.Item>
-          <Form.Item label="Yuqori kategoriya">
+          <Form.Item label="Yuqori Kategoriya (Parent)">
             <Select
-              style={{ width: "100%" }}
               allowClear
-              placeholder="— Asosiy kategoriya —"
+              placeholder="— Asosiy Kategoriya —"
               value={categoryData.parentId}
               onChange={(v) => setCategoryData({ ...categoryData, parentId: v ?? null })}
               options={(allCategories || []).map((c) => ({ value: c.id, label: c.name }))}
+              className="w-full !rounded-xl"
             />
           </Form.Item>
-          <Form.Item label="Tartib (order)">
+          <Form.Item label="Tartib (Order)">
             <InputNumber
-              style={{ width: "100%" }}
               min={0}
               value={categoryData.order}
               onChange={(v) => setCategoryData({ ...categoryData, order: v ?? 0 })}
+              className="w-full !rounded-xl"
             />
           </Form.Item>
-          <Form.Item label="Rasm yuklash">
+          <Form.Item label="Kategoriya Ikonkasi / Rasmi">
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "create"); }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImageUpload(f, "create");
+              }}
+              className="text-xs"
             />
             {categoryData.imageUrl && (
-              <img src={categoryData.imageUrl} alt="preview" style={{ marginTop: 8, width: 64, height: 64, objectFit: "cover", borderRadius: 4, border: "1px solid #f0f0f0" }} />
+              <img
+                src={categoryData.imageUrl}
+                alt="preview"
+                className="w-16 h-16 object-cover rounded-2xl border border-slate-200 mt-2 shadow-xs"
+              />
             )}
-          </Form.Item>
-          <Form.Item label="Ko'rinishi">
-            <Switch checked={categoryData.isVisible} onChange={(v) => setCategoryData({ ...categoryData, isVisible: v })} />
           </Form.Item>
         </Form>
       </Modal>
 
+      {/* Edit Modal */}
       <Modal
-        title="Kategoriyani tahrirlash"
+        title={
+          <div className="flex items-center gap-2">
+            <Edit3 className="w-5 h-5 text-indigo-600" />
+            <span className="font-black text-slate-900">Kategoriyani Tahrirlash</span>
+          </div>
+        }
         open={isEditModalOpen}
         onCancel={() => setIsEditModalOpen(false)}
         onOk={() => {
@@ -918,94 +1019,95 @@ const CategoryPage = () => {
         okText="Saqlash"
         cancelText="Bekor"
         width={480}
+        className="!rounded-3xl"
       >
         {editingCategory && (
-          <Form layout="vertical" style={{ marginTop: 8 }}>
+          <Form layout="vertical" className="mt-4">
             <Form.Item label="Nomi">
               <Input
                 value={editingCategory.name}
                 onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                className="!rounded-xl h-11 font-semibold"
               />
             </Form.Item>
-            <Form.Item label="Yuqori kategoriya">
+            <Form.Item label="Yuqori Kategoriya">
               <Select
-                style={{ width: "100%" }}
                 allowClear
                 placeholder="— Asosiy —"
                 value={editingCategory.parentId ?? undefined}
                 onChange={(v) => setEditingCategory({ ...editingCategory, parentId: v ?? null })}
-                options={(allCategories || []).filter((c) => c.id !== editingCategory.id).map((c) => ({ value: c.id, label: c.name }))}
+                options={(allCategories || [])
+                  .filter((c) => c.id !== editingCategory.id)
+                  .map((c) => ({ value: c.id, label: c.name }))}
+                className="w-full !rounded-xl"
               />
             </Form.Item>
             <Form.Item label="Tartib">
               <InputNumber
-                style={{ width: "100%" }}
                 min={0}
                 value={editingCategory.order}
                 onChange={(v) => setEditingCategory({ ...editingCategory, order: v ?? 0 })}
+                className="w-full !rounded-xl"
               />
             </Form.Item>
-            <Form.Item label="Rasm o'zgartirish">
+            <Form.Item label="Rasm O'zgartirish">
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "edit"); }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleImageUpload(f, "edit");
+                }}
+                className="text-xs"
               />
               {editingCategory.imageUrl && (
-                <img src={editingCategory.imageUrl} alt="preview" style={{ marginTop: 8, width: 64, height: 64, objectFit: "cover", borderRadius: 4, border: "1px solid #f0f0f0" }} />
+                <img
+                  src={editingCategory.imageUrl}
+                  alt="preview"
+                  className="w-16 h-16 object-cover rounded-2xl border border-slate-200 mt-2 shadow-xs"
+                />
               )}
-            </Form.Item>
-            <Form.Item label="Ko'rinishi">
-              <Switch checked={editingCategory.isVisible} onChange={(v) => setEditingCategory({ ...editingCategory, isVisible: v })} />
             </Form.Item>
           </Form>
         )}
       </Modal>
 
+      {/* Bulk Excel Modal */}
       <Modal
-        title="Excel orqali import (.xlsx, .csv)"
+        title={
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+            <span className="font-black text-slate-900">Excel Orqali Kategoriya Import (.xlsx, .csv)</span>
+          </div>
+        }
         open={isBulkModalOpen}
-        onCancel={() => { setIsBulkModalOpen(false); setBulkFile(null); }}
+        onCancel={() => {
+          setIsBulkModalOpen(false);
+          setBulkFile(null);
+        }}
         onOk={() => {
-          if (!bulkFile) { message.warning("Avval faylni tanlang!"); return; }
+          if (!bulkFile) {
+            message.warning("Avval faylni tanlang!");
+            return;
+          }
           bulkMutation.mutate(bulkFile);
         }}
         confirmLoading={bulkMutation.isPending}
         okText="Yuklash"
         cancelText="Bekor"
+        className="!rounded-3xl"
       >
-        <div style={{ padding: "16px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-          <div
-            style={{
-              width: "100%",
-              border: "2px dashed #d9d9d9",
-              borderRadius: 8,
-              padding: 32,
-              textAlign: "center",
-              cursor: "pointer",
-              transition: "border-color 0.2s",
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.borderColor = "#1677ff"}
-            onMouseLeave={(e) => e.currentTarget.style.borderColor = "#d9d9d9"}
-          >
-            <InboxOutlined style={{ fontSize: 36, color: "#bbb", marginBottom: 8, display: "block", marginLeft: "auto", marginRight: "auto" }} />
-            <input
-              type="file"
-              accept=".xlsx,.csv"
-              onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
-              style={{ fontSize: 13 }}
-            />
-            {bulkFile && <Text type="success" style={{ display: "block", marginTop: 8 }}>{bulkFile.name}</Text>}
-          </div>
-          <Text type="secondary" style={{ fontSize: 12, textAlign: "center" }}>
-            Excel ustunlari: <Text code>name</Text>, <Text code>imageUrl</Text>, <Text code>isVisible</Text>, <Text code>parentId</Text>
-          </Text>
+        <div className="p-8 flex flex-col items-center gap-3 border-2 border-dashed border-slate-200 rounded-3xl mt-4 bg-slate-50/50">
+          <Upload className="w-8 h-8 text-indigo-500" />
+          <input
+            type="file"
+            accept=".xlsx,.csv"
+            onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
+            className="text-xs"
+          />
+          {bulkFile && <span className="text-xs font-bold text-emerald-600">{bulkFile.name}</span>}
         </div>
       </Modal>
-
-      <style>{`
-        .prop-row:hover { background: #fafafa; }
-      `}</style>
     </div>
   );
 };

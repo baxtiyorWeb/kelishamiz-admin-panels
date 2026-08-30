@@ -12,10 +12,9 @@ import {
   AlertCircle,
   ChevronLeft,
   Shield,
+  Sparkles,
 } from "lucide-react";
 import api from "../config/auth/api";
-
-// API configuration - siz o'zingizning API base URL ingizni kiriting
 
 const LoginComponent = () => {
   const [phone, setPhone] = useState("");
@@ -57,31 +56,16 @@ const LoginComponent = () => {
     setRegionId(selectedRegionId);
     setDistrictId("");
 
-    const selectedRegion = regions.find(
-      (r) => r.id === parseInt(selectedRegionId)
-    );
+    const selectedRegion = regions.find((r) => r.id === parseInt(selectedRegionId));
     setDistricts(selectedRegion ? selectedRegion.districts : []);
   };
 
   const formatPhoneNumber = (value) => {
     const cleaned = value.replace(/\D/g, "");
-
-    // Format the numbers
     const match = cleaned.match(/^(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})?/);
     if (!match) return "";
 
-    // Add spaces
-    const formatted = [
-      match[1], // xx
-      match[2], // xxx
-      match[3], // xx
-      match[4], // xx
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-    return formatted;
+    return [match[1], match[2], match[3], match[4]].filter(Boolean).join(" ").trim();
   };
 
   const handleChange = (e) => {
@@ -92,7 +76,6 @@ const LoginComponent = () => {
     setPhone(finalValue);
   };
 
-  // Handle countdown timer for OTP resend
   useEffect(() => {
     let timer;
     if (countdown > 0 && step === "otp") {
@@ -101,7 +84,6 @@ const LoginComponent = () => {
     return () => clearTimeout(timer);
   }, [countdown, step]);
 
-  // Format countdown time
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -112,7 +94,6 @@ const LoginComponent = () => {
     setError("");
     setLoading(true);
 
-    // Basic validation
     const phoneDigits = phone.replace(/\D/g, "");
     if (phoneDigits.length < 9) {
       setError("Iltimos, to'g'ri telefon raqamini kiriting");
@@ -131,11 +112,10 @@ const LoginComponent = () => {
           phone: `+${phoneDigits}`,
         });
         setStep("otp");
-        setCountdown(120); // 2 minutes countdown
+        setCountdown(120);
         setSuccess("Tasdiqlash kodi yuborildi");
         setResponseCode(response.data.code);
 
-        // OTP ni auto kiritish
         if (response.data.code) {
           setTimeout(() => {
             setCode(response.data.code);
@@ -145,17 +125,13 @@ const LoginComponent = () => {
         if (otpError?.response?.status === 409) {
           setStep("otp");
           setCountdown(120);
-          setError(
-            "Bu telefon raqam allaqachon ro'yxatdan o'tgan. OTP kodini kiriting."
-          );
+          setError("Bu telefon raqam allaqachon ro'yxatdan o'tgan. OTP kodini kiriting.");
         } else {
           setError("OTP yuborishda xatolik yuz berdi. Qayta urinib ko'ring.");
         }
       }
     } catch (checkErr) {
-      setError(
-        "Telefon raqamini tekshirishda xatolik yuz berdi. Qayta urinib ko'ring."
-      );
+      setError("Telefon raqamini tekshirishda xatolik yuz berdi. Qayta urinib ko'ring.");
     } finally {
       setLoading(false);
     }
@@ -165,7 +141,6 @@ const LoginComponent = () => {
     setError("");
     setLoading(true);
 
-    // Basic validation
     if (code.length < 4 && !responseCode) {
       setError("Iltimos, to'g'ri kodni kiriting");
       setLoading(false);
@@ -193,18 +168,15 @@ const LoginComponent = () => {
             localStorage.setItem("refreshToken", loginRes.data?.refreshToken);
             setSuccess("Muvaffaqiyatli kirildi! Yo'naltirilmoqda...");
 
-            // Redirect after showing success message
             setTimeout(() => {
               window.location.href = "/";
-            }, 1500);
+            }, 1000);
           } catch (loginErr) {
             setError("Tizimga kirishda xatolik yuz berdi.");
           }
         }
       } else {
-        setError(
-          verifyRes.data?.message || "OTP kodi noto'g'ri yoki muddati o'tgan."
-        );
+        setError(verifyRes.data?.message || "OTP kodi noto'g'ri yoki muddati o'tgan.");
       }
     } catch (err) {
       setError("OTP tekshirishda xatolik yuz berdi.");
@@ -217,7 +189,6 @@ const LoginComponent = () => {
     setError("");
     setLoading(true);
 
-    // Basic validation
     if (!username.trim()) {
       setError("Iltimos, foydalanuvchi nomini kiriting");
       setLoading(false);
@@ -250,10 +221,9 @@ const LoginComponent = () => {
 
       setSuccess("Hisobingiz muvaffaqiyatli yaratildi! Yo'naltirilmoqda...");
 
-      // Redirect after showing success message
       setTimeout(() => {
         window.location.href = "/";
-      }, 1500);
+      }, 1000);
     } catch (err) {
       if (err?.response?.status === 409) {
         setError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.");
@@ -276,7 +246,7 @@ const LoginComponent = () => {
       const response = await api.post("/auth/send-otp", {
         phone: `+${phoneDigits}`,
       });
-      setCountdown(120); // Reset countdown
+      setCountdown(120);
       setResponseCode(response.data?.code);
       setSuccess("Yangi tasdiqlash kodi yuborildi");
     } catch (err) {
@@ -296,399 +266,242 @@ const LoginComponent = () => {
     setSuccess("");
   };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        when: "beforeChildren",
-        staggerChildren: 0.1,
-        duration: 0.3,
-      },
-    },
-    exit: {
-      opacity: 0,
-      transition: {
-        when: "afterChildren",
-        staggerChildren: 0.05,
-        staggerDirection: -1,
-        duration: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { type: "spring", stiffness: 300, damping: 24 },
-    },
-    exit: {
-      y: -20,
-      opacity: 0,
-      transition: { duration: 0.2 },
-    },
-  };
-
   return (
-    <div className="flex w-full min-h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-teal-100 p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-xl">
-        <div className="relative overflow-hidden">
-          {/* Animated background shapes */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-teal-400/20"
-          ></motion.div>
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="absolute -bottom-8 -left-8 h-40 w-40 rounded-full bg-teal-500/10"
-          ></motion.div>
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="absolute bottom-0 right-0 h-24 w-24 rounded-full bg-teal-300/20"
-          ></motion.div>
+    <div className="flex w-full min-h-screen items-center justify-center bg-slate-950 p-4 relative overflow-hidden font-sans">
+      {/* Dynamic Background Glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-600/20 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-purple-600/20 blur-[120px] pointer-events-none" />
 
-          <div className="relative z-10 bg-gradient-to-r from-teal-500 to-teal-600 pb-6 pt-6 text-white px-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 text-center">
-                <motion.div
-                  key={`header-${step}`}
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                >
-                  <h2 className="text-2xl font-bold">
-                    {step === "phone" && "Kirish"}
-                    {step === "otp" && "Tasdiqlash"}
-                    {step === "register" && "Ro'yxatdan o'tish"}
-                  </h2>
-                  <p className="mt-1 text-sm text-teal-100">
-                    {step === "phone" && "Telefon raqamingizni kiriting"}
-                    {step === "otp" && "Tasdiqlash kodini kiriting"}
-                    {step === "register" && "Hisobingizni yarating"}
-                  </p>
-                </motion.div>
+      <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white/95 backdrop-blur-2xl border border-white/40 shadow-2xl z-10">
+        {/* Header gradient banner */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 px-8 pt-8 pb-7 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white font-black text-xl shadow-inner">
+                K
               </div>
-              {step !== "phone" && (
-                <motion.button
-                  onClick={goBack}
-                  className="rounded-full p-2 text-white transition-colors hover:bg-white/10"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </motion.button>
-              )}
+              <div>
+                <h1 className="text-xl font-extrabold tracking-tight text-white leading-none">
+                  KELISHAMIZ
+                </h1>
+                <span className="text-[11px] font-bold text-indigo-200 uppercase tracking-widest mt-1 block">
+                  Boshqaruv Paneli
+                </span>
+              </div>
             </div>
+
+            {step !== "phone" && (
+              <button
+                onClick={goBack}
+                className="rounded-xl p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            )}
           </div>
 
-          <div className="p-6">
-            {/* Progress indicator */}
-            <div className="mb-6 flex">
-              <motion.div
-                className="h-1 flex-1 rounded-l-full bg-teal-500"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              ></motion.div>
-              <motion.div
-                className={`h-1 flex-1 ${
-                  step === "phone" ? "bg-gray-200" : "bg-teal-500"
-                }`}
-                initial={{ scaleX: step === "phone" ? 0 : 1 }}
-                animate={{ scaleX: step !== "phone" ? 1 : 0 }}
-                transition={{ duration: 0.3, ease: "easeOut", delay: 0.1 }}
-              ></motion.div>
-              <motion.div
-                className={`h-1 flex-1 rounded-r-full ${
-                  step === "register" ? "bg-teal-500" : "bg-gray-200"
-                }`}
-                initial={{ scaleX: step === "register" ? 1 : 0 }}
-                animate={{ scaleX: step === "register" ? 1 : 0 }}
-                transition={{ duration: 0.3, ease: "easeOut", delay: 0.2 }}
-              ></motion.div>
-            </div>
+          <div className="mt-6">
+            <h2 className="text-lg font-bold text-white">
+              {step === "phone" && "Tizimga Kirish"}
+              {step === "otp" && "SMS Tasdiqlash"}
+              {step === "register" && "Admin Ma'lumotlari"}
+            </h2>
+            <p className="text-xs text-indigo-100/80 mt-0.5">
+              {step === "phone" && "Telefon raqamingizni kiritib tasdiqlang"}
+              {step === "otp" && "SMS orqali yuborilgan 6 xonali kod"}
+              {step === "register" && "Yangi administrator hisobini to'ldiring"}
+            </p>
+          </div>
+        </div>
 
-            {/* Success message */}
-            <AnimatePresence mode="wait">
-              {success && (
-                <motion.div
-                  className="mb-4 flex items-start rounded-lg border border-green-200 bg-green-50 p-3"
-                  initial={{ opacity: 0, y: -10, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: -10, height: 0 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                >
-                  <CheckCircle className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
-                  <p className="text-sm text-green-700">{success}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Error message */}
-            <AnimatePresence mode="wait">
-              {error && (
-                <motion.div
-                  className="mb-4 flex items-start rounded-lg border border-red-200 bg-red-50 p-3"
-                  initial={{ opacity: 0, y: -10, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: -10, height: 0 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                >
-                  <AlertCircle className="mr-2 mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
-                  <p className="text-sm text-red-700">{error}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Form Content */}
-            <AnimatePresence mode="wait">
+        {/* Form Body */}
+        <div className="p-8 flex flex-col gap-5">
+          {/* Messages */}
+          <AnimatePresence mode="wait">
+            {success && (
               <motion.div
-                key={step}
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="space-y-6"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold"
               >
-                {/* Phone Step */}
-                {step === "phone" && (
-                  <>
-                    <motion.div variants={itemVariants}>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                          <Phone className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="tel"
-                          value={phone}
-                          onChange={handleChange}
-                          placeholder="+998 90 123 45 67"
-                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 py-3 text-sm placeholder-gray-500 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                          disabled={loading}
-                        />
-                      </div>
-                    </motion.div>
-
-                    <motion.div variants={itemVariants}>
-                      <button
-                        onClick={handleSendPhone}
-                        disabled={loading || !phone}
-                        className="group relative w-full overflow-hidden rounded-lg bg-teal-500 px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <span className="relative flex items-center justify-center">
-                          {loading ? (
-                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                          ) : (
-                            <>
-                              Davom etish
-                              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                            </>
-                          )}
-                        </span>
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-
-                {/* OTP Step */}
-                {step === "otp" && (
-                  <>
-                    <motion.div variants={itemVariants}>
-                      <div className="text-center">
-                        <div className="mb-2">
-                          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
-                            <Shield className="h-6 w-6 text-teal-600" />
-                          </div>
-                          <p className="text-sm text-gray-600">
-                            <span className="font-medium">{phone}</span>{" "}
-                            raqamiga tasdiqlash kodi yuborildi
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    <motion.div variants={itemVariants}>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                          <Lock className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="text"
-                          value={code}
-                          onChange={(e) => setCode(e.target.value)}
-                          placeholder="Tasdiqlash kodini kiriting"
-                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 py-3 text-sm placeholder-gray-500 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                          disabled={loading}
-                          maxLength={6}
-                        />
-                      </div>
-                    </motion.div>
-
-                    <motion.div variants={itemVariants}>
-                      <button
-                        onClick={handleVerifyOtp}
-                        disabled={loading || (!code && !responseCode)}
-                        className="group relative w-full overflow-hidden rounded-lg bg-teal-500 px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <span className="relative flex items-center justify-center">
-                          {loading ? (
-                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                          ) : (
-                            <>
-                              Tasdiqlash
-                              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                            </>
-                          )}
-                        </span>
-                      </button>
-                    </motion.div>
-
-                    <motion.div variants={itemVariants}>
-                      <div className="text-center">
-                        {countdown > 0 ? (
-                          <p className="text-sm text-gray-500">
-                            Qayta yuborish: {formatTime(countdown)}
-                          </p>
-                        ) : (
-                          <button
-                            onClick={handleResendOtp}
-                            disabled={loading}
-                            className="text-sm text-teal-500 hover:text-teal-600 hover:underline focus:outline-none disabled:opacity-50"
-                          >
-                            Kodni qayta yuborish
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-
-                {/* Register Step */}
-                {step === "register" && (
-                  <>
-                    <motion.div variants={itemVariants}>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3">
-                          <User className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="text"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          placeholder="Foydalanuvchi nomi"
-                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-3 py-3 text-sm placeholder-gray-500 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                          disabled={loading}
-                        />
-                      </div>
-                    </motion.div>
-
-                    <motion.div variants={itemVariants}>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none z-10">
-                          <MapPin className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <select
-                          value={regionId}
-                          onChange={handleRegionChange}
-                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-8 py-3 text-sm text-gray-700 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 appearance-none"
-                          disabled={loading}
-                        >
-                          <option value="">Viloyatni tanlang</option>
-                          {regions.map((region) => (
-                            <option key={region.id} value={region.id}>
-                              {region.name}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <svg
-                            className="h-4 w-4 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    <motion.div variants={itemVariants}>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none z-10">
-                          <MapPin className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <select
-                          value={districtId}
-                          onChange={(e) => setDistrictId(e.target.value)}
-                          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-8 py-3 text-sm text-gray-700 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20 appearance-none"
-                          disabled={loading || !regionId}
-                        >
-                          <option value="">Tumanni tanlang</option>
-                          {districts.map((district) => (
-                            <option key={district.id} value={district.id}>
-                              {district.name}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <svg
-                            className="h-4 w-4 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    <motion.div variants={itemVariants}>
-                      <button
-                        onClick={handleCreateAccount}
-                        disabled={
-                          loading || !username || !regionId || !districtId
-                        }
-                        className="group relative w-full overflow-hidden rounded-lg bg-teal-500 px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <span className="relative flex items-center justify-center">
-                          {loading ? (
-                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                          ) : (
-                            <>
-                              Hisobni yaratish
-                              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                            </>
-                          )}
-                        </span>
-                      </button>
-                    </motion.div>
-                  </>
-                )}
+                <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{success}</span>
               </motion.div>
-            </AnimatePresence>
+            )}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"
+              >
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{error}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Steps */}
+          {step === "phone" && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Telefon Raqam
+                </label>
+                <div className="relative">
+                  <Phone className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={handleChange}
+                    placeholder="+998 90 123 45 67"
+                    disabled={loading}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-slate-900 font-semibold text-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSendPhone}
+                disabled={loading || !phone}
+                className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>SMS Kodni Olish</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {step === "otp" && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  SMS Tasdiqlash Kodi
+                </label>
+                <div className="relative">
+                  <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Masalan: 123456"
+                    maxLength={6}
+                    disabled={loading}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-slate-900 font-mono font-bold text-center tracking-widest text-base outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleVerifyOtp}
+                disabled={loading || (!code && !responseCode)}
+                className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Tasdiqlash & Kirish</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              <div className="text-center mt-1">
+                {countdown > 0 ? (
+                  <span className="text-xs text-slate-400 font-medium">
+                    Kodni qayta yuborish: {formatTime(countdown)}
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                    className="text-xs font-bold text-indigo-600 hover:underline"
+                  >
+                    Kodni qayta yuborish
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === "register" && (
+            <div className="flex flex-col gap-3.5">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">To'liq Ism</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Ism va familiya"
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-indigo-600"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Viloyat</label>
+                <select
+                  value={regionId}
+                  onChange={handleRegionChange}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-indigo-600"
+                >
+                  <option value="">Viloyatni tanlang</option>
+                  {regions.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">Tuman</label>
+                <select
+                  value={districtId}
+                  onChange={(e) => setDistrictId(e.target.value)}
+                  disabled={!regionId}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-indigo-600 disabled:opacity-50"
+                >
+                  <option value="">Tumanni tanlang</option>
+                  {districts.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleCreateAccount}
+                disabled={loading || !username || !regionId || !districtId}
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Hisobni Yakunlash</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Security badge footer */}
+          <div className="flex items-center justify-center gap-1.5 pt-2 text-[11px] text-slate-400 font-medium border-t border-slate-100">
+            <Shield className="w-3.5 h-3.5 text-indigo-500" />
+            <span>256-Bit SSL Shifrlangan Xavfsiz Boshqaruv Tizimi</span>
           </div>
         </div>
       </div>

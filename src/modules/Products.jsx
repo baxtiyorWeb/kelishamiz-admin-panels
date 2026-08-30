@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import Table from "./../components/Table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "./../config/auth/api";
 import { get, isArray } from "lodash";
+import { useNavigate } from "react-router-dom";
 import {
   DatePicker,
   Form,
@@ -15,80 +16,120 @@ import {
   Button,
   Spin,
   Descriptions,
-  Divider,
+  Image,
+  Space,
+  Avatar,
+  Input,
+  Tabs,
+  Row,
+  Col,
 } from "antd";
 import dayjs from "dayjs";
-import { EyeOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import {
+  Eye,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Zap,
+  Flame,
+  Search,
+  Tag as TagIcon,
+  Layers,
+  MapPin,
+  Calendar,
+  Phone,
+  User,
+  Heart,
+  ExternalLink,
+  ShieldCheck,
+  AlertTriangle,
+  Clock,
+  Sparkles,
+  RefreshCw,
+  Image as ImageIcon,
+} from "lucide-react";
 
-const STATUS_LABELS = {
-  pending: "Kutilmoqda",
-  active: "Faol",
-  completed: "Yakunlangan",
-  rejected: "Rad etilgan",
+const STATUS_CONFIG = {
+  pending: {
+    label: "Kutilmoqda",
+    color: "warning",
+    badgeColor: "bg-amber-500",
+    textColor: "text-amber-700",
+    bgColor: "bg-amber-50 border-amber-200",
+    icon: <Clock className="w-3.5 h-3.5 text-amber-500" />,
+  },
+  active: {
+    label: "Faol",
+    color: "success",
+    badgeColor: "bg-emerald-500",
+    textColor: "text-emerald-700",
+    bgColor: "bg-emerald-50 border-emerald-200",
+    icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />,
+  },
+  completed: {
+    label: "Yakunlangan",
+    color: "blue",
+    badgeColor: "bg-blue-500",
+    textColor: "text-blue-700",
+    bgColor: "bg-blue-50 border-blue-200",
+    icon: <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />,
+  },
+  rejected: {
+    label: "Rad etilgan",
+    color: "error",
+    badgeColor: "bg-rose-500",
+    textColor: "text-rose-700",
+    bgColor: "bg-rose-50 border-rose-200",
+    icon: <XCircle className="w-3.5 h-3.5 text-rose-500" />,
+  },
 };
 
-const STATUS_COLORS = {
-  pending: "gold",
-  active: "green",
-  completed: "blue",
-  rejected: "red",
-};
-
-const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({
+const STATUS_OPTIONS = Object.entries(STATUS_CONFIG).map(([value, conf]) => ({
   value,
-  label,
+  label: conf.label,
+  icon: conf.icon,
+  textColor: conf.textColor,
 }));
 
 const Products = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [statusTab, setStatusTab] = useState("all");
   const [isTopModalOpen, setIsTopModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeProgress, setOptimizeProgress] = useState(0);
+  const [searchFilter, setSearchFilter] = useState("");
   const [form] = Form.useForm();
 
-  // Mahsulotlar ro'yxatini olish
+  // Fetch products list
   const {
     data,
     isLoading,
-    isError,
+    isFetching,
     refetch: refetchProducts,
   } = useQuery({
     queryKey: ["products", page, pageSize],
     queryFn: async () => {
-      const response = await api.get(
-        `/products?pageSize=${pageSize}&page=${page}`
-      );
-      console.log(response.data);
-
+      const response = await api.get(`/products?pageSize=${pageSize}&page=${page}`);
       if (response.status !== 200 || !response.data) {
         throw new Error("Network response was not ok");
       }
       return response.data;
     },
-    onError: (error) => {
-      console.error("Error fetching products:", error);
-      message.error("Mahsulotlarni yuklashda xatolik yuz berdi.");
-    },
-    onSuccess: (data) => {
-      console.log("Products fetched successfully:", data);
-    },
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
     retry: 2,
-    retryDelay: 1000,
   });
 
-  // Tanlangan mahsulotning to'liq ma'lumotlarini olish
+  // Fetch single product details
   const {
     data: selectedProductData,
     isLoading: isSelectedProductLoading,
     isError: isSelectedProductError,
-    refetch: refetchSelectedProduct,
   } = useQuery({
     queryKey: ["product", selectedProductId],
     queryFn: async () => {
@@ -100,194 +141,108 @@ const Products = () => {
       return response.data?.content;
     },
     enabled: !!selectedProductId && isViewModalOpen,
-    onError: (error) => {
-      console.error("Error fetching selected product:", error);
-      message.error("Mahsulot ma'lumotlarini yuklashda xatolik yuz berdi.");
-    },
   });
 
-  const productItems = get(data, "content.data", []);
+  const productItems = useMemo(() => get(data, "content.data", []), [data]);
   const totalProducts = get(data, "content.total", 0);
   const currentPage = get(data, "content.page", 1);
 
-  // TOP statusini yangilash mutation
+  // Real-time calculated counters
+  const stats = useMemo(() => {
+    return {
+      total: totalProducts || productItems.length,
+      pending: productItems.filter((p) => p.status === "pending").length,
+      active: productItems.filter((p) => p.status === "active").length,
+      top: productItems.filter((p) => p.isTop).length,
+    };
+  }, [productItems, totalProducts]);
+
+  // Mutations
   const { mutate: updateProductTopStatus } = useMutation({
     mutationFn: async ({ id, isTop, topExpiresAt }) => {
-      const response = await api.patch(`/products/${id}/top`, {
-        isTop,
-        topExpiresAt,
-      });
-      if (response.status !== 200 || !response.data) {
-        message.error("Mahsulot tafsilotlarini yangilashda xatolik yuz berdi.");
-        throw new Error("Failed to update product details");
-      }
+      const response = await api.patch(`/products/${id}/top`, { isTop, topExpiresAt });
       return response.data;
     },
-    onError: (error) => {
-      console.error("Error updating product details:", error);
-      message.error("Mahsulot tafsilotlarini yangilashda xatolik yuz berdi.");
-    },
     onSuccess: () => {
-      message.success("Mahsulot muvaffaqiyatli yangilandi.");
+      message.success("E'lon TOP holati yangilandi.");
       refetchProducts();
+    },
+    onError: () => {
+      message.error("TOP holatini yangilashda xatolik yuz berdi.");
     },
   });
 
-  // Publish statusini yangilash mutation
   const { mutate: updateProductPublishStatus } = useMutation({
     mutationFn: async ({ id, isPublished }) => {
-      const response = await api.patch(`/products/${id}/top`, {
-        isPublish: isPublished,
-      });
-      if (response.status !== 200 || !response.data) {
-        message.error(
-          "Mahsulot publish statusini yangilashda xatolik yuz berdi."
-        );
-        throw new Error("Failed to update product publish status");
-      }
+      const response = await api.patch(`/products/${id}/top`, { isPublish: isPublished });
       return response.data;
     },
-    onError: (error) => {
-      console.error("Error updating product publish status:", error);
-      message.error(
-        "Mahsulot publish statusini yangilashda xatolik yuz berdi."
-      );
-    },
     onSuccess: () => {
-      message.success("Mahsulot publish statusi muvaffaqiyatli yangilandi.");
+      message.success("Nashr holati yangilandi.");
       refetchProducts();
+    },
+    onError: () => {
+      message.error("Nashr holatini yangilashda xatolik yuz berdi.");
     },
   });
 
-  // Mahsulot statusini (pending/active/completed/rejected) yangilash mutation
   const { mutate: updateProductStatus } = useMutation({
     mutationFn: async ({ id, status }) => {
       const response = await api.patch(`/products/${id}/status`, { status });
-      if (response.status !== 200 || !response.data) {
-        throw new Error("Failed to update product status");
-      }
       return response.data;
     },
-    onMutate: ({ id }) => {
-      setStatusUpdatingId(id);
+    onMutate: ({ id }) => setStatusUpdatingId(id),
+    onSuccess: () => {
+      message.success("E'lon moderatsiya holati muvaffaqiyatli yangilandi.");
+      refetchProducts();
     },
     onError: (error) => {
-      console.error("Error updating product status:", error);
       const serverMessage = get(error, "response.data.message");
-      const errMsg = isArray(serverMessage)
-        ? serverMessage.join(", ")
-        : serverMessage || "Mahsulot statusini yangilashda xatolik yuz berdi.";
-      message.error(errMsg);
-      // Select eski qiymatga qaytishi uchun ro'yxatni qayta yuklaymiz
+      message.error(serverMessage || "Statusni yangilashda xatolik yuz berdi.");
       refetchProducts();
     },
-    onSuccess: () => {
-      message.success("Mahsulot statusi muvaffaqiyatli yangilandi.");
-      refetchProducts();
-    },
-    onSettled: () => {
-      setStatusUpdatingId(null);
-    },
+    onSettled: () => setStatusUpdatingId(null),
   });
 
-  // Mahsulotni o'chirish mutation
   const { mutate: deleteProduct } = useMutation({
     mutationFn: async (id) => {
       const response = await api.delete(`/products/by-id/${id}`);
-      if (response.status !== 200) {
-        throw new Error("Failed to delete product");
-      }
       return response.data;
     },
-    onError: (error) => {
-      console.error("Error deleting product:", error);
-      message.error("Mahsulotni o'chirishda xatolik yuz berdi.");
-    },
     onSuccess: () => {
-      message.success("Mahsulot muvaffaqiyatli o'chirildi.");
+      message.success("E'lon o'chirildi.");
       refetchProducts();
+      setIsViewModalOpen(false);
+    },
+    onError: () => {
+      message.error("E'lonni o'chirishda xatolik yuz berdi.");
     },
   });
 
-  // Handler functions
-  const handleSetTop = (id, isTop, topExpiresAt) => {
-    updateProductTopStatus({ id, isTop, topExpiresAt });
-  };
-
-  const handleUpdateProductIsPublish = (productId, value) => {
-    updateProductPublishStatus({ id: productId, isPublished: value });
-  };
-
-  const handleUpdateProductStatus = (productId, status) => {
-    updateProductStatus({ id: productId, status });
-  };
-
-  const handleDelete = (id) => {
-    deleteProduct(id);
-  };
-
-  const showViewModal = (productId) => {
-    setSelectedProductId(productId);
-    setIsViewModalOpen(true);
-  };
-
-  const handleTopModalOk = () => {
-    form.validateFields().then((values) => {
-      handleSetTop(selectedProductId, true, values.topExpiresAt);
-      setIsTopModalOpen(false);
-      form.resetFields();
-    });
-  };
-
-  const handleTopModalCancel = () => {
-    setIsTopModalOpen(false);
-    form.resetFields();
-  };
-
-  const handleViewModalCancel = () => {
-    setIsViewModalOpen(false);
-    setSelectedProductId(null);
-  };
-
-  /**
-   * Barcha mahsulot rasmlarini bir xil o'lcham va sifatga keltirish.
-   * Barcha sahifalardan rasmlarni oladi, /file/bulk-optimize endpointiga yuboradi.
-   */
   const handleBulkOptimizeProductImages = useCallback(async () => {
     setIsOptimizing(true);
     setOptimizeProgress(0);
-
     try {
-      // Barcha mahsulotlardan rasmlarni olish (bir nechta sahifa bo'lishi mumkin)
       let allImageUrls = [];
-
-      // Joriy sahifadagi mahsulotlardan rasmlarni to'playmiz
       const res = await api.get(`/products?pageSize=200&page=1`);
       const items = get(res, "data.content.data", []);
-
       items.forEach((product) => {
         if (product.images && product.images.length > 0) {
           product.images.forEach((img) => {
-            if (img.url) {
-              allImageUrls.push(img.url);
-            }
+            if (img.url) allImageUrls.push(img.url);
           });
         }
       });
 
       if (allImageUrls.length === 0) {
-        message.info("Optimizatsiya qilinadigan rasmli mahsulot topilmadi");
+        message.info("Optimizatsiya qilinadigan rasmli e'lon topilmadi");
         setIsOptimizing(false);
         return;
       }
 
-      // Duplikatlarni olib tashlash
       allImageUrls = [...new Set(allImageUrls)];
-
-      // Backend endpointiga yuboramiz (3 tadan bo'laklarga bo'lib)
       const chunkSize = 3;
       let optimizedCount = 0;
-      const urlMap = {};
 
       for (let i = 0; i < allImageUrls.length; i += chunkSize) {
         const chunk = allImageUrls.slice(i, i + chunkSize);
@@ -295,86 +250,183 @@ const Products = () => {
           const optimRes = await api.post("/file/bulk-optimize", { urls: chunk });
           const results = optimRes.data?.results || [];
           results.forEach((r) => {
-            if (r.success) {
-              urlMap[r.originalUrl] = r.optimizedUrl;
-              optimizedCount++;
-            }
+            if (r.success) optimizedCount++;
           });
-        } catch (chunkErr) {
-          console.error("Chunk optimization error", chunkErr);
+        } catch (err) {
+          console.error("Chunk error", err);
         }
         setOptimizeProgress(Math.round(((i + chunk.length) / allImageUrls.length) * 100));
       }
 
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      message.success(`✅ ${optimizedCount} ta mahsulot rasmi optimize qilindi!`);
+      message.success(`✅ ${optimizedCount} ta e'lon rasmi muvaffaqiyatli optimallashtirildi!`);
     } catch (err) {
-      message.error(get(err, "response.data.message", "Optimizatsiya xatosi"));
+      message.error("Optimizatsiya xatosi yuz berdi");
     } finally {
       setIsOptimizing(false);
       setOptimizeProgress(0);
     }
   }, [queryClient]);
 
-  // Jadval ustunlari
+  const handleTopModalOk = () => {
+    form.validateFields().then((values) => {
+      updateProductTopStatus({
+        id: selectedProductId,
+        isTop: true,
+        topExpiresAt: values.topExpiresAt,
+      });
+      setIsTopModalOpen(false);
+      form.resetFields();
+    });
+  };
+
+  const filteredItems = useMemo(() => {
+    return productItems.filter((p) => {
+      if (statusTab === "pending" && p.status !== "pending") return false;
+      if (statusTab === "active" && p.status !== "active") return false;
+      if (statusTab === "top" && !p.isTop) return false;
+      if (statusTab === "rejected" && p.status !== "rejected") return false;
+
+      if (searchFilter.trim()) {
+        const term = searchFilter.toLowerCase();
+        return (
+          p.title?.toLowerCase().includes(term) ||
+          p.category?.name?.toLowerCase().includes(term) ||
+          p.id?.toString().includes(term) ||
+          p.profile?.fullName?.toLowerCase().includes(term) ||
+          p.profile?.user?.username?.toLowerCase().includes(term)
+        );
+      }
+      return true;
+    });
+  }, [productItems, statusTab, searchFilter]);
+
   const columns = [
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
+      title: "E'lon & Media",
+      key: "product",
+      width: 280,
+      render: (_, record) => {
+        const firstImg = record.images?.[0]?.url;
+        const imgCount = record.images?.length || 0;
+        return (
+          <div className="flex items-center gap-3.5 py-1.5">
+            <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 shadow-sm group cursor-pointer">
+              {firstImg ? (
+                <img
+                  src={firstImg}
+                  alt=""
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  onClick={() => {
+                    setSelectedProductId(record.id);
+                    setIsViewModalOpen(true);
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                  <ImageIcon className="w-5 h-5 text-slate-300" />
+                  <span className="text-[9px] font-bold mt-0.5">Rasm yo'q</span>
+                </div>
+              )}
+              {imgCount > 1 && (
+                <div className="absolute bottom-1 right-1 bg-slate-950/80 backdrop-blur-md text-[9px] text-white font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                  <span>+{imgCount - 1}</span>
+                </div>
+              )}
+            </div>
+            <div className="max-w-[210px] flex flex-col gap-1">
+              <div
+                className="font-extrabold text-slate-800 text-sm hover:text-indigo-600 cursor-pointer truncate transition-colors leading-snug"
+                onClick={() => {
+                  setSelectedProductId(record.id);
+                  setIsViewModalOpen(true);
+                }}
+              >
+                {record.title}
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                <span className="font-mono text-slate-400 font-semibold">#{record.id}</span>
+                <span>•</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 font-semibold text-[10px] truncate">
+                  <Layers className="w-3 h-3 text-purple-500 flex-shrink-0" />
+                  {record.category?.name || "Kategoriyasiz"}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      },
     },
     {
-      title: "Title",
-      dataIndex: "title",
-      key: "title",
-      render: (text) => (
-        <Tooltip title={text}>
-          <div className="truncate max-w-[150px]">{text}</div>
-        </Tooltip>
-      ),
-    },
-    {
-      title: "Narx",
-      dataIndex: "price",
+      title: "Narxi",
       key: "price",
-      render: (price, record) => (
-        <span>
-          {price} {record.currencyType}
-        </span>
+      width: 160,
+      render: (_, record) => (
+        <div className="flex flex-col">
+          <div className="font-black text-slate-900 text-sm tracking-tight flex items-center gap-1">
+            <span>{Number(record.price || 0).toLocaleString("uz-UZ")}</span>
+            <span className="text-xs text-slate-500 font-bold">{record.currencyType || "UZS"}</span>
+          </div>
+          {record.negotiable && (
+            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md w-max mt-0.5">
+              🤝 Kelishiladi
+            </span>
+          )}
+        </div>
       ),
     },
     {
-      title: "Kategoriya",
-      dataIndex: ["category", "name"],
-      key: "categoryName",
-      render: (text) => (
-        <Tooltip title={text}>
-          <div className="truncate max-w-[80px]">{text}</div>
-        </Tooltip>
-      ),
+      title: "Sotuvchi",
+      key: "seller",
+      width: 190,
+      render: (_, record) => {
+        const owner = record.profile?.fullName || record.profile?.user?.username || "Noma'lum";
+        const phone = record.profile?.phone || record.profile?.user?.phone;
+        const userId = record.profile?.userId || record.userId;
+        return (
+          <div className="flex items-center gap-2.5">
+            <Avatar className="bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold text-xs flex-shrink-0 shadow-sm" size={32}>
+              {owner[0]?.toUpperCase()}
+            </Avatar>
+            <div className="flex flex-col min-w-0">
+              <div
+                className="font-bold text-slate-800 text-xs hover:text-indigo-600 cursor-pointer truncate transition-colors"
+                onClick={() => userId && navigate(`/users/${userId}`)}
+              >
+                {owner}
+              </div>
+              {phone && (
+                <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+                  <Phone className="w-3 h-3 text-slate-400" />
+                  {phone}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
-      title: "Status",
+      title: "Moderatsiya Holati",
       dataIndex: "status",
       key: "status",
+      width: 170,
       render: (status, record) => {
-        const currentStatus = status || "pending";
+        const current = status || "pending";
         return (
           <Select
-            style={{ width: 140 }}
-            value={currentStatus}
+            value={current}
             loading={statusUpdatingId === record.id}
             disabled={statusUpdatingId === record.id}
-            onChange={(value) => handleUpdateProductStatus(record.id, value)}
-            optionLabelProp="label"
+            onChange={(val) => updateProductStatus({ id: record.id, status: val })}
+            className="w-36 !rounded-xl"
           >
             {STATUS_OPTIONS.map((opt) => (
-              <Select.Option
-                key={opt.value}
-                value={opt.value}
-                label={STATUS_LABELS[opt.value]}
-              >
-                <Tag color={STATUS_COLORS[opt.value]}>{opt.label}</Tag>
+              <Select.Option key={opt.value} value={opt.value}>
+                <div className="flex items-center gap-1.5 font-bold text-xs">
+                  {opt.icon}
+                  <span>{opt.label}</span>
+                </div>
               </Select.Option>
             ))}
           </Select>
@@ -382,364 +434,504 @@ const Products = () => {
       },
     },
     {
-      title: "Nashr qilingan",
-      dataIndex: "isPublish",
-      key: "isPublish",
-      render: (isPublish, record) => (
-        <div className="truncate max-w-[120px]">
-          <Select
-            style={{ width: 120 }}
-            defaultValue={isPublish}
-            onChange={(value) => handleUpdateProductIsPublish(record.id, value)}
-          >
-            <Select.OptGroup label="Status tanlash">
-              <Select.Option value={true}>
-                <Tag color="green">Ha</Tag>
-              </Select.Option>
-              <Select.Option value={false}>
-                <Tag color="red">Yo'q</Tag>
-              </Select.Option>
-            </Select.OptGroup>
-          </Select>
-        </div>
-      ),
-    },
-    {
-      title: "Topda",
-      dataIndex: "isTop",
-      key: "isTop",
-      render: (isTop, record) => {
-        const content = isTop ? "Topda" : "Top qilish";
-        return (
-          <Tooltip title={content}>
-            <div className="truncate max-w-[100px]">
-              {isTop ? (
-                <Popconfirm
-                  title="Topdan olib tashlashni xohlaysizmi?"
-                  onConfirm={() => handleSetTop(record.id, false, null)}
-                  okText="Ha"
-                  cancelText="Yo'q"
+      title: "Tezkor Moderatsiya",
+      key: "quick_actions",
+      width: 180,
+      render: (_, record) => {
+        if (record.status === "pending") {
+          return (
+            <div className="flex items-center gap-1.5">
+              <Tooltip title="Tasdiqlash (Saytda e'lon qilish)">
+                <button
+                  type="button"
+                  onClick={() => updateProductStatus({ id: record.id, status: "active" })}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-sm shadow-emerald-600/30 transition-all cursor-pointer"
                 >
-                  <a className="text-orange-500 hover:text-orange-400">
-                    {content}
-                  </a>
-                </Popconfirm>
-              ) : (
-                <a
-                  onClick={() => {
-                    setSelectedProductId(record.id);
-                    setIsTopModalOpen(true);
-                  }}
-                  className="text-blue-500 hover:underline cursor-pointer"
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Qabul</span>
+                </button>
+              </Tooltip>
+              <Tooltip title="Rad etish">
+                <button
+                  type="button"
+                  onClick={() => updateProductStatus({ id: record.id, status: "rejected" })}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 font-bold text-xs transition-all cursor-pointer"
                 >
-                  {content}
-                </a>
-              )}
+                  <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Rad</span>
+                </button>
+              </Tooltip>
             </div>
-          </Tooltip>
+          );
+        }
+        const cfg = STATUS_CONFIG[record.status] || STATUS_CONFIG.pending;
+        return (
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${cfg.bgColor} ${cfg.textColor}`}>
+            {cfg.icon}
+            <span>{cfg.label}</span>
+          </div>
         );
       },
     },
     {
-      title: "Muddati",
-      dataIndex: "topExpiresAt",
-      key: "topExpiresAt",
-      render: (expiresAt) => {
-        if (!expiresAt) return "N/A";
-
-        const now = dayjs();
-        const expires = dayjs(expiresAt);
-        const diffDays = expires.diff(now, "day");
-        const diffHours = expires.diff(now, "hour") % 24;
-        const diffMinutes = expires.diff(now, "minute") % 60;
-
-        let text = "";
-        if (expires.isAfter(now)) {
-          if (diffDays > 0) {
-            text = `${diffDays} kun, ${diffHours} soat qoldi`;
-          } else if (diffHours > 0) {
-            text = `${diffHours} soat, ${diffMinutes} daqiqa qoldi`;
-          } else if (diffMinutes > 0) {
-            text = `${diffMinutes} daqiqa qoldi`;
-          } else {
-            text = "Bir necha soniya qoldi";
-          }
-        } else {
-          text = "Muddati o'tgan";
+      title: "TOP & Boost",
+      key: "isTop",
+      width: 140,
+      render: (_, record) => {
+        if (record.isTop) {
+          return (
+            <div className="flex items-center gap-2">
+              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-extrabold text-[11px] shadow-sm shadow-orange-500/20">
+                <Flame className="w-3.5 h-3.5 fill-white text-white" />
+                <span>TOP VIP</span>
+              </div>
+              <Popconfirm
+                title="TOP dan olib tashlaysizmi?"
+                onConfirm={() =>
+                  updateProductTopStatus({ id: record.id, isTop: false, topExpiresAt: null })
+                }
+                okText="Ha"
+                cancelText="Bekor"
+              >
+                <button
+                  type="button"
+                  className="text-rose-500 hover:text-rose-700 text-xs font-bold underline cursor-pointer p-0"
+                >
+                  Bekor
+                </button>
+              </Popconfirm>
+            </div>
+          );
         }
-
         return (
-          <Tooltip title={dayjs(expiresAt).format("YYYY-MM-DD HH:mm")}>
-            <div className="truncate max-w-[90px]">{text}</div>
-          </Tooltip>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedProductId(record.id);
+              setIsTopModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-700 hover:text-amber-700 border border-slate-200 hover:border-amber-300 font-bold text-xs transition-all active:scale-95 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>TOP qilish</span>
+          </button>
         );
       },
     },
     {
       title: "Amallar",
       key: "actions",
+      width: 95,
       render: (_, record) => (
-        <div className="flex items-center space-x-2">
-          <Button
-            type="primary"
-            icon={<EyeOutlined />}
-            onClick={() => showViewModal(record.id)}
-            size="small"
-            title="To'liq ma'lumotni ko'rish"
-          />
+        <div className="flex items-center gap-1.5">
+          <Tooltip title="Batafsil ko'rish">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedProductId(record.id);
+                setIsViewModalOpen(true);
+              }}
+              className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+          </Tooltip>
+
           <Popconfirm
-            title={`Siz ID: ${record.id} bo'lgan mahsulotni o'chirishga ishonchingiz komilmi?`}
-            onConfirm={() => handleDelete(record.id)}
-            okText="Ha"
-            cancelText="Yo'q"
+            title="E'lonni o'chirishga ishonchingiz komilmi?"
+            description="O'chirilgach ma'lumotlar qayta tiklanmaydi."
+            onConfirm={() => deleteProduct(record.id)}
+            okText="Ha, o'chirish"
+            cancelText="Bekor"
+            okButtonProps={{ danger: true }}
           >
-            <Button type="primary" danger size="small" title="O'chirish">
-              O'chirish
-            </Button>
+            <Tooltip title="O'chirish">
+              <button
+                type="button"
+                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </Tooltip>
           </Popconfirm>
         </div>
       ),
     },
   ];
 
-  if (isError) {
-    return (
-      <div className="text-red-500 text-center py-4">
-        Mahsulotlarni yuklashda xatolik yuz berdi.
-      </div>
-    );
-  }
-
   return (
-    <div className="p-4">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <h1 className="text-2xl font-semibold" style={{ margin: 0 }}>Mahsulotlar Ro'yxati</h1>
-        <Popconfirm
-          title="Barcha mahsulot rasmlarini optimize qilish?"
-          description={
-            <div style={{ maxWidth: 280 }}>
-              <p style={{ margin: 0, fontSize: 12 }}>Barcha rasmlar bir xil o'lcham (max 1200×1200), WebP format va optimal sifatga keltiriladi.</p>
-              <p style={{ margin: "4px 0 0", fontSize: 12, color: "#888" }}>Past internet uchun ham tez ochilishi ta'minlanadi.</p>
+    <div className="flex flex-col gap-6">
+      {/* Top Header Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+        <div>
+          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <TagIcon className="w-4 h-4" />
             </div>
-          }
-          onConfirm={handleBulkOptimizeProductImages}
-          okText="Ha, optimize qil"
-          cancelText="Bekor"
-          disabled={isOptimizing}
-        >
-          <Button
-            icon={<ThunderboltOutlined />}
-            loading={isOptimizing}
-            style={{
-              background: isOptimizing ? undefined : "#fff7e6",
-              borderColor: "#fa8c16",
-              color: "#fa8c16"
-            }}
-          >
-            {isOptimizing ? `Optimize qilinmoqda... ${optimizeProgress}%` : "Rasmlarni Optimize"}
-          </Button>
-        </Popconfirm>
-      </div>
-      <Table
-        dataSource={productItems}
-        columnDefs={columns}
-        isLoading={isLoading}
-        page={currentPage}
-        pageSize={pageSize}
-        total={totalProducts}
-        setPage={setPage}
-        setPageSize={setPageSize}
-      />
+            E'lonlar & Moderatsiya Markazi
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Foydalanuvchilar joylagan e'lonlarni tekshirish, 1-klikda tasdiqlash va TOP statuslarini boshqarish.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Nomi, ID yoki sotuvchi..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all w-60"
+            />
+          </div>
 
-      {/* TOP qilish modali */}
-      <Modal
-        title="Mahsulotni Topga Chiqarish"
-        open={isTopModalOpen}
-        onOk={handleTopModalOk}
-        onCancel={handleTopModalCancel}
-        okText="Tasdiqlash"
-        cancelText="Bekor qilish"
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="topExpiresAt"
-            label="Top Tugash Sanasi"
-            rules={[
+          <Popconfirm
+            title="Barcha rasmlarni Bunny CDN ga optimize qilish?"
+            description="WebP formatiga o'tkaziladi va ilova yuklanishi 3 barobar tezlashadi."
+            onConfirm={handleBulkOptimizeProductImages}
+            okText="Ha, boshlash"
+            cancelText="Bekor"
+            disabled={isOptimizing}
+          >
+            <button
+              type="button"
+              disabled={isOptimizing}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+            >
+              <Zap className="w-4 h-4 text-amber-600 fill-amber-600" />
+              <span>{isOptimizing ? `Optimize... ${optimizeProgress}%` : "⚡ Rasmlarni Optimize"}</span>
+            </button>
+          </Popconfirm>
+        </div>
+      </div>
+
+      {/* KPI Cards Bar */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami E'lonlar</div>
+              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Barcha yuklangan e'lonlar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center">
+              <Layers className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                Moderatsiyada
+              </div>
+              <div className="text-2xl font-black text-amber-600 mt-1">{stats.pending} ta</div>
+              <div className="text-[11px] text-amber-600/70 mt-0.5">Tasdiqlash kutilmoqda</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Clock className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                Faol E'lonlar
+              </div>
+              <div className="text-2xl font-black text-emerald-600 mt-1">{stats.active} ta</div>
+              <div className="text-[11px] text-emerald-600/70 mt-0.5">Saytda ochiq sotuvda</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
+                TOP / VIP Boost
+              </div>
+              <div className="text-2xl font-black text-indigo-600 mt-1">{stats.top} ta</div>
+              <div className="text-[11px] text-indigo-600/70 mt-0.5">Yuqori o'rinda turganlar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Flame className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Main Table with Tabs */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col gap-4">
+        {/* Status Tabs */}
+        <div className="border-b border-slate-100 pb-2">
+          <Tabs
+            activeKey={statusTab}
+            onChange={(key) => setStatusTab(key)}
+            className="!m-0"
+            items={[
               {
-                required: true,
-                message: "Tugash sanasini tanlang!",
+                key: "all",
+                label: (
+                  <span className="font-bold flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-slate-500" />
+                    Barchasi ({totalProducts})
+                  </span>
+                ),
+              },
+              {
+                key: "pending",
+                label: (
+                  <span className="font-bold text-amber-600 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-amber-500" />
+                    Kutilmoqda ({stats.pending})
+                  </span>
+                ),
+              },
+              {
+                key: "active",
+                label: (
+                  <span className="font-bold text-emerald-600 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    Faol ({stats.active})
+                  </span>
+                ),
+              },
+              {
+                key: "top",
+                label: (
+                  <span className="font-bold text-indigo-600 flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 text-indigo-500" />
+                    TOP VIP ({stats.top})
+                  </span>
+                ),
+              },
+              {
+                key: "rejected",
+                label: (
+                  <span className="font-bold text-rose-600 flex items-center gap-1.5">
+                    <XCircle className="w-4 h-4 text-rose-500" />
+                    Rad etilganlar
+                  </span>
+                ),
               },
             ]}
+          />
+        </div>
+
+        <Table
+          dataSource={filteredItems}
+          columnDefs={columns}
+          isLoading={isLoading}
+          page={currentPage}
+          pageSize={pageSize}
+          total={totalProducts}
+          setPage={setPage}
+          setPageSize={setPageSize}
+        />
+      </div>
+
+      {/* TOP modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <Flame className="w-5 h-5 text-amber-500 fill-amber-500" />
+            <span className="font-extrabold text-slate-900">E'lonni TOP ga Chiqarish</span>
+          </div>
+        }
+        open={isTopModalOpen}
+        onOk={handleTopModalOk}
+        onCancel={() => {
+          setIsTopModalOpen(false);
+          form.resetFields();
+        }}
+        okText="TOP qilish"
+        cancelText="Bekor"
+        okButtonProps={{ className: "!bg-amber-500 !border-amber-500 font-bold" }}
+        className="!rounded-3xl"
+      >
+        <Form form={form} layout="vertical" className="mt-4">
+          <Form.Item
+            name="topExpiresAt"
+            label="TOP tugash muddati"
+            rules={[{ required: true, message: "Sanani tanlang!" }]}
           >
-            <DatePicker
-              showTime
-              format="YYYY-MM-DD HH:mm:ss"
-              style={{ width: "100%" }}
-            />
+            <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" className="w-full !rounded-xl h-11" />
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* To'liq ma'lumotlarni ko'rish modali */}
+      {/* Product Detail Modal */}
       <Modal
-        title="Mahsulot haqida to'liq ma'lumot"
+        title={
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <TagIcon className="w-4 h-4" />
+            </div>
+            <span className="font-black text-slate-900 text-base">
+              E'lon Tafsilotlari & Moderatsiya (ID #{selectedProductId})
+            </span>
+          </div>
+        }
         open={isViewModalOpen}
-        onCancel={handleViewModalCancel}
-        footer={null}
-        width={"90%"}
-        className="max-w-4xl top-0"
+        onCancel={() => {
+          setIsViewModalOpen(false);
+          setSelectedProductId(null);
+        }}
+        footer={
+          selectedProductData ? (
+            <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
+              <Popconfirm
+                title="E'lonni butunlay o'chirishga ishonchingiz komilmi?"
+                onConfirm={() => deleteProduct(selectedProductData.id)}
+                okText="Ha, o'chirish"
+                cancelText="Bekor"
+                okButtonProps={{ danger: true }}
+              >
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-600" />
+                  <span>O'chirish</span>
+                </button>
+              </Popconfirm>
+              <div className="flex gap-2">
+                {selectedProductData.status !== "active" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateProductStatus({ id: selectedProductData.id, status: "active" });
+                      setIsViewModalOpen(false);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition-all cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Tasdiqlash (Faol qilish)</span>
+                  </button>
+                )}
+                {selectedProductData.status !== "rejected" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateProductStatus({ id: selectedProductData.id, status: "rejected" });
+                      setIsViewModalOpen(false);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/30 transition-all cursor-pointer"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Rad etish</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : null
+        }
+        width={860}
+        className="!rounded-3xl"
       >
         {isSelectedProductLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <Spin size="large" tip="Ma'lumotlar yuklanmoqda..." />
+          <div className="flex justify-center items-center h-48">
+            <Spin size="large" />
           </div>
         ) : isSelectedProductError || !selectedProductData ? (
-          <div className="text-red-500 text-center py-4">
-            Mahsulot ma'lumotlarini yuklashda xatolik yuz berdi yoki topilmadi.
-          </div>
+          <div className="text-rose-500 text-center py-6">Ma'lumot topilmadi yoki xatolik yuz berdi.</div>
         ) : (
-          <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">
-              {selectedProductData.title}
-            </h2>
-            <Divider orientation="left">Umumiy ma'lumotlar</Divider>
-            <Descriptions bordered column={2} size="small">
-              <Descriptions.Item label="ID">
-                {selectedProductData.id}
-              </Descriptions.Item>
-              <Descriptions.Item label="Narx">
-                {selectedProductData.price} {selectedProductData.currencyType}
-              </Descriptions.Item>
-              <Descriptions.Item label="Kelishilgan narx">
-                {selectedProductData.negotiable ? "Ha" : "Yo'q"}
-              </Descriptions.Item>
-              <Descriptions.Item label="To'lov turi">
-                {selectedProductData.paymentType || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Kategoriya" span={2}>
-                {selectedProductData.category?.name || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Joylashuv" span={2}>
-                {selectedProductData.location || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Viloyat">
-                {selectedProductData.region?.name || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Tuman">
-                {selectedProductData.district?.name || "N/A"}
-              </Descriptions.Item>
-            </Descriptions>
-
-            <Divider orientation="left">Foydalanuvchi ma'lumotlari</Divider>
-            <Descriptions bordered column={2} size="small">
-              <Descriptions.Item label="Profil nomi" span={2}>
-                {selectedProductData.profile?.fullName ||
-                  selectedProductData.profile?.user?.username ||
-                  "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Aloqa" span={2}>
-                {selectedProductData.profile?.phone ||
-                  selectedProductData.profile?.user?.phone ||
-                  "N/A"}
-              </Descriptions.Item>
-            </Descriptions>
-
-            <Divider orientation="left">Statistika</Divider>
-            <Descriptions bordered column={3} size="small">
-              <Descriptions.Item label="Ko'rishlar soni">
-                {selectedProductData.viewCount || 0}
-              </Descriptions.Item>
-              <Descriptions.Item label="Yoqtirishlar soni">
-                {selectedProductData.likesCount || 0}
-              </Descriptions.Item>
-              <Descriptions.Item label="Izohlar soni">
-                {selectedProductData.commentsCount || 0}
-              </Descriptions.Item>
-            </Descriptions>
-
-            <Divider orientation="left">Holati va vaqt belgilari</Divider>
-            <Descriptions bordered column={2} size="small">
-              <Descriptions.Item label="Status">
-                <Tag
-                  color={STATUS_COLORS[selectedProductData.status] || "default"}
-                >
-                  {STATUS_LABELS[selectedProductData.status] ||
-                    selectedProductData.status ||
-                    "N/A"}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Nashr qilingan">
-                <Tag color={selectedProductData.isPublish ? "green" : "red"}>
-                  {selectedProductData.isPublish ? "Ha" : "Yo'q"}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Topda">
-                <Tag color={selectedProductData.isTop ? "orange" : "blue"}>
-                  {selectedProductData.isTop ? "Ha" : "Yo'q"}
-                </Tag>
-              </Descriptions.Item>
-              {selectedProductData.isTop && (
-                <Descriptions.Item label="Top muddati" span={2}>
-                  {dayjs(selectedProductData.topExpiresAt).format(
-                    "YYYY-MM-DD HH:mm:ss"
-                  )}
-                </Descriptions.Item>
-              )}
-              <Descriptions.Item label="Yaratilgan sana" span={2}>
-                {dayjs(selectedProductData.createdAt).format(
-                  "YYYY-MM-DD HH:mm:ss"
-                )}
-              </Descriptions.Item>
-              <Descriptions.Item label="Oxirgi yangilangan" span={2}>
-                {dayjs(selectedProductData.updatedAt).format(
-                  "YYYY-MM-DD HH:mm:ss"
-                )}
-              </Descriptions.Item>
-            </Descriptions>
-
-            {/* Tavsif - alohida joylashtirilishi yaxshiroq, chunki uzun bo'lishi mumkin */}
-            <Divider orientation="left">Tavsif</Divider>
-            <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
-              <p className="whitespace-pre-wrap">
-                {selectedProductData.description || "Tavsif mavjud emas."}
-              </p>
+          <div className="flex flex-col gap-5 pt-2">
+            {/* Header info */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row justify-between items-start gap-3">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 m-0">{selectedProductData.title}</h3>
+                <div className="text-xs text-slate-500 mt-1.5 flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-bold">
+                    <Layers className="w-3 h-3 text-purple-500" />
+                    {selectedProductData.category?.name || "Kategoriyasiz"}
+                  </span>
+                  <span>•</span>
+                  <span className="inline-flex items-center gap-1 text-slate-600 font-medium">
+                    <MapPin className="w-3 h-3 text-slate-400" />
+                    {selectedProductData.location || "O'zbekiston"}
+                  </span>
+                </div>
+              </div>
+              <div className="text-left sm:text-right">
+                <div className="text-2xl font-black text-emerald-600">
+                  {Number(selectedProductData.price || 0).toLocaleString("uz-UZ")} {selectedProductData.currencyType}
+                </div>
+                <div className="mt-1">
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${STATUS_CONFIG[selectedProductData.status]?.bgColor || "bg-slate-50"} ${STATUS_CONFIG[selectedProductData.status]?.textColor || "text-slate-700"}`}>
+                    {STATUS_CONFIG[selectedProductData.status]?.icon}
+                    <span>{STATUS_CONFIG[selectedProductData.status]?.label || selectedProductData.status}</span>
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {selectedProductData.images &&
-              selectedProductData.images.length > 0 && (
-                <>
-                  <Divider orientation="left">Rasmlar</Divider>
-                  <div className="flex flex-wrap gap-2 mt-2 justify-center">
-                    {selectedProductData.images.map((image, index) => (
-                      <img
-                        key={image.id || index}
-                        src={image.url}
-                        alt={`Product image ${index + 1}`}
-                        className="w-32 h-32 object-cover rounded-md shadow-md hover:scale-105 transition-transform duration-200"
+            {/* Photos Lightbox Gallery */}
+            {selectedProductData.images?.length > 0 && (
+              <div>
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-indigo-500" />
+                  Yuklangan Rasmlar Galereyasi ({selectedProductData.images.length} ta)
+                </div>
+                <div className="flex gap-2.5 overflow-x-auto pb-2">
+                  <Image.PreviewGroup>
+                    {selectedProductData.images.map((img, idx) => (
+                      <Image
+                        key={idx}
+                        src={img.url}
+                        width={110}
+                        height={110}
+                        className="!rounded-2xl !object-cover border border-slate-200 shadow-xs cursor-pointer hover:opacity-90 transition-opacity"
                       />
                     ))}
-                  </div>
-                </>
-              )}
+                  </Image.PreviewGroup>
+                </div>
+              </div>
+            )}
 
-            {selectedProductData.productProperties &&
-              selectedProductData.productProperties.length > 0 && (
-                <>
-                  <Divider orientation="left">Xususiyatlar</Divider>
-                  <Descriptions bordered column={1} size="small">
-                    {selectedProductData.productProperties.map(
-                      (prop, index) => (
-                        <Descriptions.Item
-                          key={index}
-                          label={prop.property?.name || "N/A"}
-                        >
-                          {prop.value}
-                        </Descriptions.Item>
-                      )
-                    )}
-                  </Descriptions>
-                </>
-              )}
+            {/* Description */}
+            <div>
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">E'lon Tavsifi</div>
+              <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                {selectedProductData.description || "Tavsif berilmagan."}
+              </div>
+            </div>
+
+            {/* Seller info */}
+            <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <Avatar className="bg-indigo-600 text-white font-bold" size={40}>
+                  {(selectedProductData.profile?.fullName || selectedProductData.profile?.user?.username || "U")[0]?.toUpperCase()}
+                </Avatar>
+                <div>
+                  <div className="font-extrabold text-slate-900 text-sm">
+                    {selectedProductData.profile?.fullName || selectedProductData.profile?.user?.username || "Noma'lum sotuvchi"}
+                  </div>
+                  <div className="text-xs text-slate-500 font-mono">
+                    {selectedProductData.profile?.phone || selectedProductData.profile?.user?.phone || "Tel yo'q"}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-xs font-semibold text-slate-600">
+                <span className="flex items-center gap-1">
+                  <Eye className="w-4 h-4 text-slate-400" /> {selectedProductData.viewCount || 0} ko'rish
+                </span>
+                <span className="flex items-center gap-1">
+                  <Heart className="w-4 h-4 text-rose-500 fill-rose-500" /> {selectedProductData.likesCount || 0} yoqdi
+                </span>
+                <span className="flex items-center gap-1 text-slate-400 font-mono">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {dayjs(selectedProductData.createdAt).format("YYYY-MM-DD HH:mm")}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </Modal>

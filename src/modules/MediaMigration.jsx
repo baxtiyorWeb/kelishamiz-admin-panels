@@ -1,12 +1,24 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Button, Card, Progress, Tag, Modal, Alert } from "antd";
+import { Button, Progress, Tag, Modal, Alert, Row, Col, Tooltip } from "antd";
 import {
-  CloudSyncOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  LoadingOutlined,
-  SyncOutlined,
-} from "@ant-design/icons";
+  CloudUpload,
+  HardDrive,
+  Terminal,
+  Trash2,
+  Zap,
+  CheckCircle2,
+  AlertTriangle,
+  Play,
+  RotateCcw,
+  Sparkles,
+  Server,
+  Activity,
+  Layers,
+  Copy,
+  Check,
+  Radio,
+  FileCheck,
+} from "lucide-react";
 import api from "../config/auth/api";
 
 export default function MediaMigration() {
@@ -22,6 +34,7 @@ export default function MediaMigration() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const logsEndRef = useRef(null);
 
   const fetchStatus = async () => {
@@ -58,12 +71,22 @@ export default function MediaMigration() {
 
   const handleStartMigration = () => {
     Modal.confirm({
-      title: "Bunny CDN ga Rasmlarni Ko'chirish",
-      content:
-        "Barcha mahsulotlar, bannerlar, kategoriyalar va profillardagi Vercel/tashqi rasmlar Bunny CDN ga xavfsiz o'tkaziladi hamda ma'lumotlar bazasidagi URL lar almashtiriladi. Davom ettirasizmi?",
+      title: (
+        <div className="flex items-center gap-2">
+          <CloudUpload className="w-5 h-5 text-indigo-600" />
+          <span className="font-black text-slate-900">Bunny CDN ga Rasmlarni Ko'chirish</span>
+        </div>
+      ),
+      content: (
+        <div className="py-2 text-xs text-slate-600 leading-relaxed">
+          Barcha mahsulotlar, bannerlar, kategoriyalar va profillardagi tashqi/mahalliy rasmlar <strong>Bunny CDN</strong> ga xavfsiz o'tkaziladi hamda ma'lumotlar bazasidagi URL lar avtomatik almashtiriladi.
+        </div>
+      ),
       okText: "Ha, Boshlash",
-      cancelText: "Bekor Qilish",
-      okType: "primary",
+      cancelText: "Bekor",
+      okButtonProps: { className: "!bg-indigo-600 !border-indigo-600 font-bold !rounded-xl" },
+      cancelButtonProps: { className: "!rounded-xl font-semibold" },
+      className: "!rounded-3xl",
       onOk: async () => {
         setLoading(true);
         try {
@@ -80,18 +103,28 @@ export default function MediaMigration() {
 
   const handleCleanOrphans = () => {
     Modal.confirm({
-      title: "Keraksiz (Orphan) Rasmlarni Tozalash",
-      content:
-        "Bunny Storage da saqlangan, lekin bazada (mahsulot, banner, kategoriya yoki profilda) hech qayerda ishlatilmayotgan eskirgan va ortiqcha rasmlar o'chiriladi. Xotirani tozalashni tasdiqlaysizmi?",
+      title: (
+        <div className="flex items-center gap-2">
+          <Trash2 className="w-5 h-5 text-rose-600" />
+          <span className="font-black text-slate-900">Keraksiz (Orphan) Rasmlarni Tozalash</span>
+        </div>
+      ),
+      content: (
+        <div className="py-2 text-xs text-slate-600 leading-relaxed">
+          Bunny Storage da saqlangan, lekin bazada (mahsulot, banner, kategoriya yoki profilda) hech qayerda ishlatilmayotgan eskirgan va ortiqcha fayllar xavfsiz tozalanadi.
+        </div>
+      ),
       okText: "Ha, Tozalash",
-      cancelText: "Bekor Qilish",
-      okType: "danger",
+      cancelText: "Bekor",
+      okButtonProps: { danger: true, className: "!rounded-xl font-bold" },
+      cancelButtonProps: { className: "!rounded-xl font-semibold" },
+      className: "!rounded-3xl",
       onOk: async () => {
         setLoading(true);
         try {
           const res = await api.post("/file/clean-orphans");
           const msg = res.data?.message || "Orphan rasmlar tozalandi!";
-          Modal.success({ title: "Natija", content: msg });
+          Modal.success({ title: "Tozalash Natijasi", content: msg, className: "!rounded-3xl" });
           await fetchStatus();
         } catch (err) {
           console.error("Clean error:", err);
@@ -102,167 +135,232 @@ export default function MediaMigration() {
     });
   };
 
+  const handleCopyLogs = () => {
+    const text = status.logs.join("\n");
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+    <div className="flex flex-col gap-6">
+      {/* Top Header Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-            <CloudSyncOutlined className="text-indigo-600 text-3xl" />
-            Bunny CDN Media Migratsiyasi
+          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <CloudUpload className="w-4 h-4" />
+            </div>
+            Bunny CDN Media Migratsiya Markazi
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Barcha Vercel/tashqi rasmlarni Bunny.net Storage & Pull Zone ga xavfsiz va rate limit siz avto-ko'chirish
+          <p className="text-xs text-slate-500 mt-1">
+            Barcha tashqi va mahalliy media fayllarni Bunny.net bulutli xotirasiga o'tkazish hamda Sharp WebP konversiyasi.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            danger
-            size="large"
-            loading={loading}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            disabled={loading || status.isRunning}
             onClick={handleCleanOrphans}
-            style={{
-              height: "46px",
-              paddingHorizontal: "20px",
-              borderRadius: "10px",
-              fontWeight: "600",
-            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition-all cursor-pointer disabled:opacity-50"
           >
-            Keraksiz Rasmlarni Tozalash
-          </Button>
-          <Button
-            type="primary"
-            size="large"
-            icon={status.isRunning ? <LoadingOutlined /> : <CloudSyncOutlined />}
-            loading={loading || status.isRunning}
+            <Trash2 className="w-4 h-4 text-rose-600" />
+            <span>Ortiqcha Fayllarni Tozalash</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={loading || status.isRunning}
             onClick={handleStartMigration}
-            style={{
-              backgroundColor: status.isRunning ? "#faad14" : "#6345ED",
-              height: "46px",
-              paddingHorizontal: "24px",
-              borderRadius: "10px",
-              fontWeight: "600",
-            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
           >
-            {status.isRunning ? "Migratsiya Bajarilmoqda..." : "Migratsiyani Boshlash"}
-          </Button>
+            <CloudUpload className="w-4 h-4" />
+            <span>{status.isRunning ? "Migratsiya Bajarilmoqda..." : "Migratsiyani Boshlash"}</span>
+          </button>
         </div>
       </div>
 
-      <Alert
-        message="Muhim Eslatma"
-        description="Jarayon fonda xavfsiz va tezkor ishlaydi (har bir rasm WebP formatga Sharp orqali siqilib, Bunny CDN ga yuboriladi va DB avtomatik yangilanadi). Sahifani yopishingiz ham mumkin."
-        type="info"
-        showIcon
-        className="rounded-xl border border-indigo-100 bg-indigo-50/50"
-      />
+      {/* KPI Cards Bar */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aniqlangan Fayllar</div>
+              <div className="text-2xl font-black text-slate-900 mt-1">{status.total} ta</div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Baza bo'yicha media resurslar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <HardDrive className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
 
-      {/* Progress Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="rounded-xl border border-gray-100 shadow-sm">
-          <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-            Jami Rasmlar
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                Ko'chirildi (WebP)
+              </div>
+              <div className="text-2xl font-black text-emerald-600 mt-1">{status.success} ta</div>
+              <div className="text-[11px] text-emerald-600/70 mt-0.5">Bunny CDN da joylandi</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
           </div>
-          <div className="text-3xl font-extrabold text-gray-900 mt-2">
-            {status.total}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">Ko'chirilishi kerak</div>
-        </Card>
+        </Col>
 
-        <Card className="rounded-xl border border-gray-100 shadow-sm">
-          <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-            Bajarildi
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1">
+                Xatoliklar
+              </div>
+              <div className="text-2xl font-black text-rose-600 mt-1">{status.failed} ta</div>
+              <div className="text-[11px] text-rose-600/70 mt-0.5">Qayta urinish talab etiladi</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
           </div>
-          <div className="text-3xl font-extrabold text-indigo-600 mt-2">
-            {status.processed} / {status.total}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">Qayta ishlangan</div>
-        </Card>
+        </Col>
 
-        <Card className="rounded-xl border border-gray-100 shadow-sm">
-          <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-            Muvaffaqiyatli
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
+                Joriy Bosqich
+              </div>
+              <div className="text-lg font-black text-purple-600 mt-1 uppercase truncate max-w-[150px]">
+                {status.currentSection}
+              </div>
+              <div className="text-[11px] text-purple-600/70 mt-0.5">
+                {status.isRunning ? "Faol yuklanmoqda" : "Kutish holati"}
+              </div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
+              <Activity className="w-6 h-6" />
+            </div>
           </div>
-          <div className="text-3xl font-extrabold text-green-600 mt-2 flex items-center gap-2">
-            {status.success}
-            <CheckCircleOutlined className="text-xl" />
-          </div>
-          <div className="text-xs text-green-600 mt-1">Bunny CDN ga yozildi</div>
-        </Card>
+        </Col>
+      </Row>
 
-        <Card className="rounded-xl border border-gray-100 shadow-sm">
-          <div className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-            Xatoliklar
-          </div>
-          <div className="text-3xl font-extrabold text-red-500 mt-2 flex items-center gap-2">
-            {status.failed}
-            <CloseCircleOutlined className="text-xl" />
-          </div>
-          <div className="text-xs text-red-500 mt-1">O'tkazib yuborilgan</div>
-        </Card>
-      </div>
-
-      {/* Progress Bar & Current Section */}
-      <Card className="rounded-xl border border-gray-100 shadow-sm space-y-4">
+      {/* Progress Card */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col gap-4">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <span className="font-semibold text-gray-700">Jarayon Holati:</span>
-            <Tag color={status.isRunning ? "processing" : status.progressPercent === 100 ? "success" : "default"}>
-              {status.isRunning && <SyncOutlined spin className="mr-1" />}
-              {status.currentSection}
-            </Tag>
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-800 m-0 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-amber-500" />
+              Migratsiya Jarayoni Holati
+            </h2>
+            <div className="text-xs text-slate-400 mt-0.5">
+              {status.processed} / {status.total} ta fayl qayta ishlandi ({status.progressPercent}%)
+            </div>
           </div>
-          <span className="text-2xl font-black text-indigo-600">
-            {status.progressPercent}%
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+              status.isRunning
+                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            <Radio className={`w-3.5 h-3.5 ${status.isRunning ? "text-amber-500 animate-pulse" : "text-slate-400"}`} />
+            <span>{status.isRunning ? "Jarayon Bajarilmoqda" : "IDLE — Kutish"}</span>
           </span>
         </div>
 
         <Progress
           percent={status.progressPercent}
-          status={status.isRunning ? "active" : status.failed > 0 ? "normal" : "success"}
           strokeColor={{
             "0%": "#6345ED",
             "100%": "#10B981",
           }}
-          strokeWidth={14}
-          style={{ padding: "4px 0" }}
+          size={["100%", 12]}
+          className="!m-0"
         />
-      </Card>
 
-      {/* Live Logs Terminal Viewer */}
-      <Card
-        title={
-          <div className="flex items-center gap-2 text-gray-800">
-            <span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
-            <span className="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span>
-            <span className="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
-            <span className="ml-2 font-mono text-sm font-semibold">Real-Vaqt Konsol Jurnali (Live Logs)</span>
+        {/* Steps Breadcrumb */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs">
+              1
+            </div>
+            <div className="text-xs font-bold text-slate-700">Fayllarni aniqlash</div>
           </div>
-        }
-        className="rounded-xl border border-gray-900 bg-gray-950 shadow-md text-gray-200"
-        bodyStyle={{ padding: "16px" }}
-      >
-        <div className="font-mono text-xs text-green-400 bg-gray-900 p-4 rounded-lg h-72 overflow-y-auto space-y-1 border border-gray-800">
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs">
+              2
+            </div>
+            <div className="text-xs font-bold text-slate-700">Sharp WebP Siqish</div>
+          </div>
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs">
+              3
+            </div>
+            <div className="text-xs font-bold text-slate-700">BunnyCDN Joylash</div>
+          </div>
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xs">
+              4
+            </div>
+            <div className="text-xs font-bold text-slate-700">DB URL Yangilash</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Cyberpunk Live Terminal Console */}
+      <div className="bg-slate-950 rounded-3xl border border-slate-800 shadow-2xl p-5 flex flex-col gap-3 overflow-hidden text-slate-300">
+        <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-rose-500/80" />
+              <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+              <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+            </div>
+            <span className="font-mono text-xs text-slate-400 font-bold ml-2 flex items-center gap-1.5">
+              <Terminal className="w-3.5 h-3.5 text-indigo-400" />
+              migration-stream.log
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleCopyLogs}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs transition-all cursor-pointer"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? "Nusxalandi" : "Nusxalash"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Stream output */}
+        <div className="font-mono text-xs space-y-1.5 overflow-y-auto max-h-[320px] pr-2 scrollbar-thin scrollbar-thumb-slate-800">
           {status.logs.length === 0 ? (
-            <div className="text-gray-500 italic">Hali loglar yo'q. Jarayonni boshlash uchun tugmani bosing.</div>
+            <div className="text-slate-600 italic py-6 text-center">
+              Terminal kutish holatida. "Migratsiyani Boshlash" tugmasini bosing.
+            </div>
           ) : (
-            status.logs.map((log, index) => (
-              <div
-                key={index}
-                className={
-                  log.includes("CRITICAL") || log.includes("✗") || log.includes("xatolik")
-                    ? "text-red-400"
-                    : log.includes("✓") || log.includes("muvaffaqiyatli")
-                    ? "text-emerald-400 font-semibold"
-                    : "text-gray-300"
-                }
-              >
-                {log}
-              </div>
-            ))
+            status.logs.map((log, index) => {
+              const isSuccess = log.includes("✅") || log.includes("Success");
+              const isError = log.includes("❌") || log.includes("Error") || log.includes("Failed");
+              return (
+                <div
+                  key={index}
+                  className={`leading-relaxed ${
+                    isSuccess ? "text-emerald-400" : isError ? "text-rose-400 font-bold" : "text-slate-300"
+                  }`}
+                >
+                  <span className="text-slate-600 mr-2">[{index + 1}]</span>
+                  {log}
+                </div>
+              );
+            })
           )}
           <div ref={logsEndRef} />
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

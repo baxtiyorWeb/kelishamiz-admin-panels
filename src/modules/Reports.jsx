@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import api from '../config/auth/api';
+import React, { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import api from "../config/auth/api";
 import {
   Table,
   Button,
@@ -22,77 +22,79 @@ import {
   Row,
   Col,
   Alert,
-} from 'antd';
+} from "antd";
 import {
-  AlertOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  EyeOutlined,
-  ReloadOutlined,
-  UserOutlined,
-  ShopOutlined,
-  TagsOutlined,
-  MessageOutlined,
-  CommentOutlined,
-  ClockCircleOutlined,
-  SyncOutlined,
-  LinkOutlined,
-  SendOutlined,
-  StopOutlined,
-  SafetyCertificateOutlined,
-  ExclamationCircleOutlined,
-  NotificationOutlined,
-} from '@ant-design/icons';
-import dayjs from 'dayjs';
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  RefreshCw,
+  User,
+  Store,
+  Tag as TagIcon,
+  MessageSquare,
+  Clock,
+  ExternalLink,
+  Send,
+  Ban,
+  ShieldAlert,
+  Search,
+  FileText,
+  Sparkles,
+  Layers,
+  Check,
+  RotateCcw,
+} from "lucide-react";
+import dayjs from "dayjs";
 
 const { Option } = Select;
 const { TextArea } = Input;
 
 const STATUS_CONFIG = {
   PENDING: {
-    color: 'warning',
-    icon: <ClockCircleOutlined />,
-    label: 'Kutilmoqda (Pending)',
+    bg: "bg-amber-50 text-amber-700 border-amber-200",
+    icon: <Clock className="w-3.5 h-3.5 text-amber-500 animate-pulse" />,
+    label: "Kutilmoqda",
   },
   REVIEWING: {
-    color: 'processing',
-    icon: <SyncOutlined spin />,
-    label: 'Ko‘rib chiqilmoqda',
+    bg: "bg-blue-50 text-blue-700 border-blue-200",
+    icon: <RotateCcw className="w-3.5 h-3.5 text-blue-500 animate-spin" />,
+    label: "Ko'rib chiqilmoqda",
   },
   RESOLVED: {
-    color: 'success',
-    icon: <CheckCircleOutlined />,
-    label: 'Hal qilingan (Resolved)',
+    bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />,
+    label: "Hal qilingan",
   },
   REJECTED: {
-    color: 'error',
-    icon: <CloseCircleOutlined />,
-    label: 'Rad etilgan (Rejected)',
+    bg: "bg-rose-50 text-rose-700 border-rose-200",
+    icon: <XCircle className="w-3.5 h-3.5 text-rose-500" />,
+    label: "Rad etilgan",
   },
 };
 
 const PRIORITY_CONFIG = {
-  CRITICAL: { color: '#ff4d4f', label: 'CRITICAL' },
-  HIGH: { color: '#fa8c16', label: 'HIGH' },
-  NORMAL: { color: '#1890ff', label: 'NORMAL' },
-  LOW: { color: '#8c8c8c', label: 'LOW' },
+  CRITICAL: { bg: "bg-rose-600 text-white font-black", label: "CRITICAL" },
+  HIGH: { bg: "bg-amber-500 text-white font-extrabold", label: "HIGH" },
+  NORMAL: { bg: "bg-indigo-50 text-indigo-700 border-indigo-200 font-bold", label: "NORMAL" },
+  LOW: { bg: "bg-slate-100 text-slate-600 font-medium", label: "LOW" },
 };
 
 const RESOLUTION_TEMPLATES = [
-  'Chora ko‘rildi va qoidabuzarlik bartaraf etildi.',
-  'Foydalanuvchi ogohlantirildi va qoidalar eslatildi.',
-  'Qoidabuzar e‘lon yoki akkaunt bloklandi.',
-  'Asossiz shikoyat sifatida rad etildi.',
-  'Spam yoki takroriy shikoyat.',
+  "Chora ko‘rildi va qoidabuzarlik bartaraf etildi.",
+  "Foydalanuvchi ogohlantirildi va qoidalar eslatildi.",
+  "Qoidabuzar e‘lon yoki akkaunt bloklandi.",
+  "Asossiz shikoyat sifatida rad etildi.",
+  "Spam yoki takroriy shikoyat.",
 ];
 
 const Reports = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [statusFilter, setStatusFilter] = useState('');
-  const [targetTypeFilter, setTargetTypeFilter] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [targetTypeFilter, setTargetTypeFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -106,40 +108,40 @@ const Reports = () => {
   const [selectedUserForAction, setSelectedUserForAction] = useState(null);
 
   // Resolve form states
-  const [targetStatus, setTargetStatus] = useState('RESOLVED');
-  const [notes, setNotes] = useState('');
+  const [targetStatus, setTargetStatus] = useState("RESOLVED");
+  const [notes, setNotes] = useState("");
   const [notifyReporter, setNotifyReporter] = useState(true);
-  const [reporterMessage, setReporterMessage] = useState('');
+  const [reporterMessage, setReporterMessage] = useState("");
   const [notifyTarget, setNotifyTarget] = useState(false);
-  const [targetMessage, setTargetMessage] = useState('');
-  const [targetModerationAction, setTargetModerationAction] = useState('NONE');
+  const [targetMessage, setTargetMessage] = useState("");
+  const [targetModerationAction, setTargetModerationAction] = useState("NONE");
   const [moderationDurationHours, setModerationDurationHours] = useState(24);
-  const [moderationReason, setModerationReason] = useState('');
+  const [moderationReason, setModerationReason] = useState("");
 
   // Direct Message Modal states
   const [directMessageUserId, setDirectMessageUserId] = useState(null);
-  const [directMessageUserName, setDirectMessageUserName] = useState('');
-  const [directMessageTitle, setDirectMessageTitle] = useState('Kelishamiz.uz Xabarnomasi');
-  const [directMessageBody, setDirectMessageBody] = useState('');
+  const [directMessageUserName, setDirectMessageUserName] = useState("");
+  const [directMessageTitle, setDirectMessageTitle] = useState("Kelishamiz.uz Xabarnomasi");
+  const [directMessageBody, setDirectMessageBody] = useState("");
 
   // Standalone Moderation Modal states
   const [modIsBlocked, setModIsBlocked] = useState(false);
-  const [modBlockDuration, setModBlockDuration] = useState('24h');
-  const [modBanReason, setModBanReason] = useState('');
+  const [modBlockDuration, setModBlockDuration] = useState("24h");
+  const [modBanReason, setModBanReason] = useState("");
   const [modIsSpam, setModIsSpam] = useState(false);
-  const [modSpamDuration, setModSpamDuration] = useState('24h');
-  const [modSpamReason, setModSpamReason] = useState('');
+  const [modSpamDuration, setModSpamDuration] = useState("24h");
+  const [modSpamReason, setModSpamReason] = useState("");
   const [modSendNotification, setModSendNotification] = useState(true);
-  const [modNotificationMessage, setModNotificationMessage] = useState('');
+  const [modNotificationMessage, setModNotificationMessage] = useState("");
 
   const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ['adminReports', page, pageSize, statusFilter],
+    queryKey: ["adminReports", page, pageSize, statusFilter],
     queryFn: async () => {
-      const res = await api.get('/admin/reports', {
+      const res = await api.get("/admin/reports", {
         params: {
           page,
           limit: pageSize,
-          ...(statusFilter ? { status: statusFilter } : {}),
+          ...(statusFilter !== "all" ? { status: statusFilter } : {}),
         },
       });
       return res.data?.content || res.data;
@@ -155,19 +157,34 @@ const Reports = () => {
 
   const totalReports = data?.total || data?.content?.total || rawReports.length;
 
+  // Stats calculation
+  const stats = useMemo(() => {
+    const total = totalReports;
+    const pending = rawReports.filter((r) => r.status === "PENDING" || !r.status).length;
+    const resolved = rawReports.filter((r) => r.status === "RESOLVED").length;
+    const critical = rawReports.filter((r) => r.priority === "CRITICAL" || r.priority === "HIGH").length;
+
+    return {
+      total,
+      pending,
+      resolved,
+      critical,
+    };
+  }, [rawReports, totalReports]);
+
   const filteredReports = useMemo(() => {
     return rawReports.filter((report) => {
-      if (targetTypeFilter && report.targetType !== targetTypeFilter) {
+      if (targetTypeFilter !== "all" && report.targetType !== targetTypeFilter) {
         return false;
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const reason = (report.reason || '').toLowerCase();
-        const desc = (report.description || '').toLowerCase();
-        const reporterName = (report.reporter?.username || '').toLowerCase();
-        const reporterPhone = (report.reporter?.phone || '').toLowerCase();
-        const targetId = String(report.targetId || '').toLowerCase();
-        const notesText = (report.resolutionNotes || '').toLowerCase();
+        const reason = (report.reason || "").toLowerCase();
+        const desc = (report.description || "").toLowerCase();
+        const reporterName = (report.reporter?.username || "").toLowerCase();
+        const reporterPhone = (report.reporter?.phone || "").toLowerCase();
+        const targetId = String(report.targetId || "").toLowerCase();
+        const notesText = (report.resolutionNotes || "").toLowerCase();
 
         return (
           reason.includes(q) ||
@@ -189,15 +206,15 @@ const Reports = () => {
       return res.data;
     },
     onSuccess: () => {
-      message.success('Shikoyat ko‘rib chiqildi va xabarnomalar yuborildi!');
+      message.success("Shikoyat ko‘rib chiqildi va chora ko'rildi!");
       setResolveModalVisible(false);
       setDetailModalVisible(false);
       setSelectedReport(null);
-      queryClient.invalidateQueries({ queryKey: ['adminReports'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ["adminReports"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (err) => {
-      const errorMsg = err?.response?.data?.message || 'Shikoyatni yangilashda xatolik yuz berdi';
+      const errorMsg = err?.response?.data?.message || "Shikoyatni yangilashda xatolik yuz berdi";
       message.error(errorMsg);
     },
   });
@@ -205,7 +222,7 @@ const Reports = () => {
   // Mutation: Send Direct Message
   const directMessageMutation = useMutation({
     mutationFn: async ({ userId, title, message: msgText }) => {
-      const res = await api.post('/admin/reports/send-message', {
+      const res = await api.post("/admin/reports/send-message", {
         userId,
         title,
         message: msgText,
@@ -213,12 +230,12 @@ const Reports = () => {
       return res.data;
     },
     onSuccess: () => {
-      message.success('Foydalanuvchiga xabarnoma muvaffaqiyatli yuborildi!');
+      message.success("Foydalanuvchiga xabarnoma muvaffaqiyatli yuborildi!");
       setMessageModalVisible(false);
-      setDirectMessageBody('');
+      setDirectMessageBody("");
     },
     onError: (err) => {
-      const errorMsg = err?.response?.data?.message || 'Xabarnomani yuborishda xatolik yuz berdi';
+      const errorMsg = err?.response?.data?.message || "Xabarnomani yuborishda xatolik yuz berdi";
       message.error(errorMsg);
     },
   });
@@ -230,14 +247,14 @@ const Reports = () => {
       return res.data;
     },
     onSuccess: () => {
-      message.success('Foydalanuvchi intizomiy holati yangilandi!');
+      message.success("Foydalanuvchi intizomiy holati yangilandi!");
       setModerationModalVisible(false);
       setSelectedUserForAction(null);
-      queryClient.invalidateQueries({ queryKey: ['adminReports'] });
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ["adminReports"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (err) => {
-      const errorMsg = err?.response?.data?.message || 'Foydalanuvchi holatini yangilashda xatolik yuz berdi';
+      const errorMsg = err?.response?.data?.message || "Foydalanuvchi holatini yangilashda xatolik yuz berdi";
       message.error(errorMsg);
     },
   });
@@ -247,27 +264,27 @@ const Reports = () => {
     setTargetStatus(st);
 
     const defaultNotes =
-      st === 'RESOLVED'
-        ? 'Chora ko‘rildi va qoidabuzarlik bartaraf etildi.'
-        : st === 'REJECTED'
-        ? 'Asossiz shikoyat sifatida rad etildi.'
-        : 'Moderator ko‘rib chiqishni boshladi.';
+      st === "RESOLVED"
+        ? "Chora ko‘rildi va qoidabuzarlik bartaraf etildi."
+        : st === "REJECTED"
+        ? "Asossiz shikoyat sifatida rad etildi."
+        : "Moderator ko‘rib chiqishni boshladi.";
     setNotes(report.resolutionNotes || defaultNotes);
 
     setNotifyReporter(true);
     setReporterMessage(
-      st === 'RESOLVED'
-        ? `Sizning #${report.id}-raqamli shikoyatingiz ko‘rib chiqildi va zarur choralar ko‘rildi. Kelishamiz.uz platformasi xavfsizligini ta'minlashda yordamingiz uchun rahmat!`
-        : `Sizning #${report.id}-raqamli shikoyatingiz ko‘rib chiqildi va asoslar yetarli bo'lmagani sababli rad etildi.`,
+      st === "RESOLVED"
+        ? `Sizning #${report.id}-raqamli shikoyatingiz ko‘rib chiqildi va zarur choralar ko‘rildi. Kelishamiz.uz xavfsizligini ta'minlashda yordamingiz uchun rahmat!`
+        : `Sizning #${report.id}-raqamli shikoyatingiz ko‘rib chiqildi va asoslar yetarli bo'lmagani sababli rad etildi.`
     );
 
-    const isUserTarget = report.targetType === 'USER' || report.targetType === 'CHAT_USER';
-    setNotifyTarget(isUserTarget && st === 'RESOLVED');
+    const isUserTarget = report.targetType === "USER" || report.targetType === "CHAT_USER";
+    setNotifyTarget(isUserTarget && st === "RESOLVED");
     setTargetMessage(
-      'Sizning profilingiz yuzasidan foydalanuvchilar tomonidan shikoyat kelib tushdi. Iltimos, xizmat ko‘rsatish va xavfsizlik qoidalariga amal qiling.',
+      "Sizning profilingiz yuzasidan foydalanuvchilar tomonidan shikoyat kelib tushdi. Iltimos, xizmat ko‘rsatish va xavfsizlik qoidalariga amal qiling."
     );
 
-    setTargetModerationAction('NONE');
+    setTargetModerationAction("NONE");
     setModerationDurationHours(24);
     setModerationReason(defaultNotes);
 
@@ -279,32 +296,11 @@ const Reports = () => {
     setDetailModalVisible(true);
   };
 
-  const openDirectMessageModal = (userId, userName, defaultText = '') => {
-    setDirectMessageUserId(userId);
-    setDirectMessageUserName(userName || `Foydalanuvchi #${userId}`);
-    setDirectMessageTitle('Kelishamiz.uz Xabarnomasi');
-    setDirectMessageBody(defaultText);
-    setMessageModalVisible(true);
-  };
-
-  const openUserModerationModal = (userId, userName, currentBlocked = false, currentSpam = false) => {
-    setSelectedUserForAction({ id: userId, username: userName });
-    setModIsBlocked(currentBlocked);
-    setModBlockDuration('24h');
-    setModBanReason('');
-    setModIsSpam(currentSpam);
-    setModSpamDuration('24h');
-    setModSpamReason('');
-    setModSendNotification(true);
-    setModNotificationMessage('Hisobingiz bo‘yicha moderatsiya cheklovi o‘rnatildi.');
-    setModerationModalVisible(true);
-  };
-
   const handleResolveSubmit = () => {
     if (!selectedReport) return;
 
     let targetUserId = undefined;
-    if (selectedReport.targetType === 'USER' || selectedReport.targetType === 'CHAT_USER') {
+    if (selectedReport.targetType === "USER" || selectedReport.targetType === "CHAT_USER") {
       const parsed = Number(selectedReport.targetId);
       if (!isNaN(parsed) && parsed > 0) {
         targetUserId = parsed;
@@ -328,439 +324,370 @@ const Reports = () => {
     });
   };
 
-  const handleModerationSubmit = () => {
-    if (!selectedUserForAction?.id) return;
-
-    let blockedUntil = null;
-    if (modIsBlocked) {
-      if (modBlockDuration === '24h') blockedUntil = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
-      else if (modBlockDuration === '3d') blockedUntil = new Date(Date.now() + 72 * 3600 * 1000).toISOString();
-      else if (modBlockDuration === '7d') blockedUntil = new Date(Date.now() + 168 * 3600 * 1000).toISOString();
-      else if (modBlockDuration === '30d') blockedUntil = new Date(Date.now() + 720 * 3600 * 1000).toISOString();
-      else if (modBlockDuration === 'permanent') blockedUntil = null;
-    }
-
-    let spamUntil = null;
-    if (modIsSpam) {
-      if (modSpamDuration === '24h') spamUntil = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
-      else if (modSpamDuration === '7d') spamUntil = new Date(Date.now() + 168 * 3600 * 1000).toISOString();
-      else if (modSpamDuration === 'permanent') spamUntil = null;
-    }
-
-    userModerationMutation.mutate({
-      userId: selectedUserForAction.id,
-      payload: {
-        isBlocked: modIsBlocked,
-        blockedUntil,
-        banReason: modBanReason || (modIsBlocked ? 'Qoidabuzarlik sababli' : null),
-        isSpam: modIsSpam,
-        spamUntil,
-        spamReason: modSpamReason || (modIsSpam ? 'Spam tarqatish' : null),
-        sendNotification: modSendNotification,
-        notificationMessage: modNotificationMessage,
-      },
-    });
-  };
-
   const renderTargetTag = (targetType, targetId) => {
-    let icon = <AlertOutlined />;
-    let color = 'default';
+    let icon = <AlertTriangle className="w-3.5 h-3.5" />;
+    let bg = "bg-slate-100 text-slate-700 border-slate-200";
     let linkPath = null;
-    const isUser = targetType === 'CHAT_USER' || targetType === 'USER';
 
     switch (targetType) {
-      case 'CHAT_USER':
-      case 'USER':
-        icon = <UserOutlined />;
-        color = 'purple';
+      case "CHAT_USER":
+      case "USER":
+        icon = <User className="w-3.5 h-3.5 text-purple-600" />;
+        bg = "bg-purple-50 text-purple-700 border-purple-200";
         linkPath = `/users/${targetId}`;
         break;
-      case 'PRODUCT':
-      case 'LISTING':
-        icon = <TagsOutlined />;
-        color = 'blue';
-        linkPath = '/products';
+      case "PRODUCT":
+      case "LISTING":
+        icon = <TagIcon className="w-3.5 h-3.5 text-blue-600" />;
+        bg = "bg-blue-50 text-blue-700 border-blue-200";
+        linkPath = "/products";
         break;
-      case 'SHOP':
-        icon = <ShopOutlined />;
-        color = 'gold';
-        linkPath = '/shops';
+      case "SHOP":
+        icon = <Store className="w-3.5 h-3.5 text-amber-600" />;
+        bg = "bg-amber-50 text-amber-700 border-amber-200";
+        linkPath = "/shops";
         break;
-      case 'MESSAGE':
-        icon = <MessageOutlined />;
-        color = 'cyan';
-        break;
-      case 'COMMENT':
-        icon = <CommentOutlined />;
-        color = 'magenta';
+      case "MESSAGE":
+        icon = <MessageSquare className="w-3.5 h-3.5 text-cyan-600" />;
+        bg = "bg-cyan-50 text-cyan-700 border-cyan-200";
         break;
       default:
-        color = 'volcano';
+        bg = "bg-rose-50 text-rose-700 border-rose-200";
     }
 
     return (
-      <div>
-        <Tag color={color} icon={icon} style={{ fontWeight: 600 }}>
-          {targetType}
-        </Tag>
-        <span style={{ fontWeight: 'bold', fontSize: '13px', marginLeft: 4 }}>
-          ID #{targetId}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-bold ${bg}`}>
+          {icon}
+          <span>{targetType}</span>
         </span>
-        <Space size={2} style={{ marginLeft: 6 }}>
-          {linkPath && (
-            <Button
-              type="link"
-              size="small"
-              icon={<LinkOutlined />}
-              style={{ padding: '0 4px', fontSize: '12px' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(linkPath);
-              }}
-            >
-              Ochish
-            </Button>
-          )}
-          {isUser && (
-            <Button
-              type="link"
-              size="small"
-              icon={<SendOutlined />}
-              style={{ padding: '0 4px', fontSize: '12px', color: '#722ed1' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                openDirectMessageModal(targetId, `Foydalanuvchi #${targetId}`);
-              }}
-            >
-              Xabar
-            </Button>
-          )}
-        </Space>
+        <span className="font-mono text-xs font-bold text-slate-700">#{targetId}</span>
+        {linkPath && (
+          <button
+            type="button"
+            className="inline-flex items-center gap-0.5 text-xs text-indigo-600 hover:text-indigo-800 font-bold ml-1 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(linkPath);
+            }}
+          >
+            <span>Ochish</span>
+            <ExternalLink className="w-3 h-3" />
+          </button>
+        )}
       </div>
     );
   };
 
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
       width: 65,
-      render: (id) => <span style={{ fontWeight: 'bold', color: '#595959' }}>#{id}</span>,
+      render: (id) => <span className="font-mono text-xs font-bold text-slate-400">#{id}</span>,
     },
     {
-      title: 'Nishon (Target)',
-      key: 'target',
-      width: 230,
+      title: "Nishon Ob'ekti (Target)",
+      key: "target",
+      width: 220,
       render: (_, record) => (
-        <div>
+        <div className="flex flex-col gap-1">
           {renderTargetTag(record.targetType, record.targetId)}
-          <div style={{ fontSize: '11px', color: '#8c8c8c', marginTop: 4 }}>
-            <ClockCircleOutlined style={{ marginRight: 4 }} />
-            {dayjs(record.createdAt).format('YYYY-MM-DD HH:mm')}
+          <div className="text-[11px] text-slate-400 font-medium flex items-center gap-1 font-mono">
+            <Clock className="w-3 h-3 text-slate-400" />
+            <span>{dayjs(record.createdAt).format("YYYY-MM-DD HH:mm")}</span>
           </div>
         </div>
       ),
     },
     {
-      title: 'Sabab & Tavsif',
-      key: 'reason',
+      title: "Shikoyat Sababi & Tafsilot",
+      key: "reason",
       render: (_, record) => {
         const priorityCfg = PRIORITY_CONFIG[record.priority] || PRIORITY_CONFIG.NORMAL;
         return (
-          <div>
-            <Space size={4} wrap>
-              <Tag color={priorityCfg.color} style={{ fontWeight: 'bold', fontSize: '11px' }}>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`px-2 py-0.5 rounded-full text-[10px] ${priorityCfg.bg}`}>
                 {priorityCfg.label}
-              </Tag>
-              <Tag color="magenta" style={{ fontWeight: 'bold' }}>
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs">
                 {record.reason}
-              </Tag>
-            </Space>
+              </span>
+            </div>
             {record.description ? (
-              <div
-                style={{
-                  fontSize: '12px',
-                  color: '#434343',
-                  marginTop: 6,
-                  background: '#f9f9f9',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  border: '1px solid #f0f0f0',
-                  maxWidth: 320,
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
+              <div className="text-xs text-slate-700 bg-slate-50 p-2 rounded-xl border border-slate-200/80 max-w-sm whitespace-pre-wrap leading-relaxed">
                 {record.description}
               </div>
             ) : (
-              <div style={{ fontSize: '11px', color: '#bfbfbf', marginTop: 4, fontStyle: 'italic' }}>
-                Qo‘shimcha tavsif berilmagan
-              </div>
+              <span className="text-[11px] text-slate-400 italic">Tavsif kiritilmagan</span>
             )}
           </div>
         );
       },
     },
     {
-      title: 'Yuboruvchi',
-      key: 'reporter',
-      width: 210,
+      title: "Shikoyatchi (Reporter)",
+      key: "reporter",
+      width: 190,
       render: (_, record) => {
         if (!record.reporter) {
-          return (
-            <Space>
-              <Avatar size="small" icon={<UserOutlined />} />
-              <span style={{ color: '#8c8c8c' }}>User #{record.reporterId || 'Anonim'}</span>
-            </Space>
-          );
+          return <span className="text-xs text-slate-400 font-semibold">Anonim User</span>;
         }
-        const { username, phone, id, role } = record.reporter;
         return (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-            <Avatar size="small" style={{ backgroundColor: '#722ed1', marginTop: 2 }}>
-              {username ? username[0].toUpperCase() : 'U'}
+          <div className="flex items-center gap-2.5">
+            <Avatar className="bg-indigo-100 text-indigo-700 font-extrabold text-xs shadow-xs" size={34}>
+              {(record.reporter.username || "U")[0]?.toUpperCase()}
             </Avatar>
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.3 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span
-                  style={{ fontWeight: 'bold', cursor: 'pointer', color: '#1890ff' }}
-                  onClick={() => navigate(`/users/${id}`)}
-                >
-                  {username || 'Nomsiz'}
-                </span>
-                <Tooltip title="Shikoyatchiga to‘g‘ridan-to‘g‘ri xabar yuborish">
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<SendOutlined style={{ fontSize: '11px', color: '#52c41a' }} />}
-                    style={{ padding: 0, height: 18, width: 18 }}
-                    onClick={() => openDirectMessageModal(id, username)}
-                  />
-                </Tooltip>
-              </div>
-              <span style={{ color: '#595959', fontSize: '12px' }}>
-                {phone || 'Tel kiritilmagan'}
+            <div className="flex flex-col min-w-0">
+              <span
+                className="font-bold text-slate-900 text-xs hover:text-indigo-600 cursor-pointer truncate max-w-[120px]"
+                onClick={() => navigate(`/users/${record.reporter.id}`)}
+              >
+                {record.reporter.username || "Ismsiz"}
               </span>
-              <Space size={4} style={{ marginTop: 2 }}>
-                <span style={{ color: '#8c8c8c', fontSize: '11px' }}>ID #{id}</span>
-                {role && <Tag color="blue" style={{ fontSize: '10px', padding: '0 4px', lineHeight: '16px' }}>{role}</Tag>}
-              </Space>
+              <span className="text-[11px] text-slate-400 font-mono">{record.reporter.phone}</span>
             </div>
           </div>
         );
       },
     },
     {
-      title: 'Holat',
-      dataIndex: 'status',
-      key: 'status',
-      width: 140,
+      title: "Holat",
+      dataIndex: "status",
+      key: "status",
+      width: 150,
       render: (status) => {
-        const cfg = STATUS_CONFIG[status] || {
-          color: 'default',
-          icon: null,
-          label: status,
-        };
+        const cfg = STATUS_CONFIG[status] || { bg: "bg-slate-100 text-slate-700 border-slate-200", icon: null, label: status };
         return (
-          <Tag color={cfg.color} icon={cfg.icon} style={{ fontWeight: 600, padding: '3px 8px' }}>
-            {cfg.label}
-          </Tag>
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${cfg.bg}`}>
+            {cfg.icon}
+            <span>{cfg.label}</span>
+          </span>
         );
       },
     },
     {
-      title: 'Xulosa & Moderator',
-      key: 'resolution',
-      render: (_, record) => {
-        if (!record.resolutionNotes && !record.resolvedBy) {
-          return <span style={{ color: '#bfbfbf', fontSize: '12px' }}>—</span>;
-        }
-        return (
-          <div>
-            {record.resolutionNotes && (
-              <div style={{ fontSize: '12px', color: '#262626', fontWeight: 500 }}>
-                {record.resolutionNotes}
-              </div>
-            )}
-            {record.resolvedBy && (
-              <div style={{ fontSize: '11px', color: '#8c8c8c', marginTop: 2 }}>
-                Moderator:{' '}
-                <Tag color="geekblue" style={{ fontSize: '11px', padding: '0 4px' }}>
-                  @{record.resolvedBy.username || record.resolvedBy.phone || `Admin #${record.resolvedById}`}
-                </Tag>
-              </div>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      title: 'Amallar',
-      key: 'actions',
+      title: "Amallar",
+      key: "actions",
       width: 200,
-      render: (_, record) => {
-        const isUserTarget = record.targetType === 'USER' || record.targetType === 'CHAT_USER';
-        return (
-          <Space size={4} wrap>
-            <Tooltip title="Batafsil ma'lumot va audit">
-              <Button
-                size="small"
-                icon={<EyeOutlined />}
-                onClick={() => openDetailModal(record)}
+      render: (_, record) => (
+        <div className="flex items-center gap-1.5">
+          <Tooltip title="Tafsilotlarni ko'rish">
+            <button
+              type="button"
+              onClick={() => openDetailModal(record)}
+              className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+          </Tooltip>
+
+          {record.status !== "RESOLVED" && (
+            <Tooltip title="Hal qilish & Chora ko'rish">
+              <button
+                type="button"
+                onClick={() => openResolveModal(record, "RESOLVED")}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white text-xs font-bold transition-all cursor-pointer shadow-xs border border-emerald-200/80"
               >
-                Batafsil
-              </Button>
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Hal qilish</span>
+              </button>
             </Tooltip>
+          )}
 
-            {isUserTarget && (
-              <Tooltip title="Nishon foydalanuvchini bloklash / spamga tushirish">
-                <Button
-                  size="small"
-                  danger
-                  icon={<StopOutlined />}
-                  onClick={() => openUserModerationModal(record.targetId, `Foydalanuvchi #${record.targetId}`)}
-                >
-                  Jazo
-                </Button>
-              </Tooltip>
-            )}
-
-            {record.status === 'PENDING' || record.status === 'REVIEWING' ? (
-              <Tooltip title="Shikoyatni ko‘rib chiqish va yakunlash">
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<CheckCircleOutlined />}
-                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
-                  onClick={() => openResolveModal(record, 'RESOLVED')}
-                >
-                  Ko‘rib chiqish
-                </Button>
-              </Tooltip>
-            ) : (
-              <Button
-                size="small"
-                onClick={() => openResolveModal(record, record.status)}
+          {record.status !== "REJECTED" && (
+            <Tooltip title="Asossiz deb rad etish">
+              <button
+                type="button"
+                onClick={() => openResolveModal(record, "REJECTED")}
+                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-600 text-slate-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
               >
-                Qayta tahrirlash
-              </Button>
-            )}
-          </Space>
-        );
-      },
+                <XCircle className="w-4 h-4" />
+              </button>
+            </Tooltip>
+          )}
+        </div>
+      ),
     },
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Card
-        title={
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-            <Space>
-              <span style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                🚨 Moderatsiya va Foydalanuvchilar Shikoyatlari Markazi
-              </span>
-            </Space>
-            <Space>
-              <Button
-                icon={<ReloadOutlined spin={isFetching} />}
-                onClick={() => refetch()}
-              >
-                Yangilash
-              </Button>
-            </Space>
+    <div className="flex flex-col gap-6">
+      {/* Top Header Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+        <div>
+          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <ShieldAlert className="w-4 h-4" />
+            </div>
+            Shikoyatlar & Xavfsizlik Moderatsiya Markazi
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Foydalanuvchilar, e'lonlar va do'konlar ustidan kelib tushgan shikoyatlarni ko'rib chiqish va jazo choralarini qo'llash.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Yangilash</span>
+          </button>
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Shikoyat, sabab yoki ID..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+              className="pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all w-60"
+            />
           </div>
-        }
-        variant="borderless"
-      >
-        {/* Filter Controls Row */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
+        </div>
+      </div>
+
+      {/* 4 Main KPI Cards Bar */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Shikoyatlar</div>
+              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Kelib tushgan barcha arizalar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                Kutilayotganlar
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              </div>
+              <div className="text-2xl font-black text-amber-600 mt-1">{stats.pending} ta</div>
+              <div className="text-[11px] text-amber-600/70 mt-0.5">Zudlik bilan ko'rish kerak</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Clock className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                Hal Qilinganlar
+              </div>
+              <div className="text-2xl font-black text-emerald-600 mt-1">{stats.resolved} ta</div>
+              <div className="text-[11px] text-emerald-600/70 mt-0.5">Chora ko'rilgan shikoyatlar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1">
+                Yuqori Xavfli (Critical)
+              </div>
+              <div className="text-2xl font-black text-rose-600 mt-1">{stats.critical} ta</div>
+              <div className="text-[11px] text-rose-600/70 mt-0.5">Shoshilinch tekshiruvlar</div>
+            </div>
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Main Table Card with Tabs */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col gap-4">
+        {/* Status Tabs and Target Filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-2">
           <Tabs
             activeKey={statusFilter}
-            onChange={(key) => {
-              setStatusFilter(key);
+            onChange={(k) => {
+              setStatusFilter(k);
               setPage(1);
             }}
-            style={{ marginBottom: 0 }}
+            className="!m-0"
             items={[
-              { key: '', label: `Barcha Shikoyatlar` },
+              { key: "all", label: <span className="font-bold">Barchasi ({totalReports})</span> },
               {
-                key: 'PENDING',
+                key: "PENDING",
                 label: (
-                  <span>
-                    Kutilayotgan <Tag color="warning" style={{ marginLeft: 4 }}>PENDING</Tag>
+                  <span className="font-bold text-amber-600 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    Kutilmoqda ({stats.pending})
                   </span>
                 ),
               },
               {
-                key: 'REVIEWING',
+                key: "REVIEWING",
                 label: (
-                  <span>
-                    Ko‘rib chiqilmoqda <Tag color="processing" style={{ marginLeft: 4 }}>REVIEWING</Tag>
+                  <span className="font-bold text-blue-600 flex items-center gap-1.5">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Ko'rib chiqilmoqda
                   </span>
                 ),
               },
               {
-                key: 'RESOLVED',
+                key: "RESOLVED",
                 label: (
-                  <span>
-                    Hal qilingan <Tag color="success" style={{ marginLeft: 4 }}>RESOLVED</Tag>
+                  <span className="font-bold text-emerald-600 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Hal qilingan ({stats.resolved})
                   </span>
                 ),
               },
               {
-                key: 'REJECTED',
+                key: "REJECTED",
                 label: (
-                  <span>
-                    Rad etilgan <Tag color="error" style={{ marginLeft: 4 }}>REJECTED</Tag>
+                  <span className="font-bold text-rose-600 flex items-center gap-1.5">
+                    <XCircle className="w-3.5 h-3.5" />
+                    Rad etilgan
                   </span>
                 ),
               },
             ]}
           />
 
-          <Space wrap>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500">Nishon:</span>
             <Select
-              placeholder="Nishon turi (Target Type)"
-              allowClear
-              value={targetTypeFilter || undefined}
-              onChange={(val) => setTargetTypeFilter(val || '')}
-              style={{ width: 170 }}
+              value={targetTypeFilter}
+              onChange={(val) => setTargetTypeFilter(val)}
+              className="w-40 !rounded-xl"
             >
-              <Option value="CHAT_USER">CHAT_USER</Option>
-              <Option value="USER">USER</Option>
-              <Option value="PRODUCT">PRODUCT / E'lon</Option>
-              <Option value="SHOP">SHOP / Do'kon</Option>
-              <Option value="COMMENT">COMMENT</Option>
-              <Option value="MESSAGE">MESSAGE</Option>
+              <Option value="all">Barcha Nishonlar</Option>
+              <Option value="USER">Foydalanuvchilar (USER)</Option>
+              <Option value="PRODUCT">E'lonlar (PRODUCT)</Option>
+              <Option value="SHOP">Do'konlar (SHOP)</Option>
+              <Option value="MESSAGE">Xabarlar (MESSAGE)</Option>
             </Select>
-
-            <Input.Search
-              placeholder="Sabab, tavsif, foydalanuvchi..."
-              allowClear
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: 260 }}
-            />
-          </Space>
+          </div>
         </div>
 
-        {/* Reports Table */}
         <Table
           columns={columns}
           dataSource={filteredReports}
           rowKey="id"
-          loading={isLoading}
+          loading={isLoading || isFetching}
           pagination={{
             current: page,
             pageSize,
@@ -770,524 +697,155 @@ const Reports = () => {
               setPageSize(ps);
             },
             showSizeChanger: true,
-            showTotal: (total) => `Jami ${total} ta shikoyat`,
+            className: "px-4 py-2 !m-0",
           }}
         />
-      </Card>
+      </div>
 
-      {/* Detail Modal */}
+      {/* Resolve / Dismiss Action Modal */}
       <Modal
         title={
-          <Space>
-            <AlertOutlined style={{ color: '#ff4d4f' }} />
-            <span>Shikoyat Tafsilotlari va Moderatsiya (ID #{selectedReport?.id})</span>
-          </Space>
-        }
-        open={detailModalVisible}
-        onCancel={() => setDetailModalVisible(false)}
-        width={750}
-        footer={[
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            Yopish
-          </Button>,
-          selectedReport && (selectedReport.targetType === 'USER' || selectedReport.targetType === 'CHAT_USER') && (
-            <Button
-              key="ban"
-              danger
-              icon={<StopOutlined />}
-              onClick={() => {
-                setDetailModalVisible(false);
-                openUserModerationModal(selectedReport.targetId, `Foydalanuvchi #${selectedReport.targetId}`);
-              }}
-            >
-              Nishonni Bloklash / Spam
-            </Button>
-          ),
-          selectedReport && (
-            <Button
-              key="action"
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
-              onClick={() => {
-                setDetailModalVisible(false);
-                openResolveModal(selectedReport, 'RESOLVED');
-              }}
-            >
-              Ko‘rib Chiqish & Xulosa
-            </Button>
-          ),
-        ]}
-      >
-        {selectedReport && (
-          <div style={{ marginTop: 16 }}>
-            <Descriptions bordered column={1} size="small">
-              <Descriptions.Item label="Shikoyat ID">
-                <span style={{ fontWeight: 'bold' }}>#{selectedReport.id}</span>
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Holat">
-                {(() => {
-                  const cfg = STATUS_CONFIG[selectedReport.status] || {
-                    color: 'default',
-                    icon: null,
-                    label: selectedReport.status,
-                  };
-                  return <Tag color={cfg.color} icon={cfg.icon}>{cfg.label}</Tag>;
-                })()}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Muhimlik darajasi (Priority)">
-                {(() => {
-                  const pCfg = PRIORITY_CONFIG[selectedReport.priority] || PRIORITY_CONFIG.NORMAL;
-                  return <Tag color={pCfg.color}>{pCfg.label}</Tag>;
-                })()}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Shikoyat qilingan nishon">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  {renderTargetTag(selectedReport.targetType, selectedReport.targetId)}
-                  {(selectedReport.targetType === 'USER' || selectedReport.targetType === 'CHAT_USER') && (
-                    <Button
-                      size="small"
-                      icon={<SendOutlined />}
-                      onClick={() => {
-                        setDetailModalVisible(false);
-                        openDirectMessageModal(selectedReport.targetId, `Foydalanuvchi #${selectedReport.targetId}`);
-                      }}
-                    >
-                      Nishonga xabar yozish
-                    </Button>
-                  )}
-                </div>
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Shikoyat Sababi">
-                <Tag color="magenta" style={{ fontWeight: 'bold' }}>{selectedReport.reason}</Tag>
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Foydalanuvchi Tavsifi">
-                <div style={{ whiteSpace: 'pre-wrap', color: '#262626' }}>
-                  {selectedReport.description || <span style={{ color: '#bfbfbf' }}>Tavsif qoldirilmagan</span>}
-                </div>
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Shikoyat Yuboruvchi">
-                {selectedReport.reporter ? (
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontWeight: 'bold' }}>
-                        {selectedReport.reporter.username || 'Nomsiz'} (ID #{selectedReport.reporter.id})
-                      </div>
-                      <Button
-                        size="small"
-                        icon={<SendOutlined />}
-                        onClick={() => {
-                          setDetailModalVisible(false);
-                          openDirectMessageModal(selectedReport.reporter.id, selectedReport.reporter.username);
-                        }}
-                      >
-                        Shikoyatchiga xabar yozish
-                      </Button>
-                    </div>
-                    <div style={{ color: '#595959' }}>
-                      Tel: {selectedReport.reporter.phone || 'Kiritilmagan'}
-                    </div>
-                    <div style={{ color: '#8c8c8c', fontSize: '12px' }}>
-                      Roli: {selectedReport.reporter.role} | Balans: {selectedReport.reporter.balance || 0} so'm
-                    </div>
-                    <Button
-                      type="link"
-                      size="small"
-                      style={{ padding: 0, marginTop: 4 }}
-                      onClick={() => {
-                        setDetailModalVisible(false);
-                        navigate(`/users/${selectedReport.reporter.id}`);
-                      }}
-                    >
-                      Foydalanuvchi profiliga o‘tish →
-                    </Button>
-                  </div>
-                ) : (
-                  <span>User #{selectedReport.reporterId || 'Anonim'}</span>
-                )}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Yaratilgan Vaqt">
-                {dayjs(selectedReport.createdAt).format('YYYY-MM-DD HH:mm:ss')}
-              </Descriptions.Item>
-
-              {selectedReport.resolutionNotes && (
-                <Descriptions.Item label="Moderatsiya Xulosasi">
-                  <div style={{ fontWeight: 500, color: '#1890ff' }}>
-                    {selectedReport.resolutionNotes}
-                  </div>
-                </Descriptions.Item>
-              )}
-
-              {selectedReport.resolvedBy && (
-                <Descriptions.Item label="Ko‘rib chiqqan Moderator">
-                  <Tag color="geekblue">
-                    @{selectedReport.resolvedBy.username || selectedReport.resolvedBy.phone || `Admin #${selectedReport.resolvedById}`}
-                  </Tag>
-                </Descriptions.Item>
-              )}
-            </Descriptions>
+          <div className="flex items-center gap-2">
+            {targetStatus === "RESOLVED" ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            ) : (
+              <XCircle className="w-5 h-5 text-rose-600" />
+            )}
+            <span className="font-black text-slate-900">
+              Shikoyatni {targetStatus === "RESOLVED" ? "Hal Qilish & Chora Ko'rish" : "Rad Etish"} (ID #{selectedReport?.id})
+            </span>
           </div>
-        )}
-      </Modal>
-
-      {/* Comprehensive Resolve / Action Modal */}
-      <Modal
-        title={
-          <Space>
-            <CheckCircleOutlined style={{ color: '#1890ff' }} />
-            <span>Shikoyatni Ko‘rib Chiqish va Xabarnomalar Yuborish (ID #{selectedReport?.id})</span>
-          </Space>
         }
         open={resolveModalVisible}
         onCancel={() => setResolveModalVisible(false)}
         onOk={handleResolveSubmit}
         confirmLoading={resolveMutation.isPending}
-        okText="Tasdiqlash va Amalga Oshirish"
-        cancelText="Bekor qilish"
-        width={720}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 12 }}>
-          {/* 1. Status Selection */}
-          <div>
-            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: 4 }}>
-              1. Yakuniy Qaror Statusi:
-            </label>
-            <Select
-              value={targetStatus}
-              onChange={(val) => {
-                setTargetStatus(val);
-                if (val === 'RESOLVED') {
-                  setReporterMessage(
-                    `Sizning #${selectedReport?.id}-raqamli shikoyatingiz ko‘rib chiqildi va zarur choralar ko‘rildi. Kelishamiz.uz xavfsizligiga qo'shgan hissangiz uchun rahmat!`,
-                  );
-                } else if (val === 'REJECTED') {
-                  setReporterMessage(
-                    `Sizning #${selectedReport?.id}-raqamli shikoyatingiz ko‘rib chiqildi va dalillar yetarli bo'lmagani sababli rad etildi.`,
-                  );
-                }
-              }}
-              style={{ width: '100%' }}
-              options={[
-                {
-                  value: 'RESOLVED',
-                  label: 'RESOLVED — Qanoatlantirildi (Chora ko‘rildi)',
-                },
-                {
-                  value: 'REJECTED',
-                  label: 'REJECTED — Rad etildi (Shikoyat asossiz)',
-                },
-                {
-                  value: 'REVIEWING',
-                  label: 'REVIEWING — Jarayonda (Ko‘rib chiqilmoqda)',
-                },
-              ]}
-            />
-          </div>
-
-          {/* 2. Quick Templates and Resolution Notes */}
-          <div>
-            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: 4 }}>
-              2. Moderator Audit va Rezolyutsiya Izohi:
-            </label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-              {RESOLUTION_TEMPLATES.map((tmpl, idx) => (
-                <Tag
-                  key={idx}
-                  color="blue"
-                  style={{ cursor: 'pointer', padding: '3px 8px' }}
-                  onClick={() => setNotes(tmpl)}
-                >
-                  + {tmpl}
-                </Tag>
-              ))}
-            </div>
-            <TextArea
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Qabul qilingan qaror sababini yozing..."
-            />
-          </div>
-
-          <Divider style={{ margin: '4px 0' }} />
-
-          {/* 3. Notify Reporter Section */}
-          <div style={{ background: '#f6ffed', padding: 12, borderRadius: 8, border: '1px solid #b7eb8f' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <Space>
-                <NotificationOutlined style={{ color: '#52c41a' }} />
-                <span style={{ fontWeight: 'bold', color: '#237804' }}>
-                  Shikoyat yuborgan foydalanuvchiga (Reporter) xabarnoma yuborish
-                </span>
-              </Space>
-              <Switch checked={notifyReporter} onChange={setNotifyReporter} />
-            </div>
-            {notifyReporter && (
-              <TextArea
-                rows={2}
-                value={reporterMessage}
-                onChange={(e) => setReporterMessage(e.target.value)}
-                placeholder="Shikoyatchiga boradigan bildirishnoma matni..."
-                style={{ marginTop: 6 }}
-              />
-            )}
-          </div>
-
-          {/* 4. Notify Target User Section */}
-          <div style={{ background: '#fffbe6', padding: 12, borderRadius: 8, border: '1px solid #ffe58f' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <Space>
-                <AlertOutlined style={{ color: '#fa8c16' }} />
-                <span style={{ fontWeight: 'bold', color: '#ad6800' }}>
-                  Shikoyat qilingan foydalanuvchiga (Nishon) ogohlantirish yuborish
-                </span>
-              </Space>
-              <Switch checked={notifyTarget} onChange={setNotifyTarget} />
-            </div>
-            {notifyTarget && (
-              <TextArea
-                rows={2}
-                value={targetMessage}
-                onChange={(e) => setTargetMessage(e.target.value)}
-                placeholder="Qoidabuzarga boradigan rasmiy ogohlantirish matni..."
-                style={{ marginTop: 6 }}
-              />
-            )}
-          </div>
-
-          {/* 5. Moderation Action on Target User (Ban / Spam) */}
-          <div style={{ background: '#fff1f0', padding: 12, borderRadius: 8, border: '1px solid #ffa39e' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <StopOutlined style={{ color: '#f5222d' }} />
-              <span style={{ fontWeight: 'bold', color: '#cf1322' }}>
-                Nishon foydalanuvchiga intizomiy chora (Bloklash / Spam)
-              </span>
-            </div>
-
-            <Row gutter={[12, 12]}>
-              <Col xs={24} sm={14}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#595959' }}>Chora turi:</label>
-                <Select
-                  value={targetModerationAction}
-                  onChange={setTargetModerationAction}
-                  style={{ width: '100%', marginTop: 2 }}
-                  options={[
-                    { value: 'NONE', label: 'Hech qanday chora yo‘q (None)' },
-                    { value: 'TEMP_BLOCK', label: 'Vaqtinchalik bloklash (Temp Ban)' },
-                    { value: 'PERM_BLOCK', label: 'Doimiy bloklash (Permanent Ban)' },
-                    { value: 'TEMP_SPAM', label: 'Vaqtinchalik Spam cheklovi (Temp Spam)' },
-                    { value: 'PERM_SPAM', label: 'Doimiy Spam belgisi (Permanent Spam)' },
-                    { value: 'UNBLOCK', label: 'Blokdan / Spamdan chiqarish' },
-                  ]}
-                />
-              </Col>
-
-              {(targetModerationAction === 'TEMP_BLOCK' || targetModerationAction === 'TEMP_SPAM') && (
-                <Col xs={24} sm={10}>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#595959' }}>Muddat:</label>
-                  <Select
-                    value={moderationDurationHours}
-                    onChange={setModerationDurationHours}
-                    style={{ width: '100%', marginTop: 2 }}
-                    options={[
-                      { value: 24, label: '24 soat (1 kun)' },
-                      { value: 72, label: '72 soat (3 kun)' },
-                      { value: 168, label: '168 soat (7 kun)' },
-                      { value: 720, label: '720 soat (30 kun)' },
-                    ]}
-                  />
-                </Col>
-              )}
-
-              {targetModerationAction !== 'NONE' && (
-                <Col span={24}>
-                  <Input
-                    placeholder="Chora ko‘rish sababi (User ko‘radigan izoh)..."
-                    value={moderationReason}
-                    onChange={(e) => setModerationReason(e.target.value)}
-                  />
-                </Col>
-              )}
-            </Row>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Direct Message Modal */}
-      <Modal
-        title={
-          <Space>
-            <SendOutlined style={{ color: '#722ed1' }} />
-            <span>Foydalanuvchiga To‘g‘ridan-to‘g‘ri Xabar Yuborish ({directMessageUserName})</span>
-          </Space>
-        }
-        open={messageModalVisible}
-        onCancel={() => setMessageModalVisible(false)}
-        onOk={() => {
-          if (!directMessageBody.trim()) {
-            message.warning('Xabar matnini kiriting!');
-            return;
-          }
-          directMessageMutation.mutate({
-            userId: directMessageUserId,
-            title: directMessageTitle,
-            message: directMessageBody,
-          });
+        okText={targetStatus === "RESOLVED" ? "Tasdiqlash & Chora Ko'rish" : "Rad Etish"}
+        cancelText="Bekor"
+        okButtonProps={{
+          className: targetStatus === "RESOLVED" ? "!bg-emerald-600 font-bold !rounded-xl" : "!bg-rose-600 font-bold !rounded-xl",
         }}
-        confirmLoading={directMessageMutation.isPending}
-        okText="Xabarni Yuborish"
-        cancelText="Bekor qilish"
+        cancelButtonProps={{ className: "!rounded-xl font-semibold" }}
+        width={680}
+        className="!rounded-3xl"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
-          <Alert
-            message="Push & Socket Bildirishnoma"
-            description="Ushbu xabar foydalanuvchining telefoniga Push-bildirishnoma va ilova ichidagi xabarnomalar bo‘limiga yetkaziladi."
-            type="info"
-            showIcon
-          />
+        {selectedReport && (
+          <div className="flex flex-col gap-4 mt-3">
+            <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-xs flex justify-between items-center">
+              <div>
+                <span className="text-slate-400 block">Nishon:</span>
+                <span className="font-extrabold text-slate-900">{selectedReport.targetType} #{selectedReport.targetId}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Sabab:</span>
+                <span className="font-extrabold text-rose-600">{selectedReport.reason}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Shikoyatchi:</span>
+                <span className="font-extrabold text-slate-900">{selectedReport.reporter?.username || "Anonim"}</span>
+              </div>
+            </div>
 
-          <div>
-            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: 4 }}>
-              Xabar Sarlavhasi:
-            </label>
-            <Input
-              value={directMessageTitle}
-              onChange={(e) => setDirectMessageTitle(e.target.value)}
-              placeholder="Masalan: Kelishamiz.uz Moderatsiya Xabari"
-            />
-          </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Tayyor Shablonlar:</label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {RESOLUTION_TEMPLATES.map((tmpl, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setNotes(tmpl)}
+                    className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    {tmpl}
+                  </button>
+                ))}
+              </div>
+              <TextArea
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Moderatsiya qarori va qilingan choralar..."
+                className="!rounded-xl text-xs"
+              />
+            </div>
 
-          <div>
-            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: 4 }}>
-              Xabar Matni:
-            </label>
-            <TextArea
-              rows={4}
-              value={directMessageBody}
-              onChange={(e) => setDirectMessageBody(e.target.value)}
-              placeholder="Foydalanuvchiga yuboriladigan to‘liq xabar matnini yozing..."
-            />
+            <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-2xl flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">Shikoyatchiga Push Xabar Yuborish:</span>
+                <Switch checked={notifyReporter} onChange={setNotifyReporter} />
+              </div>
+              {notifyReporter && (
+                <TextArea
+                  rows={2}
+                  value={reporterMessage}
+                  onChange={(e) => setReporterMessage(e.target.value)}
+                  className="!rounded-xl text-xs bg-white"
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
 
-      {/* User Moderation Modal (Block / Spam) */}
+      {/* Detail Lightbox Modal */}
       <Modal
         title={
-          <Space>
-            <SafetyCertificateOutlined style={{ color: '#f5222d' }} />
-            <span>Foydalanuvchi Intizomiy Holati Boshqaruvi ({selectedUserForAction?.username || `ID #${selectedUserForAction?.id}`})</span>
-          </Space>
+          <div className="flex items-center gap-2">
+            <Eye className="w-5 h-5 text-indigo-600" />
+            <span className="font-black text-slate-900">
+              Shikoyat Tafsilotlari (ID #{selectedReport?.id})
+            </span>
+          </div>
         }
-        open={moderationModalVisible}
-        onCancel={() => setModerationModalVisible(false)}
-        onOk={handleModerationSubmit}
-        confirmLoading={userModerationMutation.isPending}
-        okText="O‘zgarishlarni Saqlash"
-        cancelText="Bekor qilish"
-        width={600}
+        open={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        footer={null}
+        width={720}
+        className="!rounded-3xl"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 12 }}>
-          {/* Block Section */}
-          <div style={{ background: '#fff1f0', padding: 14, borderRadius: 8, border: '1px solid #ffa39e' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontWeight: 'bold', color: '#cf1322' }}>
-                🚫 Foydalanuvchini Bloklash (Ban)
-              </span>
-              <Switch checked={modIsBlocked} onChange={setModIsBlocked} />
+        {selectedReport && (
+          <div className="flex flex-col gap-4 mt-3">
+            <Descriptions bordered size="small" column={2} className="!rounded-2xl overflow-hidden">
+              <Descriptions.Item label="ID">#{selectedReport.id}</Descriptions.Item>
+              <Descriptions.Item label="Sana">
+                {dayjs(selectedReport.createdAt).format("YYYY-MM-DD HH:mm:ss")}
+              </Descriptions.Item>
+              <Descriptions.Item label="Nishon">{selectedReport.targetType} #{selectedReport.targetId}</Descriptions.Item>
+              <Descriptions.Item label="Holat">
+                <Tag color={selectedReport.status === "RESOLVED" ? "green" : "orange"}>
+                  {selectedReport.status}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Sabab" span={2}>
+                <span className="font-bold text-rose-600">{selectedReport.reason}</span>
+              </Descriptions.Item>
+              <Descriptions.Item label="To'liq Tavsif" span={2}>
+                <span className="text-slate-800 text-xs leading-relaxed">
+                  {selectedReport.description || "Tavsif qoldirilmagan"}
+                </span>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <div className="flex justify-end gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => setDetailModalVisible(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer"
+              >
+                Yopish
+              </button>
+              {selectedReport.status !== "RESOLVED" && (
+                <button
+                  type="button"
+                  onClick={() => openResolveModal(selectedReport, "RESOLVED")}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all cursor-pointer shadow-sm"
+                >
+                  Hal Qilish
+                </button>
+              )}
             </div>
-
-            {modIsBlocked && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#595959', display: 'block', marginBottom: 4 }}>
-                    Bloklash Muddati:
-                  </label>
-                  <Radio.Group value={modBlockDuration} onChange={(e) => setModBlockDuration(e.target.value)}>
-                    <Radio.Button value="24h">24 soat (1 kun)</Radio.Button>
-                    <Radio.Button value="3d">3 kun</Radio.Button>
-                    <Radio.Button value="7d">7 kun</Radio.Button>
-                    <Radio.Button value="30d">30 kun</Radio.Button>
-                    <Radio.Button value="permanent">Doimiy (Permanent)</Radio.Button>
-                  </Radio.Group>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#595959', display: 'block', marginBottom: 4 }}>
-                    Bloklash Sababi (Foydalanuvchiga ko‘rsatiladi):
-                  </label>
-                  <Input
-                    placeholder="Qoidabuzarlik sababini kiriting..."
-                    value={modBanReason}
-                    onChange={(e) => setModBanReason(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
           </div>
-
-          {/* Spam Section */}
-          <div style={{ background: '#fffbe6', padding: 14, borderRadius: 8, border: '1px solid #ffe58f' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontWeight: 'bold', color: '#ad6800' }}>
-                ⚠️ Spam Belgisi (Cheklov)
-              </span>
-              <Switch checked={modIsSpam} onChange={setModIsSpam} />
-            </div>
-
-            {modIsSpam && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#595959', display: 'block', marginBottom: 4 }}>
-                    Spam Cheklovi Muddati:
-                  </label>
-                  <Radio.Group value={modSpamDuration} onChange={(e) => setModSpamDuration(e.target.value)}>
-                    <Radio.Button value="24h">24 soat</Radio.Button>
-                    <Radio.Button value="7d">7 kun</Radio.Button>
-                    <Radio.Button value="permanent">Doimiy</Radio.Button>
-                  </Radio.Group>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#595959', display: 'block', marginBottom: 4 }}>
-                    Spam Sababi:
-                  </label>
-                  <Input
-                    placeholder="Spam sababini kiriting..."
-                    value={modSpamReason}
-                    onChange={(e) => setModSpamReason(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Notification to User */}
-          <div style={{ background: '#f6ffed', padding: 14, borderRadius: 8, border: '1px solid #b7eb8f' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontWeight: 'bold', color: '#237804' }}>
-                🔔 Foydalanuvchiga Bildirishnoma Jo‘natish
-              </span>
-              <Switch checked={modSendNotification} onChange={setModSendNotification} />
-            </div>
-
-            {modSendNotification && (
-              <TextArea
-                rows={2}
-                value={modNotificationMessage}
-                onChange={(e) => setModNotificationMessage(e.target.value)}
-                placeholder="Foydalanuvchiga boradigan xabar..."
-              />
-            )}
-          </div>
-        </div>
+        )}
       </Modal>
     </div>
   );
