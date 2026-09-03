@@ -1,4 +1,4 @@
-﻿/* eslint-disable no-unsafe-optional-chaining */
+/* eslint-disable no-unsafe-optional-chaining */
 import axios from "axios";
 import { toast } from "react-toastify";
 // http://localhost:3030
@@ -90,23 +90,30 @@ api.interceptors.response.use(
         }
 
         try {
-          const response = await axios.get(`${import.meta.env.VITE_API_URL || "http://localhost:3030"}/auth/refresh-token`, { headers: { Authorization: `Bearer ${refreshToken}` } });
+          const baseUrl = api.defaults.baseURL || "https://api.kelishamiz.uz";
+          const response = await axios.get(`${baseUrl}/auth/refresh-token`, {
+            headers: { Authorization: `Bearer ${refreshToken}` },
+          });
 
           if (response.status === 200) {
-            const {
-              accessToken: newAccessToken,
-              refreshToken: newRefreshToken,
-            } = response.data?.data;
+            const newAccessToken =
+              response.data?.accessToken ||
+              response.data?.content?.accessToken ||
+              response.data?.data?.accessToken;
+            const newRefreshToken =
+              response.data?.refreshToken ||
+              response.data?.content?.refreshToken ||
+              response.data?.data?.refreshToken;
 
-            setAccessToken(newAccessToken);
+            if (newAccessToken) {
+              setAccessToken(newAccessToken);
+            }
             if (newRefreshToken) {
               setRefreshToken(newRefreshToken);
             }
 
             processQueue(null, newAccessToken);
-            originalRequest.headers[
-              "Authorization"
-            ] = `Bearer ${newAccessToken}`;
+            originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
             return api(originalRequest);
           }

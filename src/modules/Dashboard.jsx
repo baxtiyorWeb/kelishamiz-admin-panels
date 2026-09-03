@@ -99,7 +99,7 @@ const Dashboard = () => {
     queryKey: ["admin-settings"],
     queryFn: async () => {
       const response = await api.get("/settings");
-      return response.data || {};
+      return response.data?.content || response.data || {};
     },
     staleTime: 60000,
   });

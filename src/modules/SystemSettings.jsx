@@ -112,7 +112,7 @@ export default function SystemSettings() {
 
   // 1. Fetch all settings from backend
   const {
-    data: settings = {},
+    data: rawSettings = {},
     isLoading,
     isRefetching,
     refetch,
@@ -120,18 +120,26 @@ export default function SystemSettings() {
     queryKey: ["admin-settings"],
     queryFn: async () => {
       const res = await api.get("/settings");
-      return res.data || {};
+      return res.data?.content || res.data || {};
     },
   });
 
+  const settings = rawSettings?.content || rawSettings || {};
+
   // 2. Fetch config audit logs
-  const { data: auditLogs = [], isLoading: isAuditLoading, refetch: refetchAudit } = useQuery({
+  const { data: rawAuditLogs = [], isLoading: isAuditLoading, refetch: refetchAudit } = useQuery({
     queryKey: ["admin-settings-audit"],
     queryFn: async () => {
       const res = await api.get("/settings/audit");
-      return res.data || [];
+      return res.data?.content || res.data || [];
     },
   });
+
+  const auditLogs = Array.isArray(rawAuditLogs?.content)
+    ? rawAuditLogs.content
+    : Array.isArray(rawAuditLogs)
+    ? rawAuditLogs
+    : [];
 
   // 3. Mutation for updating settings
   const updateMutation = useMutation({
@@ -143,7 +151,8 @@ export default function SystemSettings() {
       return res.data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["admin-settings"], data);
+      const actualSettings = data?.content || data;
+      queryClient.setQueryData(["admin-settings"], actualSettings);
       queryClient.invalidateQueries({ queryKey: ["admin-settings-audit"] });
       toast.success("Sozlamalar muvaffaqiyatli saqlandi!");
       setDraftSettings({});
