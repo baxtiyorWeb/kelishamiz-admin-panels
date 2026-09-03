@@ -71,6 +71,12 @@ const AppLayout = () => {
           label: "Boshqaruv & Telemetriya",
           onClick: () => navigate("/dashboard"),
         },
+        {
+          key: "/settings",
+          icon: <Settings className="w-4 h-4 text-purple-400" />,
+          label: "Tizim Sozlamalari & Flags",
+          onClick: () => navigate("/settings"),
+        },
       ],
     },
     {
@@ -148,29 +154,16 @@ const AppLayout = () => {
       ],
     },
     {
-      key: "group-finance",
-      type: "group",
-      label: <span className="text-[10px] font-extrabold text-slate-400 tracking-wider">MOLIYA & XARAJATLAR</span>,
-      children: [
-        {
-          key: "/payments",
-          icon: <CreditCard className="w-4 h-4" />,
-          label: "To'lovlar & Tranzaksiyalar",
-          onClick: () => navigate("/payments"),
-        },
-        {
-          key: "/expenses",
-          icon: <Wallet className="w-4 h-4" />,
-          label: "Server & CDN Xarajatlari",
-          onClick: () => navigate("/expenses"),
-        },
-      ],
-    },
-    {
       key: "group-system",
       type: "group",
       label: <span className="text-[10px] font-extrabold text-slate-400 tracking-wider">TIZIM & SOZLAMALAR</span>,
       children: [
+        {
+          key: "/settings-full",
+          icon: <Settings className="w-4 h-4 text-purple-400" />,
+          label: "Tizim Sozlamalari (Control Plane)",
+          onClick: () => navigate("/settings"),
+        },
         {
           key: "/migration",
           icon: <CloudUpload className="w-4 h-4" />,
@@ -220,6 +213,12 @@ const AppLayout = () => {
         type: "divider",
       },
       {
+        key: "settings_profile",
+        icon: <Settings className="w-3.5 h-3.5 text-purple-500" />,
+        label: <span className="text-xs font-semibold">Tizim Sozlamalari</span>,
+        onClick: () => navigate("/settings"),
+      },
+      {
         key: "users_crm",
         icon: <Users className="w-3.5 h-3.5 text-indigo-500" />,
         label: <span className="text-xs font-semibold">Foydalanuvchilar CRM</span>,
@@ -254,6 +253,8 @@ const AppLayout = () => {
     const path = location.pathname;
     if (path.includes("dashboard"))
       return { title: "Boshqaruv & Telemetriya", icon: <LayoutDashboard className="w-4 h-4 text-indigo-600" /> };
+    if (path.includes("settings"))
+      return { title: "Tizim Boshqaruvi & Feature Flags", icon: <Settings className="w-4 h-4 text-purple-600" /> };
     if (path.includes("products"))
       return { title: "E'lonlar & Moderatsiya", icon: <TagIcon className="w-4 h-4 text-indigo-600" /> };
     if (path.includes("shops"))
