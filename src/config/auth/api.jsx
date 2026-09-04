@@ -1,9 +1,12 @@
 /* eslint-disable no-unsafe-optional-chaining */
 import axios from "axios";
 import { toast } from "react-toastify";
-// http://localhost:3030
+const getBaseURL = () => {
+  return import.meta.env.VITE_API_URL || "https://api.kelishamiz.uz";
+};
+
 const api = axios.create({
-  baseURL: "https://api.kelishamiz.uz",
+  baseURL: getBaseURL(),
   headers: {
     "Content-Type": "application/json",
   },
