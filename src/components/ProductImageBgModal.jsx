@@ -75,17 +75,18 @@ export const ProductImageBgModal = ({
           : `/ai/products/${productId}/images/${imageId}/bg-remove/preview`;
       const res = await api.post(endpoint);
       const data = res.data?.content;
+      const actualData = data?.content || data; // Handle double-nested 'content'
 
       setPreviews((prev) => ({
         ...prev,
         [imageId]: {
           status: "success",
-          previewBase64: data.previewBase64,
-          originalUrl: data.originalUrl,
-          width: data.width,
-          height: data.height,
-          sizeBytes: data.sizeBytes,
-          format: data.format,
+          previewBase64: actualData.previewBase64,
+          originalUrl: actualData.originalUrl,
+          width: actualData.width,
+          height: actualData.height,
+          sizeBytes: actualData.sizeBytes,
+          format: actualData.format,
         },
       }));
     } catch (err) {
