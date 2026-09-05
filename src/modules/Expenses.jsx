@@ -251,7 +251,7 @@ const Expenses = () => {
                 Media Xotira (Storage)
               </div>
               <div className="text-2xl font-black text-purple-600 mt-1">
-                {usageData?.storageUsedGB ? `${usageData.storageUsedGB.toFixed(1)} GB` : "2.4 GB"}
+                {usageData?.gbStorage !== undefined ? `${usageData.gbStorage.toFixed(1)} GB` : "2.4 GB"}
               </div>
               <div className="text-[11px] text-purple-600/70 mt-0.5">WebP siqilgan fayllar</div>
             </div>
@@ -268,7 +268,7 @@ const Expenses = () => {
                 CDN Trafik Sarfi
               </div>
               <div className="text-2xl font-black text-emerald-600 mt-1">
-                {usageData?.bandwidthUsedGB ? `${usageData.bandwidthUsedGB.toFixed(1)} GB` : "14.8 GB"}
+                {usageData?.gbBandwidth !== undefined ? `${usageData.gbBandwidth.toFixed(1)} GB` : "14.8 GB"}
               </div>
               <div className="text-[11px] text-emerald-600/70 mt-0.5">Global Edge yetkazish</div>
             </div>
