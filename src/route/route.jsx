@@ -21,6 +21,7 @@ import AuditLogs from "../modules/AuditLogs";
 import AccountDeletions from "../modules/AccountDeletions";
 import Expenses from "../modules/Expenses";
 import SecurityPolicies from "../modules/SecurityPolicies";
+import SystemSettings from "../modules/SystemSettings";
 
 export const AppRouter = () => {
   return (
@@ -51,6 +52,7 @@ export const AppRouter = () => {
         <Route path="/security-policies" element={<SecurityPolicies />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/expenses" element={<Expenses />} />
+        <Route path="/settings" element={<SystemSettings />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>

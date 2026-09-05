@@ -24,6 +24,7 @@ import {
   RefreshCw,
   Layers,
   Eye,
+  Sliders,
 } from "lucide-react";
 import {
   AreaChart,
@@ -91,6 +92,16 @@ const Dashboard = () => {
       return response.data?.content;
     },
     refetchInterval: 30000,
+  });
+
+  // 5. System configuration status
+  const { data: sysSettings } = useQuery({
+    queryKey: ["admin-settings"],
+    queryFn: async () => {
+      const response = await api.get("/settings");
+      return response.data?.content || response.data || {};
+    },
+    staleTime: 60000,
   });
 
   const isLoadingAll = statsLoading || chatsLoading || visitorsLoading || activeUsersLoading;
@@ -199,6 +210,72 @@ const Dashboard = () => {
             <Radio className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
             <span>Telemetry Live (30s)</span>
           </div>
+        </div>
+      </div>
+
+      {/* Central Control Plane Quick Widget */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 rounded-3xl shadow-md border border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
+            <Sliders className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-sm text-white">Central Control Plane Status</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-300 font-mono font-bold">
+                v{sysSettings?.config_version || 1}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Platforma operatsion holati va asosiy funksiyalarning real vaqtdagi statusi
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs flex items-center gap-2">
+            <span className="text-slate-400">Platforma:</span>
+            <span className={`font-bold ${sysSettings?.platform_enabled !== false ? "text-emerald-400" : "text-rose-400"}`}>
+              {sysSettings?.platform_enabled !== false ? "● Online" : "○ Offline"}
+            </span>
+          </div>
+
+          <div className="px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs flex items-center gap-2">
+            <span className="text-slate-400">E'lonlar:</span>
+            <span className={`font-bold ${sysSettings?.ad_posting_enabled !== false ? "text-emerald-400" : "text-rose-400"}`}>
+              {sysSettings?.ad_posting_enabled !== false ? "● Enabled" : "○ Disabled"}
+            </span>
+          </div>
+
+          <div className="px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs flex items-center gap-2">
+            <span className="text-slate-400">Chat:</span>
+            <span className={`font-bold ${sysSettings?.chat_enabled !== false ? "text-emerald-400" : "text-rose-400"}`}>
+              {sysSettings?.chat_enabled !== false ? "● Enabled" : "○ Disabled"}
+            </span>
+          </div>
+
+          <div className="px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs flex items-center gap-2">
+            <span className="text-slate-400">Media Upload:</span>
+            <span className={`font-bold ${sysSettings?.media_upload_enabled !== false ? "text-emerald-400" : "text-rose-400"}`}>
+              {sysSettings?.media_upload_enabled !== false ? "● Enabled" : "○ Disabled"}
+            </span>
+          </div>
+
+          <div className="px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs flex items-center gap-2">
+            <span className="text-slate-400">Maintenance:</span>
+            <span className={`font-bold ${sysSettings?.maintenance_mode ? "text-rose-400 animate-pulse" : "text-slate-400"}`}>
+              {sysSettings?.maintenance_mode ? "● Active" : "○ Disabled"}
+            </span>
+          </div>
+
+          <Button
+            type="primary"
+            size="middle"
+            className="bg-[#6345ED] hover:bg-[#795EF5] font-bold text-xs rounded-xl ml-1"
+            onClick={() => navigate("/settings")}
+          >
+            Boshqarish
+          </Button>
         </div>
       </div>
 
