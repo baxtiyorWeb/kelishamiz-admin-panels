@@ -593,29 +593,31 @@ const Banners = () => {
                   <Input placeholder="00:15" className="!rounded-xl h-10" />
                 </Form.Item>
               </div>
-
-              <div className="text-xs font-bold text-purple-700 uppercase tracking-wider flex items-center gap-1.5 mt-2">
-                Ijtimoiy Tarmoq Havolalari
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Form.Item name="youtubeUrl" label="YouTube URL" className="!m-0">
-                  <Input placeholder="https://youtube.com/..." className="!rounded-xl" />
-                </Form.Item>
-                <Form.Item name="instagramUrl" label="Instagram URL" className="!m-0">
-                  <Input placeholder="https://instagram.com/..." className="!rounded-xl" />
-                </Form.Item>
-                <Form.Item name="telegramUrl" label="Telegram URL" className="!m-0">
-                  <Input placeholder="https://t.me/..." className="!rounded-xl" />
-                </Form.Item>
-                <Form.Item name="facebookUrl" label="Facebook URL" className="!m-0">
-                  <Input placeholder="https://facebook.com/..." className="!rounded-xl" />
-                </Form.Item>
-              </div>
             </div>
           )}
 
+          <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100/80 flex flex-col gap-3 mb-4">
+            <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
+              <Layers className="w-4 h-4" /> Ijtimoiy Tarmoq Havolalari (Instagram, Telegram, YouTube, Facebook)
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Form.Item name="instagramUrl" label="Instagram URL" className="!m-0">
+                <Input placeholder="https://instagram.com/..." className="!rounded-xl" />
+              </Form.Item>
+              <Form.Item name="telegramUrl" label="Telegram URL" className="!m-0">
+                <Input placeholder="https://t.me/..." className="!rounded-xl" />
+              </Form.Item>
+              <Form.Item name="youtubeUrl" label="YouTube URL" className="!m-0">
+                <Input placeholder="https://youtube.com/..." className="!rounded-xl" />
+              </Form.Item>
+              <Form.Item name="facebookUrl" label="Facebook URL" className="!m-0">
+                <Input placeholder="https://facebook.com/..." className="!rounded-xl" />
+              </Form.Item>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <Form.Item name="linkUrl" label="Yo'naltirish URL havolasi">
+            <Form.Item name="linkUrl" label="Yo'naltirish URL havolasi (Veb-sayt)">
               <Input placeholder="https://..." className="!rounded-xl h-11" />
             </Form.Item>
             <Form.Item name="placement" label="Joylashuv" rules={[{ required: true }]}>
