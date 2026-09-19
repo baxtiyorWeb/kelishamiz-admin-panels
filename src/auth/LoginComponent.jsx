@@ -111,15 +111,26 @@ const LoginComponent = () => {
         const response = await api.post("/auth/send-otp", {
           phone: `+${phoneDigits}`,
         });
+        const incomingOtp =
+          response.data?.otp ||
+          response.data?.code ||
+          response.data?.content?.otp ||
+          response.data?.content?.code ||
+          "";
+
         setStep("otp");
         setCountdown(120);
-        setSuccess("Tasdiqlash kodi yuborildi");
-        setResponseCode(response.data.code);
+        setResponseCode(incomingOtp);
 
-        if (response.data.code) {
+        if (incomingOtp) {
+          setCode(incomingOtp);
+          setSuccess("Ruxsat berilgan raqam: Kod avtomatik to'ldirildi!");
+          // Avtomatik tizimga kirish
           setTimeout(() => {
-            setCode(response.data.code);
-          }, 1000);
+            executeLogin(incomingOtp, `+${phoneDigits}`, !checkRes.data?.exists);
+          }, 600);
+        } else {
+          setSuccess("Tasdiqlash kodi yuborildi");
         }
       } catch (otpError) {
         if (otpError?.response?.status === 409) {
@@ -137,52 +148,61 @@ const LoginComponent = () => {
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const executeLogin = async (otpValue, targetPhone, isNew) => {
     setError("");
     setLoading(true);
 
-    if (code.length < 4 && !responseCode) {
-      setError("Iltimos, to'g'ri kodni kiriting");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const phoneDigits = phone.replace(/\D/g, "");
-      const verifyRes = await api.post("/auth/verify-otp", {
-        phone: `+${phoneDigits}`,
-        code: responseCode || code,
-      });
+      const phoneDigits = (targetPhone || phone).replace(/\D/g, "");
+      const otpCode = otpValue || responseCode || code;
 
-      if (verifyRes.data?.success) {
-        if (isNewUser) {
+      if (isNew) {
+        const verifyRes = await api.post("/auth/verify-otp", {
+          phone: `+${phoneDigits}`,
+          code: otpCode,
+        });
+
+        if (verifyRes.data?.success) {
           setStep("register");
           setSuccess("Kod tasdiqlandi. Iltimos, ma'lumotlaringizni kiriting");
         } else {
-          try {
-            const loginRes = await api.post("/auth/login/verify-otp", {
-              phone: `+${phoneDigits}`,
-              code: responseCode || code,
-            });
-            localStorage.setItem("accessToken", loginRes.data?.accessToken);
-            localStorage.setItem("refreshToken", loginRes.data?.refreshToken);
-            setSuccess("Muvaffaqiyatli kirildi! Yo'naltirilmoqda...");
-
-            setTimeout(() => {
-              window.location.href = "/";
-            }, 1000);
-          } catch (loginErr) {
-            setError("Tizimga kirishda xatolik yuz berdi.");
-          }
+          setError(verifyRes.data?.message || "OTP kodi noto'g'ri yoki muddati o'tgan.");
         }
       } else {
-        setError(verifyRes.data?.message || "OTP kodi noto'g'ri yoki muddati o'tgan.");
+        const loginRes = await api.post("/auth/login/verify-otp", {
+          phone: `+${phoneDigits}`,
+          code: otpCode,
+        });
+
+        const token = loginRes.data?.accessToken || loginRes.data?.content?.accessToken;
+        const refreshToken = loginRes.data?.refreshToken || loginRes.data?.content?.refreshToken;
+
+        if (token) {
+          localStorage.setItem("accessToken", token);
+          if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+          setSuccess("Muvaffaqiyatli kirildi! Yo'naltirilmoqda...");
+
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 800);
+        } else {
+          setError(loginRes.data?.message || "Tizimga kirishda xatolik yuz berdi.");
+        }
       }
     } catch (err) {
-      setError("OTP tekshirishda xatolik yuz berdi.");
+      const msg = err?.response?.data?.message || "OTP tekshirishda xatolik yuz berdi.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerifyOtp = () => {
+    if (code.length < 4 && !responseCode) {
+      setError("Iltimos, to'g'ri kodni kiriting");
+      return;
+    }
+    executeLogin(responseCode || code, phone, isNewUser);
   };
 
   const handleCreateAccount = async () => {
@@ -246,9 +266,25 @@ const LoginComponent = () => {
       const response = await api.post("/auth/send-otp", {
         phone: `+${phoneDigits}`,
       });
+      const incomingOtp =
+        response.data?.otp ||
+        response.data?.code ||
+        response.data?.content?.otp ||
+        response.data?.content?.code ||
+        "";
+
       setCountdown(120);
-      setResponseCode(response.data?.code);
-      setSuccess("Yangi tasdiqlash kodi yuborildi");
+      setResponseCode(incomingOtp);
+
+      if (incomingOtp) {
+        setCode(incomingOtp);
+        setSuccess("Ruxsat berilgan raqam: Kod avtomatik to'ldirildi!");
+        setTimeout(() => {
+          executeLogin(incomingOtp, `+${phoneDigits}`, isNewUser);
+        }, 600);
+      } else {
+        setSuccess("Yangi tasdiqlash kodi yuborildi");
+      }
     } catch (err) {
       setError("OTP qayta yuborishda xatolik yuz berdi.");
     } finally {
