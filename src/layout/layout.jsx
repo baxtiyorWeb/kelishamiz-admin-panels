@@ -189,6 +189,12 @@ const AppLayout = () => {
           onClick: () => navigate("/security-policies"),
         },
         {
+          key: "/otp-security",
+          icon: <Shield className="w-4 h-4 text-amber-500" />,
+          label: "OTP & Play Testers Siyosati",
+          onClick: () => navigate("/otp-security"),
+        },
+        {
           key: "/audit-logs",
           icon: <History className="w-4 h-4" />,
           label: "Audit Tarixi & Logs",
