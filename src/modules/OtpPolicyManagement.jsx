@@ -67,7 +67,8 @@ export default function OtpPolicyManagement() {
     setLoading(true);
     try {
       const res = await api.get("/admin/security/otp-policy");
-      setPolicyData(res.data);
+      const data = res.data?.content || res.data || {};
+      setPolicyData(data);
     } catch (err) {
       message.error("OTP siyosatini yuklashda xatolik yuz berdi");
     } finally {
@@ -80,7 +81,8 @@ export default function OtpPolicyManagement() {
     setTestersLoading(true);
     try {
       const res = await api.get("/admin/security/otp-testers");
-      setTesters(res.data || []);
+      const list = res.data?.content || res.data || [];
+      setTesters(Array.isArray(list) ? list : []);
     } catch (err) {
       message.error("Testerlar ro'yxatini yuklashda xatolik");
     } finally {
@@ -112,12 +114,13 @@ export default function OtpPolicyManagement() {
         enabled: targetToggleState,
         reason: toggleReason,
       });
-      message.success(res.data?.message || "Siyosat muvaffaqiyatli yangilandi");
+      const data = res.data?.content || res.data || {};
+      message.success(data?.message || res.data?.message || "Siyosat muvaffaqiyatli yangilandi");
       setPolicyData((prev) => ({
         ...prev,
         fakeForTesters: targetToggleState,
-        lastUpdatedAt: res.data?.lastUpdatedAt || new Date().toISOString(),
-        lastUpdatedBy: res.data?.lastUpdatedBy || "Siz",
+        lastUpdatedAt: data?.lastUpdatedAt || new Date().toISOString(),
+        lastUpdatedBy: data?.lastUpdatedBy || "Siz",
       }));
       setConfirmModalVisible(false);
       fetchPolicy();
@@ -423,7 +426,7 @@ export default function OtpPolicyManagement() {
                 Faqat Authorized Testerlar
               </div>
               <div className="text-[11px] text-slate-500 mt-1">
-                {testers.filter((t) => t.status === "ACTIVE").length} ta faol test hisobi
+                {(Array.isArray(testers) ? testers : []).filter((t) => t?.status === "ACTIVE").length} ta faol test hisobi
               </div>
             </div>
           </Col>
@@ -484,7 +487,7 @@ export default function OtpPolicyManagement() {
               Authorized Testers Allowlist
             </span>
             <Badge
-              count={testers.length}
+              count={(Array.isArray(testers) ? testers : []).length}
               className="ml-2"
               style={{ backgroundColor: "#4f46e5" }}
             />
@@ -503,7 +506,7 @@ export default function OtpPolicyManagement() {
         className="border border-slate-200 shadow-xs"
       >
         <Table
-          dataSource={testers}
+          dataSource={Array.isArray(testers) ? testers : []}
           columns={testerColumns}
           rowKey="id"
           loading={testersLoading}

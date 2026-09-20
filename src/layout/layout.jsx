@@ -171,6 +171,12 @@ const AppLayout = () => {
           onClick: () => navigate("/migration"),
         },
         {
+          key: "/expenses",
+          icon: <Wallet className="w-4 h-4" />,
+          label: "Server & CDN Xarajatlari",
+          onClick: () => navigate("/expenses"),
+        },
+        {
           key: "/deletions",
           icon: <UserX className="w-4 h-4" />,
           label: "Account Deletions Ops",
