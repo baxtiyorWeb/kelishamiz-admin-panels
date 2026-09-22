@@ -50,11 +50,14 @@ const useAuthStore = create((set, getState) => ({
         return;
       }
 
-      const response = await api.post("/authority/refresh-token", {
+      const response = await api.post("/auth/refresh-token", {
         refreshToken: state.refreshToken,
       });
 
-      const newAccessToken = get(response, "data.accessToken");
+      const newAccessToken =
+        get(response, "data.accessToken") ||
+        get(response, "data.content.accessToken") ||
+        get(response, "data.data.accessToken");
       if (!newAccessToken) {
         console.log("Failed to retrieve new access token, logging out...");
         state.logout();
@@ -66,7 +69,7 @@ const useAuthStore = create((set, getState) => ({
       console.log("Access token refreshed");
     } catch (error) {
       console.error("Failed to refresh access token", error);
-      if (error.response?.status === 401 || error.response?.status === 403) {
+      if (error.response?.status === 401) {
         getState().logout();
       }
     }

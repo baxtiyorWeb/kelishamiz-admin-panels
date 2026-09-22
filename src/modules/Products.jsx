@@ -125,22 +125,36 @@ const Products = () => {
   const [selectedGalleryImageIds, setSelectedGalleryImageIds] = useState([]);
   const [form] = Form.useForm();
 
-  // Fetch products list
+  // Fetch products list via Admin Listings API with server-side pagination, status filter, and search
   const {
     data,
     isLoading,
     isFetching,
     refetch: refetchProducts,
   } = useQuery({
-    queryKey: ["products", page, pageSize],
+    queryKey: ["admin-listings", page, pageSize, statusTab, searchFilter],
     queryFn: async () => {
-      const response = await api.get(`/products?pageSize=${pageSize}&page=${page}`);
+      const statusParam = statusTab === "all" || statusTab === "top" ? "" : statusTab;
+      const response = await api.get(
+        `/admin/listings?page=${page}&limit=${pageSize}&status=${statusParam}&search=${encodeURIComponent(searchFilter)}`
+      );
       if (response.status !== 200 || !response.data) {
         throw new Error("Network response was not ok");
       }
       return response.data;
     },
     retry: 2,
+    keepPreviousData: true,
+  });
+
+  // Fetch admin dashboard stats for accurate system-wide counters
+  const { data: dashboardStatsData, refetch: refetchStats } = useQuery({
+    queryKey: ["admin-dashboard-stats"],
+    queryFn: async () => {
+      const res = await api.get("/admin/dashboard/stats");
+      return res.data?.content || res.data;
+    },
+    staleTime: 30000,
   });
 
   // Fetch single product details
@@ -157,7 +171,7 @@ const Products = () => {
       if (response.status !== 200 || !response.data) {
         throw new Error("Network response was not ok");
       }
-      return response.data?.content;
+      return response.data?.content || response.data;
     },
     enabled: !!selectedProductId && isViewModalOpen,
   });
@@ -174,19 +188,60 @@ const Products = () => {
     }
   };
 
-  const productItems = useMemo(() => get(data, "content.data", []), [data]);
-  const totalProducts = get(data, "content.total", 0);
-  const currentPage = get(data, "content.page", 1);
+  const productItems = useMemo(() => {
+    return get(data, "content.data", get(data, "data", []));
+  }, [data]);
+  const totalProducts = get(data, "content.total", get(data, "total", 0));
+  const currentPage = get(data, "content.page", get(data, "page", 1));
 
-  // Real-time calculated counters
+  // Real-time calculated counters from system stats
   const stats = useMemo(() => {
+    const kpi = dashboardStatsData?.kpi;
     return {
-      total: totalProducts || productItems.length,
-      pending: productItems.filter((p) => p.status === "pending").length,
-      active: productItems.filter((p) => p.status === "active").length,
+      total: kpi?.totalListings ?? totalProducts,
+      pending: kpi?.pendingListings ?? productItems.filter((p) => p.status === "pending").length,
+      active: kpi?.activeListings ?? productItems.filter((p) => p.status === "active").length,
       top: productItems.filter((p) => p.isTop).length,
     };
-  }, [productItems, totalProducts]);
+  }, [dashboardStatsData, totalProducts, productItems]);
+
+  // Approve listing mutation
+  const { mutate: approveListing } = useMutation({
+    mutationFn: async (id) => {
+      const response = await api.post(`/admin/listings/${id}/approve`);
+      return response.data;
+    },
+    onMutate: (id) => setStatusUpdatingId(id),
+    onSuccess: () => {
+      message.success("E'lon tasdiqlandi va faollashtirildi.");
+      refetchProducts();
+      refetchStats();
+    },
+    onError: (error) => {
+      const serverMessage = get(error, "response.data.message");
+      message.error(serverMessage || "Tasdiqlashda xatolik yuz berdi.");
+    },
+    onSettled: () => setStatusUpdatingId(null),
+  });
+
+  // Reject listing mutation
+  const { mutate: rejectListing } = useMutation({
+    mutationFn: async ({ id, reason }) => {
+      const response = await api.post(`/admin/listings/${id}/reject`, { reason });
+      return response.data;
+    },
+    onMutate: ({ id }) => setStatusUpdatingId(id),
+    onSuccess: () => {
+      message.success("E'lon rad etildi.");
+      refetchProducts();
+      refetchStats();
+    },
+    onError: (error) => {
+      const serverMessage = get(error, "response.data.message");
+      message.error(serverMessage || "Rad etishda xatolik yuz berdi.");
+    },
+    onSettled: () => setStatusUpdatingId(null),
+  });
 
   // Mutations
   const { mutate: updateProductTopStatus } = useMutation({
@@ -205,7 +260,7 @@ const Products = () => {
 
   const { mutate: updateProductPublishStatus } = useMutation({
     mutationFn: async ({ id, isPublished }) => {
-      const response = await api.patch(`/products/${id}/top`, { isPublish: isPublished });
+      const response = await api.patch(`/products/${id}/publish`, { isPublish: isPublished });
       return response.data;
     },
     onSuccess: () => {
@@ -226,6 +281,7 @@ const Products = () => {
     onSuccess: () => {
       message.success("E'lon moderatsiya holati muvaffaqiyatli yangilandi.");
       refetchProducts();
+      refetchStats();
     },
     onError: (error) => {
       const serverMessage = get(error, "response.data.message");
@@ -237,12 +293,13 @@ const Products = () => {
 
   const { mutate: deleteProduct } = useMutation({
     mutationFn: async (id) => {
-      const response = await api.delete(`/products/by-id/${id}`);
+      const response = await api.delete(`/admin/listings/${id}`);
       return response.data;
     },
     onSuccess: () => {
       message.success("E'lon o'chirildi.");
       refetchProducts();
+      refetchStats();
       setIsViewModalOpen(false);
     },
     onError: () => {
@@ -312,25 +369,11 @@ const Products = () => {
   };
 
   const filteredItems = useMemo(() => {
-    return productItems.filter((p) => {
-      if (statusTab === "pending" && p.status !== "pending") return false;
-      if (statusTab === "active" && p.status !== "active") return false;
-      if (statusTab === "top" && !p.isTop) return false;
-      if (statusTab === "rejected" && p.status !== "rejected") return false;
-
-      if (searchFilter.trim()) {
-        const term = searchFilter.toLowerCase();
-        return (
-          p.title?.toLowerCase().includes(term) ||
-          p.category?.name?.toLowerCase().includes(term) ||
-          p.id?.toString().includes(term) ||
-          p.profile?.fullName?.toLowerCase().includes(term) ||
-          p.profile?.user?.username?.toLowerCase().includes(term)
-        );
-      }
-      return true;
-    });
-  }, [productItems, statusTab, searchFilter]);
+    if (statusTab === "top") {
+      return productItems.filter((p) => p.isTop);
+    }
+    return productItems;
+  }, [productItems, statusTab]);
 
   const columns = [
     {
@@ -449,7 +492,11 @@ const Products = () => {
             value={current}
             loading={statusUpdatingId === record.id}
             disabled={statusUpdatingId === record.id}
-            onChange={(val) => updateProductStatus({ id: record.id, status: val })}
+            onChange={(val) => {
+              if (val === "active") approveListing(record.id);
+              else if (val === "rejected") rejectListing({ id: record.id, reason: "Admin tomonidan rad etildi" });
+              else updateProductStatus({ id: record.id, status: val });
+            }}
             className="w-36 !rounded-xl"
           >
             {STATUS_OPTIONS.map((opt) => (
@@ -475,8 +522,9 @@ const Products = () => {
               <Tooltip title="Tasdiqlash (Saytda e'lon qilish)">
                 <button
                   type="button"
-                  onClick={() => updateProductStatus({ id: record.id, status: "active" })}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-sm shadow-emerald-600/30 transition-all cursor-pointer"
+                  disabled={statusUpdatingId === record.id}
+                  onClick={() => approveListing(record.id)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-sm shadow-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Qabul</span>
@@ -485,8 +533,9 @@ const Products = () => {
               <Tooltip title="Rad etish">
                 <button
                   type="button"
-                  onClick={() => updateProductStatus({ id: record.id, status: "rejected" })}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 font-bold text-xs transition-all cursor-pointer"
+                  disabled={statusUpdatingId === record.id}
+                  onClick={() => rejectListing({ id: record.id, reason: "Talablarga javob bermaydi" })}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
                 >
                   <XCircle className="w-3.5 h-3.5 text-rose-600" />
                   <span>Rad</span>
@@ -612,7 +661,10 @@ const Products = () => {
               type="text"
               placeholder="Nomi, ID yoki sotuvchi..."
               value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
+              onChange={(e) => {
+                setSearchFilter(e.target.value);
+                setPage(1);
+              }}
               className="pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all w-60"
             />
           </div>
@@ -704,7 +756,10 @@ const Products = () => {
         <div className="border-b border-slate-100 pb-2">
           <Tabs
             activeKey={statusTab}
-            onChange={(key) => setStatusTab(key)}
+            onChange={(key) => {
+              setStatusTab(key);
+              setPage(1);
+            }}
             className="!m-0"
             items={[
               {

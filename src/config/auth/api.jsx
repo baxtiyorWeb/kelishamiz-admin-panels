@@ -61,8 +61,14 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      if (error.response.data.message === "Invalid refresh token") {
+    if (error.response?.status === 403) {
+      const msg = error.response?.data?.message || "Sizda ushbu amalni bajarish uchun ruxsat yo'q.";
+      toast.error(msg);
+      return Promise.reject(error);
+    }
+
+    if (error.response?.status === 401) {
+      if (error.response.data?.message === "Invalid refresh token") {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         window.location.href = "/auth/login";
