@@ -2194,7 +2194,208 @@ export default function SystemSettings() {
                           >
                             Banerni Saqlash
                           </Button>
+      
+
+                    {/* App Version & In-App Update Control Card */}
+                    <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-4">
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                            <Smartphone className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-slate-900 text-sm">
+                              Mobil Ilova Yangilanish Boshqaruvi (Android & iOS)
+                            </span>
+                            <p className="text-xs text-slate-500">
+                              Play Market / App Store yangilanishi va foydalanuvchilar ekranida chiqadigan xabarnoma
+                            </p>
+                          </div>
                         </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-600 font-medium">Majburiy yangilash:</span>
+                          <Switch
+                            checked={Boolean(getValue("app_version", {})?.android?.force_update)}
+                            onChange={(checked) => {
+                              const current = getValue("app_version", {
+                                android: {
+                                  latest_version_code: 22,
+                                  latest_version: "1.0.21",
+                                  min_version_code: 20,
+                                  force_update: false,
+                                  message: "Kelishamiz mobil ilovasida tezlik oshirildi, xatoliklar tuzatildi va yangi imkoniyatlar qo'shildi. Eng so'nggi versiyaga yangilang!",
+                                  store_url: "https://play.google.com/store/apps/details?id=uz.kelishamizgroup.kelishamiz",
+                                },
+                              });
+                              updateMutation.mutate({
+                                payload: {
+                                  app_version: {
+                                    ...current,
+                                    android: {
+                                      ...(current?.android || {}),
+                                      force_update: checked,
+                                    },
+                                  },
+                                },
+                                reason: `Mobil ilovani majburiy yangilash ${checked ? "YOQILDI" : "O'CHIRILDI"}`,
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Row gutter={[16, 16]}>
+                          <Col xs={24} sm={8}>
+                            <label className="text-xs font-semibold text-slate-700 block mb-1">
+                              Eng So'nggi Version Code:
+                            </label>
+                            <InputNumber
+                              min={1}
+                              className="w-full"
+                              value={getValue("app_version", {})?.android?.latest_version_code ?? 22}
+                              onChange={(val) => {
+                                const current = getValue("app_version", {});
+                                handleDraftChange("app_version", {
+                                  ...current,
+                                  android: {
+                                    ...(current?.android || {}),
+                                    latest_version_code: Number(val) || 1,
+                                  },
+                                });
+                              }}
+                            />
+                            <span className="text-[11px] text-slate-400 block mt-1">
+                              Play Store'dagi eng so'nggi versionCode (masalan: 22)
+                            </span>
+                          </Col>
+
+                          <Col xs={24} sm={8}>
+                            <label className="text-xs font-semibold text-slate-700 block mb-1">
+                              Eng So'nggi Versiya Nomi:
+                            </label>
+                            <Input
+                              value={getValue("app_version", {})?.android?.latest_version || "1.0.21"}
+                              onChange={(e) => {
+                                const current = getValue("app_version", {});
+                                handleDraftChange("app_version", {
+                                  ...current,
+                                  android: {
+                                    ...(current?.android || {}),
+                                    latest_version: e.target.value,
+                                  },
+                                });
+                              }}
+                              className="rounded-lg"
+                              placeholder="1.0.21"
+                            />
+                            <span className="text-[11px] text-slate-400 block mt-1">
+                              Foydalanuvchiga ko'rinadigan versiya nomi
+                            </span>
+                          </Col>
+
+                          <Col xs={24} sm={8}>
+                            <label className="text-xs font-semibold text-slate-700 block mb-1">
+                              Minimal Ruxsat Versiya Code:
+                            </label>
+                            <InputNumber
+                              min={1}
+                              className="w-full"
+                              value={getValue("app_version", {})?.android?.min_version_code ?? 20}
+                              onChange={(val) => {
+                                const current = getValue("app_version", {});
+                                handleDraftChange("app_version", {
+                                  ...current,
+                                  android: {
+                                    ...(current?.android || {}),
+                                    min_version_code: Number(val) || 1,
+                                  },
+                                });
+                              }}
+                            />
+                            <span className="text-[11px] text-slate-400 block mt-1">
+                              Bundan eski versiyalar majburiy yangilanadi
+                            </span>
+                          </Col>
+                        </Row>
+
+                        <div>
+                          <label className="text-xs font-semibold text-slate-700 block mb-1">
+                            Yangilanish Xabari (Foydalanuvchi ko'radigan matn):
+                          </label>
+                          <TextArea
+                            rows={2}
+                            value={
+                              getValue("app_version", {})?.android?.message ||
+                              "Kelishamiz mobil ilovasida tezlik oshirildi, xatoliklar tuzatildi va yangi imkoniyatlar qo'shildi. Eng so'nggi versiyaga yangilang!"
+                            }
+                            onChange={(e) => {
+                              const current = getValue("app_version", {});
+                              handleDraftChange("app_version", {
+                                ...current,
+                                android: {
+                                  ...(current?.android || {}),
+                                  message: e.target.value,
+                                },
+                              });
+                            }}
+                            className="rounded-lg"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-slate-700 block mb-1">
+                            Google Play Store Havolasi:
+                          </label>
+                          <Input
+                            value={
+                              getValue("app_version", {})?.android?.store_url ||
+                              "https://play.google.com/store/apps/details?id=uz.kelishamizgroup.kelishamiz"
+                            }
+                            onChange={(e) => {
+                              const current = getValue("app_version", {});
+                              handleDraftChange("app_version", {
+                                ...current,
+                                android: {
+                                  ...(current?.android || {}),
+                                  store_url: e.target.value,
+                                },
+                              });
+                            }}
+                            className="rounded-lg"
+                          />
+                        </div>
+
+                        <div className="flex justify-end pt-2">
+                          <Button
+                            type="primary"
+                            className="bg-[#6345ED]"
+                            icon={<Save className="w-4 h-4" />}
+                            loading={updateMutation.isPending}
+                            onClick={() => {
+                              const current = getValue("app_version", {
+                                android: {
+                                  latest_version_code: 22,
+                                  latest_version: "1.0.21",
+                                  min_version_code: 20,
+                                  force_update: false,
+                                  message: "Kelishamiz mobil ilovasida tezlik oshirildi, xatoliklar tuzatildi va yangi imkoniyatlar qo'shildi. Eng so'nggi versiyaga yangilang!",
+                                  store_url: "https://play.google.com/store/apps/details?id=uz.kelishamizgroup.kelishamiz",
+                                },
+                              });
+                              updateMutation.mutate({
+                                payload: { app_version: current },
+                                reason: "Mobil ilova yangilanish sozlamalari yangilandi",
+                              });
+                            }}
+                          >
+                            Ilova Yangilanishini Saqlash
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                       </div>
                     </div>
                   </div>
