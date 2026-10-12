@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import Table from "./../components/Table";
 import api from "../config/auth/api";
+import { CompactStatCard } from "../components/CompactStatCard";
 
 const initialPropertyState = {
   id: null,
@@ -299,31 +300,36 @@ const Properties = () => {
     {
       title: "Amallar",
       key: "action",
-      width: 95,
+      width: 80,
+      fixed: "right",
       render: (_, record) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 justify-end">
           <Tooltip title="Tahrirlash">
             <button
               type="button"
+              aria-label="Xususiyatni tahrirlash"
               onClick={() => handleOpenEdit(record)}
-              className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+              className="btn-action-primary"
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
           <Popconfirm
-            title="Ushbu xususiyatni o'chirishga ishonchingiz komilmi?"
+            title="Xususiyatni o'chirish"
+            description={`Haqiqatan ham #${record.id} ${record.name} xususiyatini o'chirmoqchimisiz?`}
             onConfirm={() => deletePropertyMutation.mutate(record.id)}
             okText="Ha, o'chirish"
             cancelText="Bekor"
-            okButtonProps={{ danger: true }}
+            okButtonProps={{ danger: true, size: "small" }}
+            cancelButtonProps={{ size: "small" }}
           >
             <Tooltip title="O'chirish">
               <button
                 type="button"
-                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                aria-label="Xususiyatni o'chirish"
+                className="btn-action-danger"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </Tooltip>
           </Popconfirm>
@@ -335,10 +341,10 @@ const Properties = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <h1 className="text-xl font-bold text-slate-900 m-0 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center">
               <Sliders className="w-4 h-4" />
             </div>
             Dinamik Mahsulot Xususiyatlari & Parametrlari
@@ -355,7 +361,7 @@ const Properties = () => {
               placeholder="Xususiyat yoki kategoriya..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all w-60"
+              className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white text-xs font-medium text-slate-800 outline-none focus:border-blue-700 transition-all w-60"
             />
           </div>
           <button
@@ -365,7 +371,7 @@ const Properties = () => {
               setPropertyFormData(initialPropertyState);
               setIsModalOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs shadow-sm shadow-blue-700/20 transition-all active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Yangi Xususiyat</span>
@@ -373,69 +379,55 @@ const Properties = () => {
         </div>
       </div>
 
-      {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Xususiyatlar</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Barcha filtr parametrlari</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Sliders className="w-6 h-6" />
-            </div>
-          </div>
+      {/* Compact KPI Cards */}
+      <Row gutter={[12, 12]}>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Jami Xususiyatlar"
+            value={stats.total}
+            unit="ta"
+            icon={<Sliders className="w-4 h-4" />}
+            color="blue"
+            description="Barcha filtr parametrlari"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1">
-                Tanlovli (Select)
-              </div>
-              <div className="text-2xl font-black text-rose-600 mt-1">{stats.selectType} ta</div>
-              <div className="text-[11px] text-rose-600/70 mt-0.5">Variantli ro'yxatlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <List className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Tanlovli (Select)"
+            value={stats.selectType}
+            unit="ta"
+            icon={<List className="w-4 h-4" />}
+            color="rose"
+            description="Variantli ro'yxatlar"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
-                Raqamli Parametrlar
-              </div>
-              <div className="text-2xl font-black text-purple-600 mt-1">{stats.numericType} ta</div>
-              <div className="text-[11px] text-purple-600/70 mt-0.5">Sonli diapazon filtrlari</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Hash className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Raqamli Parametrlar"
+            value={stats.numericType}
+            unit="ta"
+            icon={<Hash className="w-4 h-4" />}
+            color="indigo"
+            description="Sonli diapazon filtrlari"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Bog'langan Bo'limlar
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">{stats.uniqueCats} ta</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">Parametrga ega kategoriyalar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Layers className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Bog'langan Bo'limlar"
+            value={stats.uniqueCats}
+            unit="ta"
+            icon={<Layers className="w-4 h-4" />}
+            color="emerald"
+            description="Parametrga ega kategoriyalar"
+          />
         </Col>
       </Row>
 
       {/* Main Table Card with Type Tabs */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col gap-4">
+      <div className="enterprise-card p-4 overflow-hidden flex flex-col gap-3">
         {/* Type Tabs */}
         <div className="border-b border-slate-100 pb-2">
           <Tabs
@@ -443,11 +435,11 @@ const Properties = () => {
             onChange={(k) => setTypeFilter(k)}
             className="!m-0"
             items={[
-              { key: "all", label: <span className="font-bold">Barchasi ({propertiesList.length})</span> },
-              { key: "SELECT", label: <span className="font-bold text-rose-600">🔴 SELECT (Variantli)</span> },
-              { key: "STRING", label: <span className="font-bold text-blue-600">🔵 STRING (Matn)</span> },
-              { key: "INTEGER", label: <span className="font-bold text-purple-600">🟣 INTEGER (Son)</span> },
-              { key: "DOUBLE", label: <span className="font-bold text-amber-600">🟡 DOUBLE (O'nlik)</span> },
+              { key: "all", label: <span className="font-semibold text-xs">Barchasi ({propertiesList.length})</span> },
+              { key: "SELECT", label: <span className="font-semibold text-xs text-rose-700">SELECT (Variantli)</span> },
+              { key: "STRING", label: <span className="font-semibold text-xs text-blue-700">STRING (Matn)</span> },
+              { key: "INTEGER", label: <span className="font-semibold text-xs text-indigo-700">INTEGER (Son)</span> },
+              { key: "DOUBLE", label: <span className="font-semibold text-xs text-amber-700">DOUBLE (O'nlik)</span> },
               { key: "BOOLEAN", label: <span className="font-bold text-emerald-600">🟢 BOOLEAN (Ha/Yo'q)</span> },
             ]}
           />
@@ -463,6 +455,7 @@ const Properties = () => {
           setPage={setPage}
           setPageSize={setPageSize}
           total={filteredProperties.length}
+          size="small"
         />
       </div>
 

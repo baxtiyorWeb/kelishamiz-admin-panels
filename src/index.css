@@ -5,16 +5,30 @@
 @tailwind utilities;
 
 :root {
-  --primary: #6345ed;
-  --primary-hover: #795ef5;
-  --primary-active: #5034d6;
-  --primary-light: #f3f0ff;
-  
+  /* Enterprise Deep Blue Design System */
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --primary-active: #1e3a8a;
+  --primary-light: #eff6ff;
+  --primary-border: #bfdbfe;
+
   --bg-main: #f8fafc;
-  --bg-card: #ffffff;
+  --bg-surface: #ffffff;
+  --bg-muted: #f1f5f9;
+  
   --text-main: #0f172a;
+  --text-secondary: #334155;
   --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  
   --border-color: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --border-strong: #cbd5e1;
+
+  --status-success: #059669;
+  --status-warning: #d97706;
+  --status-danger: #dc2626;
+  --status-info: #2563eb;
 }
 
 * {
@@ -47,109 +61,219 @@ body {
   background: #94a3b8;
 }
 
-/* Glassmorphism & Modern Card Classes */
-.glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-}
-
-.modern-card {
+/* Enterprise Surface & Metric Card Styles */
+.enterprise-card {
   background: #ffffff;
-  border-radius: 14px;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s ease-in-out;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.modern-card:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.02);
+.enterprise-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px 0 rgba(15, 23, 42, 0.05);
 }
 
-.gradient-header {
-  background: linear-gradient(135deg, #6345ed 0%, #8b5cf6 50%, #3b82f6 100%);
+.enterprise-card-compact {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
 }
 
+/* Status Badges */
 .stat-badge-up {
   background: #ecfdf5;
-  color: #059669;
+  color: #065f46;
   border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .stat-badge-down {
   background: #fef2f2;
-  color: #dc2626;
+  color: #991b1b;
   border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
-/* Ant Design Table & Component Customizations */
+.stat-badge-neutral {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Ant Design Global Polish for Enterprise SaaS (High-Density & Compact) */
 .ant-table-wrapper .ant-table {
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   overflow: hidden;
+  border: 1px solid #e2e8f0 !important;
 }
 
 .ant-table-wrapper .ant-table-thead > tr > th {
   background: #f8fafc !important;
   color: #475569 !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
+  font-weight: 700 !important;
+  font-size: 11.5px !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase !important;
   border-bottom: 1px solid #e2e8f0 !important;
+  padding: 8px 12px !important;
+  white-space: nowrap !important;
 }
 
 .ant-table-wrapper .ant-table-tbody > tr > td {
   border-bottom: 1px solid #f1f5f9 !important;
-  padding: 14px 16px !important;
-  font-size: 13.5px !important;
+  padding: 9px 12px !important;
+  font-size: 12.5px !important;
+  color: #1e293b !important;
+  line-height: 1.4 !important;
 }
 
 .ant-table-wrapper .ant-table-tbody > tr:hover > td {
-  background: #f8faff !important;
+  background: #f8fafc !important;
+}
+
+/* Compact Metric Card */
+.metric-card-compact {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.metric-card-compact:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px 0 rgba(15, 23, 42, 0.05);
+}
+
+/* Dedicated Action Button Styles (28px compact) */
+.btn-action-primary {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-action-primary:hover {
+  background-color: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+
+.btn-action-danger {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: #fef2f2;
+  color: #dc2626;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fecaca;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-action-danger:hover {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.btn-action-neutral {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: #f8fafc;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-action-neutral:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
 }
 
 .ant-card {
-  border-radius: 14px !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04) !important;
+}
+
+.ant-card-head {
+  border-bottom: 1px solid #f1f5f9 !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  padding: 0 16px !important;
+  min-height: 48px !important;
 }
 
 .ant-btn {
   border-radius: 8px !important;
   font-weight: 500 !important;
+  font-size: 13px !important;
+  transition: all 0.15s ease !important;
 }
 
 .ant-btn-primary {
-  background: #6345ed !important;
-  box-shadow: 0 2px 4px rgba(99, 69, 237, 0.2) !important;
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 1px 2px 0 rgba(29, 78, 216, 0.15) !important;
 }
 
 .ant-btn-primary:hover {
-  background: #795ef5 !important;
+  background: #1e40af !important;
+  border-color: #1e40af !important;
 }
 
 .ant-tag {
   border-radius: 6px !important;
   font-weight: 500 !important;
-  padding: 2px 8px !important;
+  padding: 2px 7px !important;
+  font-size: 11.5px !important;
 }
 
-/* Modern Ant Design Pagination Pills */
+/* Ant Design Pagination */
 .ant-pagination .ant-pagination-item {
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   border: 1px solid #e2e8f0 !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   font-size: 12px !important;
-  transition: all 0.2s ease-in-out !important;
+  transition: all 0.15s ease !important;
 }
 
 .ant-pagination .ant-pagination-item:hover {
-  border-color: #6345ed !important;
-  color: #6345ed !important;
-  background-color: #f5f3ff !important;
+  border-color: #1d4ed8 !important;
+  color: #1d4ed8 !important;
+  background-color: #eff6ff !important;
 }
 
 .ant-pagination .ant-pagination-item-active {
-  background: #6345ed !important;
-  border-color: #6345ed !important;
-  box-shadow: 0 4px 10px rgba(99, 69, 237, 0.25) !important;
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.25) !important;
 }
 
 .ant-pagination .ant-pagination-item-active a {
@@ -157,9 +281,47 @@ body {
 }
 
 .ant-pagination .ant-select-selector {
-  border-radius: 12px !important;
-  font-weight: 600 !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
   font-size: 12px !important;
   border-color: #e2e8f0 !important;
 }
 
+/* Ant Inputs & Selects */
+.ant-input,
+.ant-select-selector,
+.ant-picker {
+  border-radius: 8px !important;
+  border-color: #cbd5e1 !important;
+  font-size: 13px !important;
+}
+
+.ant-input:focus,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.12) !important;
+}
+
+/* Ant Tabs Clean Style */
+.ant-tabs-nav {
+  margin-bottom: 16px !important;
+}
+.ant-tabs-tab {
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  color: #64748b !important;
+}
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #1d4ed8 !important;
+  font-weight: 600 !important;
+}
+.ant-tabs-ink-bar {
+  background: #1d4ed8 !important;
+}
+
+/* Accessible focus outlines */
+:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}

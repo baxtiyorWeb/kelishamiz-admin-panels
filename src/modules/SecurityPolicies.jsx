@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import api from "../config/auth/api";
 import dayjs from "dayjs";
+import CompactStatCard from "../components/CompactStatCard";
 
 const { Option } = Select;
 
@@ -164,16 +165,18 @@ const SecurityPolicies = () => {
     {
       title: "Amallar",
       key: "actions",
-      width: 95,
+      width: 70,
+      fixed: "right",
+      align: "center",
       render: (_, record) => (
         <Tooltip title="Tahrirlash va matnini ko'rish">
           <button
             type="button"
             onClick={() => handleEdit(record)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white font-bold text-xs transition-all cursor-pointer shadow-xs"
+            className="btn-action-primary"
+            aria-label="Tahrirlash"
           >
             <Edit3 className="w-3.5 h-3.5" />
-            <span>Tahrirlash</span>
           </button>
         </Tooltip>
       ),
@@ -181,101 +184,87 @@ const SecurityPolicies = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Scale className="w-4 h-4" />
+          <h1 className="text-base font-bold text-slate-900 m-0 flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center">
+              <Scale className="w-3.5 h-3.5" />
             </div>
             Platforma Xavfsizlik & Huquqiy Hujjatlari (3 Tilda)
           </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Mobil ilova va Veb-sayt uchun Maxfiylik Siyosati hamda Foydalanish Shartlarini tahrirlash markazi.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Mobil ilova va Veb-sayt uchun Maxfiylik Siyosati hamda Foydalanish Shartlarini tahrirlash markazi
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-xs">
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold text-xs">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           <span>App Store & Google Play Compliant</span>
         </div>
       </div>
 
       {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Hujjatlar</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Faol yuridik hujjatlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Scale className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Jami Hujjatlar"
+            value={stats.total}
+            unit="ta"
+            subtitle="Faol yuridik hujjatlar"
+            icon={Scale}
+            color="blue"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
-                Privacy Policies
-              </div>
-              <div className="text-2xl font-black text-purple-600 mt-1">{stats.privacy} ta</div>
-              <div className="text-[11px] text-purple-600/70 mt-0.5">Maxfiylik hujjatlari</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Lock className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Privacy Policies"
+            value={stats.privacy}
+            unit="ta"
+            subtitle="Maxfiylik hujjatlari"
+            icon={Lock}
+            color="indigo"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-blue-500 uppercase tracking-wider flex items-center gap-1">
-                Terms of Service
-              </div>
-              <div className="text-2xl font-black text-blue-600 mt-1">{stats.terms} ta</div>
-              <div className="text-[11px] text-blue-600/70 mt-0.5">Foydalanish qoidalari</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <FileText className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Terms of Service"
+            value={stats.terms}
+            unit="ta"
+            subtitle="Foydalanish qoidalari"
+            icon={FileText}
+            color="blue"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Qo'llab-quvvatlanuvchi Tillar
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">3 ta Til</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">UZ / RU / EN</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Globe className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Qo'llab-quvvatlanuvchi Tillar"
+            value="3"
+            unit="ta til"
+            subtitle="UZ / RU / EN"
+            icon={Globe}
+            color="emerald"
+          />
         </Col>
       </Row>
 
       {/* Table Card */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col gap-4">
+      <div className="enterprise-card p-4 overflow-hidden flex flex-col gap-3">
         <div className="border-b border-slate-100 pb-2">
           <Tabs
             activeKey={typeFilter}
             onChange={(k) => setTypeFilter(k)}
             className="!m-0"
             items={[
-              { key: "all", label: <span className="font-bold">Barcha Hujjatlar ({documents.length})</span> },
+              { key: "all", label: <span className="font-semibold text-xs">Barcha Hujjatlar ({documents.length})</span> },
               {
                 key: "privacy",
                 label: (
-                  <span className="font-bold text-purple-600 flex items-center gap-1.5">
-                    <Lock className="w-4 h-4 text-purple-500" />
+                  <span className="font-semibold text-xs text-indigo-700 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-indigo-600" />
                     Maxfiylik Siyosati (Privacy)
                   </span>
                 ),
@@ -283,8 +272,8 @@ const SecurityPolicies = () => {
               {
                 key: "terms",
                 label: (
-                  <span className="font-bold text-blue-600 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-blue-500" />
+                  <span className="font-semibold text-xs text-blue-700 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-blue-600" />
                     Foydalanish Qoidalari (Terms)
                   </span>
                 ),
@@ -294,11 +283,13 @@ const SecurityPolicies = () => {
         </div>
 
         <Table
+          size="small"
           dataSource={filteredDocs}
           columns={columns}
           rowKey="id"
           loading={loading}
           pagination={false}
+          scroll={{ x: 700 }}
         />
       </div>
 

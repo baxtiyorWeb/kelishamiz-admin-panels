@@ -43,6 +43,7 @@ import {
   ExternalLink,
   Lock,
 } from "lucide-react";
+import { CompactStatCard } from "../components/CompactStatCard";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -367,14 +368,16 @@ const Users = () => {
     {
       title: "Amallar",
       key: "actions",
-      width: 150,
+      width: 140,
+      fixed: "right",
       render: (_, record) => (
-        <div className="flex items-center gap-1.5">
-          <Tooltip title="Foydalanuvchiga to'g'ridan-to'g'ri xabar (Push) yuborish">
+        <div className="flex items-center gap-1">
+          <Tooltip title="Foydalanuvchiga xabar (Push) yuborish">
             <button
               type="button"
+              aria-label="Push xabarnoma"
               onClick={() => openMessageModal(record)}
-              className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+              className="btn-action-primary"
             >
               <Send className="w-3.5 h-3.5" />
             </button>
@@ -383,12 +386,9 @@ const Users = () => {
           <Tooltip title="Intizomiy chora (Bloklash / Spam)">
             <button
               type="button"
+              aria-label="Moderatsiya chorasi"
               onClick={() => openModerationModal(record)}
-              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer shadow-xs ${
-                record.isBlocked || record.isSpam
-                  ? "bg-rose-600 text-white"
-                  : "bg-amber-50 hover:bg-amber-600 text-amber-600 hover:text-white"
-              }`}
+              className={record.isBlocked || record.isSpam ? "btn-action-danger !bg-rose-600 !text-white" : "btn-action-neutral hover:!text-amber-700 hover:!bg-amber-50"}
             >
               <ShieldAlert className="w-3.5 h-3.5" />
             </button>
@@ -397,24 +397,28 @@ const Users = () => {
           <Tooltip title="360° CRM Profilini ochish">
             <button
               type="button"
+              aria-label="Profilni ko'rish"
               onClick={() => navigate(`/users/${record.id}`)}
-              className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer shadow-xs"
+              className="btn-action-neutral hover:!text-blue-700 hover:!bg-blue-50"
             >
               <Eye className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
 
           <Popconfirm
-            title="Foydalanuvchini o'chirishga ishonchingiz komilmi?"
+            title="Foydalanuvchini o'chirish"
+            description={`Haqiqatan ham #${record.id} foydalanuvchini o'chirmoqchimisiz?`}
             onConfirm={() => deleteUser(record.id)}
             okText="Ha, o'chirish"
             cancelText="Bekor"
-            okButtonProps={{ danger: true }}
+            okButtonProps={{ danger: true, size: "small" }}
+            cancelButtonProps={{ size: "small" }}
           >
             <Tooltip title="O'chirish">
               <button
                 type="button"
-                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                aria-label="Foydalanuvchini o'chirish"
+                className="btn-action-danger"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -428,105 +432,93 @@ const Users = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <UsersIcon className="w-4 h-4" />
-            </div>
-            Foydalanuvchilar & CRM Boshqaruv Markazi
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold text-slate-900 m-0">
+              Foydalanuvchilar & CRM Boshqaruv Markazi
+            </h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              CRM REGISTRY
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            Barcha ro'yxatdan o'tgan mijozlar, hisob balansi, rollar va xavfsizlik moderatsiyasi.
+            Barcha ro'yxatdan o'tgan mijozlar, hisob balansi, rollar va xavfsizlik moderatsiyasi
           </p>
         </div>
+
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Ism, telefon yoki ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all w-72"
+            className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 w-64"
           />
         </div>
       </div>
 
       {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Mijozlar</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Ro'yxatdan o'tganlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <UsersIcon className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            title="Jami Mijozlar"
+            value={stats.total.toLocaleString()}
+            unit="mijoz"
+            subtext="Ro'yxatdan o'tgan barcha hisoblar"
+            icon={UsersIcon}
+            color="blue"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
-                Admin & Xodimlar
-              </div>
-              <div className="text-2xl font-black text-purple-600 mt-1">{stats.admins} ta</div>
-              <div className="text-[11px] text-purple-600/70 mt-0.5">Boshqaruv vakolati borlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            title="Admin & Xodimlar"
+            value={stats.admins.toLocaleString()}
+            unit="staff"
+            subtext="Boshqaruv vakolatiga egalar"
+            icon={ShieldCheck}
+            color="indigo"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Faol Foydalanuvchilar
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">{stats.active} ta</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">Cheklovsiz faoliyatda</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            title="Faol Mijozlar"
+            value={stats.active.toLocaleString()}
+            unit="faol"
+            subtext="Cheklovlarsiz hisoblar"
+            icon={CheckCircle2}
+            color="emerald"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1">
-                Bloklangan / Spam
-              </div>
-              <div className="text-2xl font-black text-rose-600 mt-1">{stats.blocked + stats.spam} ta</div>
-              <div className="text-[11px] text-rose-600/70 mt-0.5">Moderatsiya jazosi ostida</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <Ban className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            title="Bloklangan / Spam"
+            value={(stats.blocked + stats.spam).toLocaleString()}
+            unit="cheklovda"
+            subtext="Moderatsiya jazo choralari"
+            icon={Ban}
+            color={stats.blocked + stats.spam > 0 ? "rose" : "slate"}
+          />
         </Col>
       </Row>
 
       {/* Main Table with Tabs */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col gap-4">
-        {/* Role Tabs */}
-        <div className="border-b border-slate-100 pb-2">
+      <div className="enterprise-card p-4">
+        <div className="border-b border-slate-100 pb-2 mb-4">
           <Tabs
             activeKey={roleTab}
             onChange={(k) => setRoleTab(k)}
             className="!m-0"
             items={[
-              { key: "all", label: <span className="font-bold">Barcha Foydalanuvchilar ({totalUsers})</span> },
-              { key: "user", label: <span className="font-bold text-blue-600">👤 Oddiy Foydalanuvchilar</span> },
-              { key: "admin", label: <span className="font-bold text-purple-600">🛡️ Adminlar ({stats.admins})</span> },
-              { key: "blocked", label: <span className="font-bold text-rose-600">🚫 Bloklanganlar ({stats.blocked})</span> },
-              { key: "spam", label: <span className="font-bold text-amber-600">⚠️ Spam Belgisi ({stats.spam})</span> },
+              { key: "all", label: `Barchasi (${totalUsers})` },
+              { key: "user", label: "Oddiy Foydalanuvchilar" },
+              { key: "admin", label: `Adminlar (${stats.admins})` },
+              { key: "blocked", label: `Bloklanganlar (${stats.blocked})` },
+              { key: "spam", label: `Spam Belgisi (${stats.spam})` },
             ]}
           />
         </div>
@@ -546,12 +538,9 @@ const Users = () => {
       {/* Direct Message Modal */}
       <Modal
         title={
-          <div className="flex items-center gap-2">
-            <Send className="w-5 h-5 text-indigo-600" />
-            <span className="font-black text-slate-900">
-              Foydalanuvchiga Push Xabar Yuborish ({selectedUser?.username})
-            </span>
-          </div>
+          <span className="font-bold text-sm text-slate-900">
+            Foydalanuvchiga Push Xabar Yuborish ({selectedUser?.username})
+          </span>
         }
         open={messageModalVisible}
         onCancel={() => setMessageModalVisible(false)}
@@ -569,27 +558,26 @@ const Users = () => {
         confirmLoading={directMessageMutation.isPending}
         okText="Xabarni Yuborish"
         cancelText="Bekor"
-        okButtonProps={{ className: "!bg-indigo-600 !border-indigo-600 font-bold" }}
-        className="!rounded-3xl"
+        centered
       >
-        <div className="flex flex-col gap-4 mt-4">
+        <div className="space-y-4 pt-2">
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1.5">Xabar Sarlavhasi:</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Xabar Sarlavhasi:</label>
             <Input
               value={msgTitle}
               onChange={(e) => setMsgTitle(e.target.value)}
-              className="!rounded-xl h-11 font-semibold"
+              className="text-xs"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 block mb-1.5">Xabar Matni:</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Xabar Matni:</label>
             <TextArea
               rows={4}
               value={msgBody}
               onChange={(e) => setMsgBody(e.target.value)}
-              placeholder="Foydalanuvchining smartfoniga yuboriladigan to'liq matn..."
-              className="!rounded-xl"
+              placeholder="Foydalanuvchiga yuboriladigan to'liq matn..."
+              className="text-xs"
             />
           </div>
         </div>
@@ -598,12 +586,9 @@ const Users = () => {
       {/* User Moderation Modal */}
       <Modal
         title={
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-rose-600" />
-            <span className="font-black text-slate-900">
-              Intizomiy Moderatsiya Boshqaruvi ({selectedUser?.username})
-            </span>
-          </div>
+          <span className="font-bold text-sm text-slate-900">
+            Intizomiy Moderatsiya Boshqaruvi ({selectedUser?.username})
+          </span>
         }
         open={moderationModalVisible}
         onCancel={() => setModerationModalVisible(false)}
@@ -611,15 +596,15 @@ const Users = () => {
         confirmLoading={userModerationMutation.isPending}
         okText="O'zgarishlarni Saqlash"
         cancelText="Bekor"
-        okButtonProps={{ className: "!bg-rose-600 !border-rose-600 font-bold" }}
-        className="!rounded-3xl"
-        width={580}
+        okButtonProps={{ danger: true }}
+        width={540}
+        centered
       >
-        <div className="flex flex-col gap-4 mt-4">
+        <div className="space-y-4 pt-2">
           {/* Block Section */}
-          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-bold text-xs text-rose-800 flex items-center gap-1.5">
+          <div className="p-3.5 rounded-lg bg-rose-50/70 border border-rose-200">
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-semibold text-xs text-rose-900 flex items-center gap-1.5">
                 <Ban className="w-4 h-4 text-rose-600" />
                 Foydalanuvchini Bloklash (Ban)
               </span>
@@ -627,10 +612,10 @@ const Users = () => {
             </div>
 
             {modIsBlocked && (
-              <div className="flex flex-col gap-3 mt-3 pt-2 border-t border-rose-200">
+              <div className="space-y-2.5 mt-3 pt-2.5 border-t border-rose-200/80">
                 <div>
-                  <label className="text-[11px] font-bold text-rose-900 block mb-1">Bloklash Muddati:</label>
-                  <Radio.Group value={modBlockDuration} onChange={(e) => setModBlockDuration(e.target.value)}>
+                  <label className="text-[11px] font-semibold text-rose-900 block mb-1">Bloklash Muddati:</label>
+                  <Radio.Group value={modBlockDuration} onChange={(e) => setModBlockDuration(e.target.value)} size="small">
                     <Radio.Button value="24h">24 soat</Radio.Button>
                     <Radio.Button value="3d">3 kun</Radio.Button>
                     <Radio.Button value="7d">7 kun</Radio.Button>
@@ -638,12 +623,12 @@ const Users = () => {
                   </Radio.Group>
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-rose-900 block mb-1">Bloklash Sababi:</label>
+                  <label className="text-[11px] font-semibold text-rose-900 block mb-1">Bloklash Sababi:</label>
                   <Input
                     placeholder="Qoidabuzarlik sababini yozing..."
                     value={modBanReason}
                     onChange={(e) => setModBanReason(e.target.value)}
-                    className="!rounded-xl bg-white"
+                    className="bg-white text-xs"
                   />
                 </div>
               </div>
@@ -651,9 +636,9 @@ const Users = () => {
           </div>
 
           {/* Spam Section */}
-          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-bold text-xs text-amber-800 flex items-center gap-1.5">
+          <div className="p-3.5 rounded-lg bg-amber-50/70 border border-amber-200">
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-semibold text-xs text-amber-900 flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-amber-600" />
                 Spam Belgisi (Cheklov)
               </span>
@@ -661,21 +646,21 @@ const Users = () => {
             </div>
 
             {modIsSpam && (
-              <div className="flex flex-col gap-3 mt-3 pt-2 border-t border-amber-200">
+              <div className="space-y-2.5 mt-3 pt-2.5 border-t border-amber-200/80">
                 <div>
-                  <label className="text-[11px] font-bold text-amber-900 block mb-1">Spam Muddati:</label>
-                  <Radio.Group value={modSpamDuration} onChange={(e) => setModSpamDuration(e.target.value)}>
+                  <label className="text-[11px] font-semibold text-amber-900 block mb-1">Spam Muddati:</label>
+                  <Radio.Group value={modSpamDuration} onChange={(e) => setModSpamDuration(e.target.value)} size="small">
                     <Radio.Button value="24h">24 soat</Radio.Button>
                     <Radio.Button value="7d">7 kun</Radio.Button>
                   </Radio.Group>
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-amber-900 block mb-1">Spam Sababi:</label>
+                  <label className="text-[11px] font-semibold text-amber-900 block mb-1">Spam Sababi:</label>
                   <Input
                     placeholder="Spam tarqatish sababi..."
                     value={modSpamReason}
                     onChange={(e) => setModSpamReason(e.target.value)}
-                    className="!rounded-xl bg-white"
+                    className="bg-white text-xs"
                   />
                 </div>
               </div>
@@ -683,8 +668,8 @@ const Users = () => {
           </div>
 
           {/* Send notification */}
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
-            <span className="text-xs font-bold text-slate-700">Foydalanuvchiga Push Bildirishnoma Yuborilsinmi?</span>
+          <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex justify-between items-center">
+            <span className="text-xs font-medium text-slate-700">Foydalanuvchiga Push Bildirishnoma Yuborilsinmi?</span>
             <Switch checked={modSendNotification} onChange={setModSendNotification} />
           </div>
         </div>

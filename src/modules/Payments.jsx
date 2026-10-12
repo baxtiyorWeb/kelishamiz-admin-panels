@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "./../config/auth/api";
 import { get } from "lodash";
-import { message, Tag, Button, Input, Space, Row, Col, Avatar } from "antd";
+import { message, Tag, Button, Input, Space, Row, Col, Avatar, Tooltip } from "antd";
 import Table from "./../components/Table";
 import {
   ReloadOutlined,
@@ -14,6 +14,8 @@ import {
   ClockCircleOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+import { Eye, DollarSign, CheckCircle2, Clock } from "lucide-react";
+import { CompactStatCard } from "../components/CompactStatCard";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
@@ -159,25 +161,48 @@ const Payments = () => {
       key: "status",
       render: (status) => getStatusTag(status),
     },
+    {
+      title: "Amallar",
+      key: "actions",
+      width: 70,
+      fixed: "right",
+      render: (_, record) => (
+        <Tooltip title="Mijoz CRM profilini ochish">
+          <button
+            type="button"
+            aria-label="Profilni ochish"
+            onClick={() => navigate(`/users/${record.userId || record.user?.id}`)}
+            className="btn-action-primary"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
+      ),
+    },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold text-slate-900 m-0">To'lovlar & Tranzaksiyalar Markazi</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold text-slate-900 m-0">To'lovlar & Tranzaksiyalar Markazi</h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              PAYME INTEGRATION
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            Payme to'lov tizimi orqali kiritilgan barcha tranzaksiyalar monitoringi.
+            Payme to'lov tizimi orqali kiritilgan barcha tranzaksiyalar monitoringi va auditi
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Input
             placeholder="Tranzaksiya ID, telefon yoki username..."
             prefix={<SearchOutlined className="text-slate-400" />}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-72 !rounded-xl"
+            className="w-64 text-xs"
             allowClear
           />
           <Button
@@ -187,62 +212,57 @@ const Payments = () => {
               refetch();
               message.success("To'lovlar ro'yxati yangilandi");
             }}
-            className="!rounded-xl font-bold"
           >
             Yangilash
           </Button>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={8}>
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Jami Tushum (Muvaffaqiyatli)</span>
-              <DollarOutlined className="text-emerald-500 text-base" />
-            </div>
-            <div className="text-2xl font-black text-emerald-600 mt-2">
-              {totalVolume.toLocaleString("uz-UZ")} UZS
-            </div>
-            <div className="text-xs text-slate-400 mt-1">Barcha muvaffaqiyatli to'lovlar</div>
-          </div>
+      {/* Compact KPI Cards */}
+      <Row gutter={[12, 12]}>
+        <Col xs={12} sm={8}>
+          <CompactStatCard
+            label="Jami Tushum"
+            value={`${totalVolume.toLocaleString("uz-UZ")} UZS`}
+            icon={<DollarSign className="w-4 h-4" />}
+            color="emerald"
+            description="Muvaffaqiyatli to'lovlar hajmi"
+          />
+        </Col>
+
+        <Col xs={12} sm={8}>
+          <CompactStatCard
+            label="Muvaffaqiyatli To'lovlar"
+            value={successCount}
+            unit="ta"
+            icon={<CheckCircle2 className="w-4 h-4" />}
+            color="blue"
+            description="Yakunlangan to'lov amallari"
+          />
         </Col>
 
         <Col xs={24} sm={8}>
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Muvaffaqiyatli To'lovlar</span>
-              <CheckCircleOutlined className="text-indigo-500 text-base" />
-            </div>
-            <div className="text-2xl font-black text-slate-800 mt-2">
-              {successCount} ta
-            </div>
-            <div className="text-xs text-slate-400 mt-1">Yakunlangan to'lov amallari</div>
-          </div>
-        </Col>
-
-        <Col xs={24} sm={8}>
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider">
-              <span>Kutilayotgan Tranzaksiyalar</span>
-              <ClockCircleOutlined className="text-amber-500 text-base" />
-            </div>
-            <div className="text-2xl font-black text-amber-600 mt-2">
-              {pendingCount} ta
-            </div>
-            <div className="text-xs text-slate-400 mt-1">Jarayonda bo'lgan to'lovlar</div>
-          </div>
+          <CompactStatCard
+            label="Kutilayotgan Tranzaksiyalar"
+            value={pendingCount}
+            unit="ta"
+            icon={<Clock className="w-4 h-4" />}
+            color={pendingCount > 0 ? "amber" : "slate"}
+            description="Jarayonda bo'lgan to'lovlar"
+          />
         </Col>
       </Row>
 
       {/* Main Table */}
-      <Table
-        dataSource={filteredTransactions}
-        columnDefs={columns}
-        isLoading={isLoading}
-        rowKey="id"
-      />
+      <div className="enterprise-card p-4">
+        <Table
+          dataSource={filteredTransactions}
+          columnDefs={columns}
+          isLoading={isLoading}
+          rowKey="id"
+          size="small"
+        />
+      </div>
     </div>
   );
 };

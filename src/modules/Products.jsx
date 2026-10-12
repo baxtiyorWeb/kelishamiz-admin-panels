@@ -51,6 +51,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { ProductImageBgModal } from "../components/ProductImageBgModal";
+import { CompactStatCard } from "../components/CompactStatCard";
 
 const STATUS_CONFIG = {
   pending: {
@@ -601,36 +602,40 @@ const Products = () => {
     {
       title: "Amallar",
       key: "actions",
-      width: 95,
+      width: 90,
+      fixed: "right",
       render: (_, record) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <Tooltip title="Batafsil ko'rish">
             <button
               type="button"
+              aria-label="E'lonni ko'rish"
               onClick={() => {
                 setSelectedProductId(record.id);
                 setIsViewModalOpen(true);
               }}
-              className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+              className="btn-action-neutral hover:!text-blue-700 hover:!bg-blue-50"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
 
           <Popconfirm
-            title="E'lonni o'chirishga ishonchingiz komilmi?"
-            description="O'chirilgach ma'lumotlar qayta tiklanmaydi."
+            title="E'lonni o'chirish"
+            description={`Haqiqatan ham #${record.id} e'lonni o'chirmoqchimisiz?`}
             onConfirm={() => deleteProduct(record.id)}
             okText="Ha, o'chirish"
             cancelText="Bekor"
-            okButtonProps={{ danger: true }}
+            okButtonProps={{ danger: true, size: "small" }}
+            cancelButtonProps={{ size: "small" }}
           >
             <Tooltip title="O'chirish">
               <button
                 type="button"
-                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                aria-label="E'lonni o'chirish"
+                className="btn-action-danger"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </Tooltip>
           </Popconfirm>
@@ -642,21 +647,23 @@ const Products = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <TagIcon className="w-4 h-4" />
-            </div>
-            E'lonlar & Moderatsiya Markazi
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold text-slate-900 m-0">
+              E'lonlar & Moderatsiya Markazi
+            </h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              CATALOG OPS
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            Foydalanuvchilar joylagan e'lonlarni tekshirish, 1-klikda tasdiqlash va TOP statuslarini boshqarish.
+            Foydalanuvchilar joylagan e'lonlarni tekshirish, tezkor tasdiqlash va TOP statuslarini boshqarish
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Nomi, ID yoki sotuvchi..."
@@ -665,13 +672,13 @@ const Products = () => {
                 setSearchFilter(e.target.value);
                 setPage(1);
               }}
-              className="pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all w-60"
+              className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 w-60"
             />
           </div>
 
           <Popconfirm
             title="Barcha rasmlarni Bunny CDN ga optimize qilish?"
-            description="WebP formatiga o'tkaziladi va ilova yuklanishi 3 barobar tezlashadi."
+            description="WebP formatiga o'tkaziladi va yuklanish tezlashadi."
             onConfirm={handleBulkOptimizeProductImages}
             okText="Ha, boshlash"
             cancelText="Bekor"
@@ -680,80 +687,66 @@ const Products = () => {
             <button
               type="button"
               disabled={isOptimizing}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-medium text-xs transition-colors cursor-pointer disabled:opacity-50"
             >
-              <Zap className="w-4 h-4 text-amber-600 fill-amber-600" />
-              <span>{isOptimizing ? `Optimize... ${optimizeProgress}%` : "⚡ Rasmlarni Optimize"}</span>
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <span>{isOptimizing ? `Optimize... ${optimizeProgress}%` : "Rasmlarni Optimize"}</span>
             </button>
           </Popconfirm>
         </div>
       </div>
 
       {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami E'lonlar</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Barcha yuklangan e'lonlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center">
-              <Layers className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            title="Jami E'lonlar"
+            value={stats.total.toLocaleString()}
+            unit="e'lon"
+            subtext="Barcha yuklangan e'lonlar bazasi"
+            icon={Layers}
+            color="blue"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
-                Moderatsiyada
-              </div>
-              <div className="text-2xl font-black text-amber-600 mt-1">{stats.pending} ta</div>
-              <div className="text-[11px] text-amber-600/70 mt-0.5">Tasdiqlash kutilmoqda</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Clock className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            title="Moderatsiyada"
+            value={stats.pending.toLocaleString()}
+            unit="kutilmoqda"
+            subtext="Tasdiqlash kutilayotganlar"
+            icon={Clock}
+            color={stats.pending > 0 ? "amber" : "slate"}
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Faol E'lonlar
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">{stats.active} ta</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">Saytda ochiq sotuvda</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            title="Faol E'lonlar"
+            value={stats.active.toLocaleString()}
+            unit="sotuvda"
+            subtext="Saytda ochiq ko'rinayotganlar"
+            icon={CheckCircle2}
+            color="emerald"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-indigo-500 uppercase tracking-wider flex items-center gap-1">
-                TOP / VIP Boost
-              </div>
-              <div className="text-2xl font-black text-indigo-600 mt-1">{stats.top} ta</div>
-              <div className="text-[11px] text-indigo-600/70 mt-0.5">Yuqori o'rinda turganlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Flame className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            title="TOP / VIP Boost"
+            value={stats.top.toLocaleString()}
+            unit="boost"
+            subtext="Yuqori o'ringa ko'tarilganlar"
+            icon={Flame}
+            color="indigo"
+          />
         </Col>
       </Row>
 
       {/* Main Table with Tabs */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col gap-4">
+      <div className="enterprise-card p-4">
         {/* Status Tabs */}
-        <div className="border-b border-slate-100 pb-2">
+        <div className="border-b border-slate-100 pb-2 mb-4">
           <Tabs
             activeKey={statusTab}
             onChange={(key) => {

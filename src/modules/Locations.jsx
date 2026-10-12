@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import Table from "./../components/Table";
 import api from "./../config/auth/api";
+import { CompactStatCard } from "../components/CompactStatCard";
 
 const Locations = () => {
   const queryClient = useQueryClient();
@@ -153,10 +154,10 @@ const Locations = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <h1 className="text-xl font-bold text-slate-900 m-0 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center">
               <MapPin className="w-4 h-4" />
             </div>
             Hududlar & Manzillar Boshqaruvi
@@ -169,7 +170,7 @@ const Locations = () => {
           <button
             type="button"
             onClick={() => setIsRegionModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs shadow-sm shadow-blue-700/20 transition-all active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Yangi Viloyat Qo'shish</span>
@@ -177,76 +178,60 @@ const Locations = () => {
         </div>
       </div>
 
-      {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Viloyatlar</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{stats.totalRegions} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Viloyat va Toshkent sh.</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Map className="w-6 h-6" />
-            </div>
-          </div>
+      {/* Compact KPI Cards */}
+      <Row gutter={[12, 12]}>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Jami Viloyatlar"
+            value={stats.totalRegions}
+            unit="ta"
+            icon={<Map className="w-4 h-4" />}
+            color="blue"
+            description="Viloyat va Toshkent shahri"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
-                Tuman & Shaharlar
-              </div>
-              <div className="text-2xl font-black text-purple-600 mt-1">{stats.totalDistricts} ta</div>
-              <div className="text-[11px] text-purple-600/70 mt-0.5">Barcha hududiy bo'linmalar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Building2 className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Tuman & Shaharlar"
+            value={stats.totalDistricts}
+            unit="ta"
+            icon={<Building2 className="w-4 h-4" />}
+            color="indigo"
+            description="Barcha hududiy bo'linmalar"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Respublika Qamrovi
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">100% To'liq</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">Barcha hududlar faol</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Globe className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Respublika Qamrovi"
+            value="100%"
+            unit="to'liq"
+            icon={<Globe className="w-4 h-4" />}
+            color="emerald"
+            description="Barcha hududlar faol"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
-                Tanlangan Hudud
-              </div>
-              <div className="text-lg font-black text-amber-600 mt-1 truncate max-w-[150px]">
-                {stats.activeRegionName}
-              </div>
-              <div className="text-[11px] text-amber-600/70 mt-0.5">{districtsList.length} ta tuman</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Compass className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Tanlangan Hudud"
+            value={stats.activeRegionName}
+            unit={`${districtsList.length} tuman`}
+            icon={<Compass className="w-4 h-4" />}
+            color="amber"
+            description={`${districtsList.length} ta tuman va shahar`}
+          />
         </Col>
       </Row>
 
       {/* 2-Column Geography Studio */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Regions List */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex flex-col gap-4">
+        <div className="lg:col-span-5 enterprise-card p-5 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Map className="w-4 h-4 text-indigo-500" />
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <Map className="w-4 h-4 text-blue-700" />
               Viloyatlar ({filteredRegions.length})
             </div>
             <div className="relative">
@@ -256,7 +241,7 @@ const Locations = () => {
                 placeholder="Viloyat qidirish..."
                 value={searchRegion}
                 onChange={(e) => setSearchRegion(e.target.value)}
-                className="pl-7 pr-2.5 py-1 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none w-36"
+                className="pl-7 pr-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-slate-50 focus:bg-white outline-none w-36"
               />
             </div>
           </div>
@@ -269,52 +254,57 @@ const Locations = () => {
                 <div
                   key={region.id}
                   onClick={() => setSelectedRegion(region)}
-                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                     isSelected
-                      ? "bg-indigo-50/90 border-indigo-200 shadow-xs"
-                      : "bg-slate-50 hover:bg-slate-100 border-slate-100"
+                      ? "bg-blue-50/90 border-blue-200 shadow-2xs font-medium"
+                      : "bg-slate-50 hover:bg-slate-100 border-slate-200"
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs flex-shrink-0 ${
-                        isSelected ? "bg-indigo-600 text-white" : "bg-white text-slate-700 shadow-2xs"
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                        isSelected ? "bg-blue-700 text-white" : "bg-white text-slate-700 border border-slate-200"
                       }`}
                     >
                       <MapPin className="w-4 h-4" />
                     </div>
                     <div className="min-w-0">
                       <div
-                        className={`font-black text-sm truncate ${
-                          isSelected ? "text-indigo-900" : "text-slate-800"
+                        className={`font-bold text-xs truncate ${
+                          isSelected ? "text-blue-900" : "text-slate-800"
                         }`}
                       >
                         {region.name}
                       </div>
-                      <div className="text-[11px] text-slate-400 font-mono">ID: #{region.id}</div>
+                      <div className="text-[10px] text-slate-400 font-mono">ID: #{region.id}</div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <Popconfirm
-                      title="Viloyatni o'chirishga ishonchingiz komilmi?"
+                      title="Viloyatni o'chirish"
+                      description={`Haqiqatan ham #${region.id} ${region.name} viloyatini o'chirmoqchimisiz?`}
                       onConfirm={(e) => {
                         e.stopPropagation();
                         deleteLocationMutation.mutate({ id: region.id, type: "region" });
                       }}
-                      okText="Ha"
+                      okText="Ha, o'chirish"
                       cancelText="Bekor"
-                      okButtonProps={{ danger: true }}
+                      okButtonProps={{ danger: true, size: "small" }}
+                      cancelButtonProps={{ size: "small" }}
                     >
-                      <button
-                        type="button"
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-7 h-7 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <Tooltip title="Viloyatni o'chirish">
+                        <button
+                          type="button"
+                          aria-label={`${region.name} viloyatini o'chirish`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="btn-action-danger"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
                     </Popconfirm>
-                    <ChevronRight className={`w-4 h-4 ${isSelected ? "text-indigo-600" : "text-slate-400"}`} />
+                    <ChevronRight className={`w-4 h-4 ${isSelected ? "text-blue-700" : "text-slate-400"}`} />
                   </div>
                 </div>
               );
@@ -323,11 +313,11 @@ const Locations = () => {
         </div>
 
         {/* Right Column: Districts List */}
-        <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-100 shadow-sm p-5 flex flex-col gap-4">
+        <div className="lg:col-span-7 enterprise-card p-5 flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-purple-500" />
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-blue-700" />
                 {activeRegion ? activeRegion.name : "Viloyat"} tumanlari ({districtsList.length} ta)
               </div>
               <div className="text-xs text-slate-500 mt-0.5">Ushbu viloyatga biriktirilgan tuman va shaharchalar</div>
@@ -341,14 +331,14 @@ const Locations = () => {
                   placeholder="Tuman qidirish..."
                   value={searchDistrict}
                   onChange={(e) => setSearchDistrict(e.target.value)}
-                  className="pl-7 pr-2.5 py-1 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none w-36"
+                  className="pl-7 pr-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-slate-50 focus:bg-white outline-none w-36"
                 />
               </div>
 
               <button
                 type="button"
                 onClick={() => setIsDistrictModalOpen(true)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-all cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Tuman qo'shish</span>
@@ -366,13 +356,13 @@ const Locations = () => {
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleInlineDistrictAdd();
               }}
-              className="flex-1 px-3.5 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-semibold outline-none focus:border-purple-600 focus:bg-white"
+              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-medium outline-none focus:border-blue-700 focus:bg-white"
             />
             <button
               type="button"
               onClick={handleInlineDistrictAdd}
               disabled={createDistrictMutation.isPending}
-              className="px-4 py-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-all cursor-pointer shadow-xs"
+              className="px-4 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
             >
               Qo'shish
             </button>
@@ -388,31 +378,36 @@ const Locations = () => {
             {filteredDistricts.map((district) => (
               <div
                 key={district.id}
-                className="p-3 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-100 transition-colors"
+                className="p-3 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between gap-2 shadow-2xs hover:bg-slate-100 transition-colors"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                  <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
                     <Building2 className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <div className="font-extrabold text-slate-800 text-xs truncate">{district.name}</div>
+                    <div className="font-bold text-slate-800 text-xs truncate">{district.name}</div>
                     <div className="text-[10px] text-slate-400 font-mono">ID: #{district.id}</div>
                   </div>
                 </div>
 
                 <Popconfirm
-                  title="Tumanni o'chirishga ishonchingiz komilmi?"
+                  title="Tumanni o'chirish"
+                  description={`Haqiqatan ham #${district.id} ${district.name} tumanini o'chirmoqchimisiz?`}
                   onConfirm={() => deleteLocationMutation.mutate({ id: district.id, type: "district" })}
-                  okText="Ha"
+                  okText="Ha, o'chirish"
                   cancelText="Bekor"
-                  okButtonProps={{ danger: true }}
+                  okButtonProps={{ danger: true, size: "small" }}
+                  cancelButtonProps={{ size: "small" }}
                 >
-                  <button
-                    type="button"
-                    className="w-7 h-7 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer flex-shrink-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <Tooltip title="Tumanni o'chirish">
+                    <button
+                      type="button"
+                      aria-label={`${district.name} tumanini o'chirish`}
+                      className="btn-action-danger flex-shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
                 </Popconfirm>
               </div>
             ))}

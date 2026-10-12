@@ -20,6 +20,7 @@ import {
   FileCheck,
 } from "lucide-react";
 import api from "../config/auth/api";
+import CompactStatCard from "../components/CompactStatCard";
 
 export default function MediaMigration() {
   const [status, setStatus] = useState({
@@ -143,28 +144,30 @@ export default function MediaMigration() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <CloudUpload className="w-4 h-4" />
-            </div>
-            Bunny CDN Media Migratsiya Markazi
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Barcha tashqi va mahalliy media fayllarni Bunny.net bulutli xotirasiga o'tkazish hamda Sharp WebP konversiyasi.
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-bold text-slate-900 m-0">
+              Bunny CDN Media Migratsiya Markazi
+            </h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              STORAGE OPS
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Barcha tashqi va mahalliy media fayllarni Bunny.net bulutli xotirasiga o'tkazish hamda WebP konversiyasi
           </p>
         </div>
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             disabled={loading || status.isRunning}
             onClick={handleCleanOrphans}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-rose-700 font-medium text-xs border border-slate-200 transition-colors cursor-pointer disabled:opacity-50"
           >
-            <Trash2 className="w-4 h-4 text-rose-600" />
+            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
             <span>Ortiqcha Fayllarni Tozalash</span>
           </button>
 
@@ -172,95 +175,76 @@ export default function MediaMigration() {
             type="button"
             disabled={loading || status.isRunning}
             onClick={handleStartMigration}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs transition-colors cursor-pointer disabled:opacity-50"
           >
-            <CloudUpload className="w-4 h-4" />
+            <CloudUpload className="w-3.5 h-3.5" />
             <span>{status.isRunning ? "Migratsiya Bajarilmoqda..." : "Migratsiyani Boshlash"}</span>
           </button>
         </div>
       </div>
 
       {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aniqlangan Fayllar</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{status.total} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Baza bo'yicha media resurslar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <HardDrive className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Aniqlangan Fayllar"
+            value={status.total}
+            unit="fayl"
+            subtitle="Baza bo'yicha media resurslar"
+            icon={HardDrive}
+            color="blue"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Ko'chirildi (WebP)
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">{status.success} ta</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">Bunny CDN da joylandi</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Ko'chirildi (WebP)"
+            value={status.success}
+            unit="ta"
+            subtitle="Bunny CDN da joylangan"
+            icon={CheckCircle2}
+            color="emerald"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1">
-                Xatoliklar
-              </div>
-              <div className="text-2xl font-black text-rose-600 mt-1">{status.failed} ta</div>
-              <div className="text-[11px] text-rose-600/70 mt-0.5">Qayta urinish talab etiladi</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Xatoliklar"
+            value={status.failed}
+            unit="xato"
+            subtitle="Qayta urinish talab etiladi"
+            icon={AlertTriangle}
+            color="rose"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
-                Joriy Bosqich
-              </div>
-              <div className="text-lg font-black text-purple-600 mt-1 uppercase truncate max-w-[150px]">
-                {status.currentSection}
-              </div>
-              <div className="text-[11px] text-purple-600/70 mt-0.5">
-                {status.isRunning ? "Faol yuklanmoqda" : "Kutish holati"}
-              </div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Activity className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Joriy Bosqich"
+            value={status.currentSection}
+            subtitle={status.isRunning ? "Faol yuklanmoqda" : "Kutish holati"}
+            icon={Activity}
+            color="indigo"
+          />
         </Col>
       </Row>
 
       {/* Progress Card */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col gap-4">
+      <div className="enterprise-card p-4 flex flex-col gap-3">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-sm font-extrabold text-slate-800 m-0 flex items-center gap-2">
+            <div className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-500" />
               Migratsiya Jarayoni Holati
-            </h2>
-            <div className="text-xs text-slate-400 mt-0.5">
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
               {status.processed} / {status.total} ta fayl qayta ishlandi ({status.progressPercent}%)
             </div>
           </div>
           <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
               status.isRunning
-                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                ? "bg-amber-50 text-amber-800 border border-amber-200"
                 : "bg-slate-100 text-slate-600"
             }`}
           >
@@ -272,10 +256,10 @@ export default function MediaMigration() {
         <Progress
           percent={status.progressPercent}
           strokeColor={{
-            "0%": "#6345ED",
-            "100%": "#10B981",
+            "0%": "#1d4ed8",
+            "100%": "#059669",
           }}
-          size={["100%", 12]}
+          size={["100%", 10]}
           className="!m-0"
         />
 

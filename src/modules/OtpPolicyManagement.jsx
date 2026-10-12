@@ -283,21 +283,28 @@ export default function OtpPolicyManagement() {
     {
       title: "Amallar",
       key: "actions",
+      width: 70,
+      fixed: "right",
+      align: "center",
       render: (_, record) => (
         <Popconfirm
           title="Testerni o'chirish"
-          description="Haqiqatan ham bu testerni ro'yxatdan o'chirmoqchimisiz?"
+          description={`Haqiqatan ham #${record.id} (${record.phoneNormalized || record.phone}) test hisobini o'chirmoqchimisiz?`}
           onConfirm={() => handleDeleteTester(record.id)}
           okText="Ha, o'chirish"
-          cancelText="Bekor qilish"
-          okButtonProps={{ danger: true }}
+          cancelText="Bekor"
+          okButtonProps={{ danger: true, size: "small" }}
+          cancelButtonProps={{ size: "small" }}
         >
-          <Button
-            type="text"
-            danger
-            size="small"
-            icon={<Trash2 className="w-3.5 h-3.5" />}
-          />
+          <Tooltip title="Testerni o'chirish">
+            <button
+              type="button"
+              className="btn-action-danger"
+              aria-label="Testerni o'chirish"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         </Popconfirm>
       ),
     },
@@ -306,22 +313,24 @@ export default function OtpPolicyManagement() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="enterprise-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-7 h-7 text-indigo-600" />
-            <Title level={3} className="!mb-0">
+            <h1 className="text-lg font-bold text-slate-900 m-0">
               Xavfsizlik & OTP Siyosati
-            </Title>
+            </h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              AUTH POLICY
+            </span>
           </div>
-          <Text type="secondary" className="text-sm">
+          <p className="text-xs text-slate-500 mt-1">
             Google Play Market testerlari va real foydalanuvchilar uchun markaziy autentifikatsiya boshqaruvi
-          </Text>
+          </p>
         </div>
 
         <Space>
           <Button
-            icon={<RefreshCw className="w-4 h-4" />}
+            icon={<RefreshCw className="w-4 h-4 text-slate-400" />}
             onClick={() => {
               fetchPolicy();
               fetchTesters();
@@ -334,7 +343,6 @@ export default function OtpPolicyManagement() {
             type="primary"
             icon={<Plus className="w-4 h-4" />}
             onClick={() => setAddTesterModalVisible(true)}
-            className="bg-indigo-600 hover:bg-indigo-500"
           >
             Yangi Tester Qo'shish
           </Button>
@@ -415,9 +423,9 @@ export default function OtpPolicyManagement() {
         <Divider className="my-5" />
 
         {/* Security Matrix Overview Grid */}
-        <Row gutter={[16, 16]}>
+        <Row gutter={[12, 12]}>
           <Col xs={24} sm={12} md={6}>
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
               <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">
                 Qo'llanish doirasi (Scope)
               </div>
@@ -432,7 +440,7 @@ export default function OtpPolicyManagement() {
           </Col>
 
           <Col xs={24} sm={12} md={6}>
-            <div className="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-100">
+            <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
               <div className="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wider mb-1">
                 Real Foydalanuvchilar
               </div>
@@ -447,7 +455,7 @@ export default function OtpPolicyManagement() {
           </Col>
 
           <Col xs={24} sm={12} md={6}>
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
               <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">
                 Ta'sir etuvchi oqimlar
               </div>
@@ -462,7 +470,7 @@ export default function OtpPolicyManagement() {
           </Col>
 
           <Col xs={24} sm={12} md={6}>
-            <div className="bg-rose-50/60 p-3.5 rounded-xl border border-rose-100">
+            <div className="bg-rose-50/60 p-3 rounded-xl border border-rose-100">
               <div className="text-[11px] font-extrabold text-rose-600 uppercase tracking-wider mb-1">
                 Phone Migration
               </div>
@@ -482,8 +490,8 @@ export default function OtpPolicyManagement() {
       <Card
         title={
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-indigo-600" />
-            <span className="font-black text-base text-slate-900">
+            <Users className="w-4 h-4 text-indigo-600" />
+            <span className="font-bold text-sm text-slate-900">
               Authorized Testers Allowlist
             </span>
             <Badge
@@ -506,11 +514,17 @@ export default function OtpPolicyManagement() {
         className="border border-slate-200 shadow-xs"
       >
         <Table
+          size="small"
           dataSource={Array.isArray(testers) ? testers : []}
           columns={testerColumns}
           rowKey="id"
           loading={testersLoading}
-          pagination={{ pageSize: 8 }}
+          scroll={{ x: 750 }}
+          pagination={{
+            pageSize: 8,
+            size: "small",
+            showTotal: (total) => `Jami: ${total} ta tester`,
+          }}
           locale={{ emptyText: "Hozircha testerlar mavjud emas" }}
         />
       </Card>

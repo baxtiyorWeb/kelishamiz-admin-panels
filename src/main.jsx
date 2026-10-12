@@ -2,67 +2,74 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
-import { ConfigProvider, theme } from "antd";
+import { ConfigProvider } from "antd";
 import App from "./App.jsx";
 import "./index.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false, // Oyna faollashganda avtomatik qayta yuklamaslik
-      refetchOnReconnect: true, // Tarmoq tiklanganda yuklash
-      retry: 1, // Xatolik bo'lsa 1 marta urinib ko'rish
-      staleTime: 1000 * 60 * 5, // 5 daqiqa davomida ma'lumotlar eskirgan deb hisoblanmaydi (keshdan olinadi)
-      gcTime: 1000 * 60 * 30, // 30 daqiqa davomida xotirada saqlanadi
-      refetchOnMount: false, // Sahifaga qayta kirganda yana so'rov yubormaslik (keshdan o'qiydi)
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      retry: 1,
+      staleTime: 1000 * 60 * 3, // 3 daqiqa
+      gcTime: 1000 * 60 * 30, // 30 daqiqa
+      refetchOnMount: false,
     },
   },
 });
 
 const antdTheme = {
   token: {
-    colorPrimary: "#6345ED",
-    colorPrimaryHover: "#795EF5",
-    colorPrimaryActive: "#5034D6",
-    colorInfo: "#6345ED",
-    colorSuccess: "#10B981",
-    colorWarning: "#F59E0B",
-    colorError: "#EF4444",
-    borderRadius: 10,
-    borderRadiusLG: 14,
+    // Enterprise Deep Blue Design System
+    colorPrimary: "#1d4ed8",
+    colorPrimaryHover: "#1e40af",
+    colorPrimaryActive: "#1e3a8a",
+    colorInfo: "#1d4ed8",
+    colorSuccess: "#059669",
+    colorWarning: "#d97706",
+    colorError: "#dc2626",
+    colorTextBase: "#0f172a",
+    colorTextSecondary: "#475569",
+    colorBgBase: "#ffffff",
+    colorBgContainer: "#ffffff",
+    colorBgLayout: "#f8fafc",
+    colorBorder: "#e2e8f0",
+    colorBorderSecondary: "#f1f5f9",
+    borderRadius: 8,
+    borderRadiusLG: 12,
     borderRadiusSM: 6,
     fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    fontSize: 14,
-    colorBgBase: "#FFFFFF",
-    colorBgContainer: "#FFFFFF",
-    colorBgLayout: "#F8FAFC",
-    boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02)",
-    boxShadowSecondary: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03)",
+    fontSize: 13.5,
+    boxShadow: "0 1px 2px 0 rgba(15, 23, 42, 0.04)",
+    boxShadowSecondary: "0 2px 4px 0 rgba(15, 23, 42, 0.05)",
   },
   components: {
     Button: {
-      controlHeight: 40,
-      controlHeightLG: 44,
-      controlHeightSM: 32,
-      fontWeight: 600,
+      controlHeight: 38,
+      controlHeightLG: 42,
+      controlHeightSM: 30,
+      fontWeight: 500,
+      borderRadius: 8,
     },
     Table: {
-      headerBg: "#F8FAFC",
+      headerBg: "#f8fafc",
       headerColor: "#475569",
-      rowHoverBg: "#F8FAFF",
-      borderRadius: 12,
+      rowHoverBg: "#f8fafc",
+      borderRadius: 10,
     },
     Card: {
-      headerFontSize: 16,
-      headerHeight: 52,
+      headerFontSize: 15,
+      headerHeight: 48,
+      borderRadiusLG: 12,
     },
     Menu: {
-      itemBorderRadius: 8,
-      itemMarginInline: 10,
-      itemHeight: 40,
+      itemBorderRadius: 6,
+      itemMarginInline: 8,
+      itemHeight: 38,
     },
     Modal: {
-      borderRadiusLG: 16,
+      borderRadiusLG: 12,
     },
   },
 };

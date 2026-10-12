@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
+import { CompactStatCard } from "../components/CompactStatCard";
 
 const Profiles = () => {
   const navigate = useNavigate();
@@ -199,35 +200,40 @@ const Profiles = () => {
     {
       title: "Amallar",
       key: "actions",
-      width: 95,
+      width: 80,
+      fixed: "right",
       render: (_, record) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 justify-end">
           <Tooltip title="Profil tafsilotlarini ko'rish">
             <button
               type="button"
+              aria-label="Profil tafsilotini ko'rish"
               onClick={() => {
                 setSelectedProfile(record);
                 setIsDetailModalOpen(true);
               }}
-              className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+              className="btn-action-primary"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
 
           <Popconfirm
-            title="Ushbu profilni o'chirishga ishonchingiz komilmi?"
+            title="Profilni o'chirish"
+            description={`Haqiqatan ham #${record.id} profilni o'chirmoqchimisiz?`}
             onConfirm={() => deleteMutation.mutate(record.id)}
             okText="Ha, o'chirish"
             cancelText="Bekor"
-            okButtonProps={{ danger: true }}
+            okButtonProps={{ danger: true, size: "small" }}
+            cancelButtonProps={{ size: "small" }}
           >
             <Tooltip title="O'chirish">
               <button
                 type="button"
-                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                aria-label="Profilni o'chirish"
+                className="btn-action-danger"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </Tooltip>
           </Popconfirm>
@@ -239,10 +245,10 @@ const Profiles = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <h1 className="text-xl font-bold text-slate-900 m-0 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center">
               <Contact className="w-4 h-4" />
             </div>
             Foydalanuvchi Profillari Reestri
@@ -258,74 +264,60 @@ const Profiles = () => {
             placeholder="Ism, email yoki telefon..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all w-72"
+            className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white text-xs font-medium text-slate-800 outline-none focus:border-blue-700 transition-all w-72"
           />
         </div>
       </div>
 
-      {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Profillar</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Shaxsiy anketalar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Contact className="w-6 h-6" />
-            </div>
-          </div>
+      {/* Compact KPI Cards */}
+      <Row gutter={[12, 12]}>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Jami Profillar"
+            value={stats.total}
+            unit="ta"
+            icon={<Contact className="w-4 h-4" />}
+            color="blue"
+            description="Shaxsiy anketalar"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
-                Rasmli Profillar
-              </div>
-              <div className="text-2xl font-black text-purple-600 mt-1">{stats.withAvatar} ta</div>
-              <div className="text-[11px] text-purple-600/70 mt-0.5">Avatar yuklanganlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <ImageIcon className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Rasmli Profillar"
+            value={stats.withAvatar}
+            unit="ta"
+            icon={<ImageIcon className="w-4 h-4" />}
+            color="indigo"
+            description="Avatar yuklanganlar"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-blue-500 uppercase tracking-wider flex items-center gap-1">
-                Email Biriktirilgan
-              </div>
-              <div className="text-2xl font-black text-blue-600 mt-1">{stats.withEmail} ta</div>
-              <div className="text-[11px] text-blue-600/70 mt-0.5">Elektron pochta egalari</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Mail className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Email Biriktirilgan"
+            value={stats.withEmail}
+            unit="ta"
+            icon={<Mail className="w-4 h-4" />}
+            color="blue"
+            description="Elektron pochta egalari"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Manzili Borlar
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">{stats.withAddress} ta</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">Hududi to'ldirilganlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <MapPin className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Manzili Borlar"
+            value={stats.withAddress}
+            unit="ta"
+            icon={<MapPin className="w-4 h-4" />}
+            color="emerald"
+            description="Hududi to'ldirilganlar"
+          />
         </Col>
       </Row>
 
       {/* Main Table Card with Tabs */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col gap-4">
+      <div className="enterprise-card p-4 overflow-hidden flex flex-col gap-3">
         {/* Filter Tabs */}
         <div className="border-b border-slate-100 pb-2">
           <Tabs
@@ -333,12 +325,12 @@ const Profiles = () => {
             onChange={(k) => setFilterTab(k)}
             className="!m-0"
             items={[
-              { key: "all", label: <span className="font-bold">Barcha Profillar ({stats.total})</span> },
+              { key: "all", label: <span className="font-semibold text-xs">Barcha Profillar ({stats.total})</span> },
               {
                 key: "avatar",
                 label: (
-                  <span className="font-bold text-purple-600 flex items-center gap-1.5">
-                    <ImageIcon className="w-4 h-4 text-purple-500" />
+                  <span className="font-semibold text-xs text-indigo-700 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
                     Rasmli Profillar ({stats.withAvatar})
                   </span>
                 ),
@@ -346,8 +338,8 @@ const Profiles = () => {
               {
                 key: "email",
                 label: (
-                  <span className="font-bold text-blue-600 flex items-center gap-1.5">
-                    <Mail className="w-4 h-4 text-blue-500" />
+                  <span className="font-semibold text-xs text-blue-700 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-blue-600" />
                     Email Borlar ({stats.withEmail})
                   </span>
                 ),
@@ -365,7 +357,7 @@ const Profiles = () => {
           />
         </div>
 
-        <Table dataSource={filteredProfiles} columnDefs={columns} isLoading={isLoading} rowKey="id" />
+        <Table dataSource={filteredProfiles} columnDefs={columns} isLoading={isLoading} rowKey="id" size="small" />
       </div>
 
       {/* Profile Detail Modal */}

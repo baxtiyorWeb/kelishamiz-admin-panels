@@ -23,6 +23,7 @@ import Expenses from "../modules/Expenses";
 import SecurityPolicies from "../modules/SecurityPolicies";
 import SystemSettings from "../modules/SystemSettings";
 import OtpPolicyManagement from "../modules/OtpPolicyManagement";
+import SecurityOperationsCenter from "../modules/SecurityOperationsCenter";
 
 export const AppRouter = () => {
   return (
@@ -36,6 +37,8 @@ export const AppRouter = () => {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/soc" element={<SecurityOperationsCenter />} />
+        <Route path="/security-center" element={<SecurityOperationsCenter />} />
         <Route path="/products" element={<Products />} />
         <Route path="/shops" element={<Shops />} />
         <Route path="/reports" element={<Reports />} />

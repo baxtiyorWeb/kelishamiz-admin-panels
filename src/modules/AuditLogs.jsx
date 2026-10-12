@@ -1,36 +1,22 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../config/auth/api";
-import { Table, Tag, Input, Space, Card, Row, Col, Tabs, Tooltip, Modal, Avatar } from "antd";
+import { Table, Tag, Input, Row, Col, Tabs, Modal, Avatar, Button, Tooltip } from "antd";
+import { CompactStatCard } from "../components/CompactStatCard";
 import {
   History,
   ShieldAlert,
   User,
   Calendar,
-  Terminal,
   Search,
   Eye,
-  CheckCircle2,
-  AlertTriangle,
-  Layers,
-  Lock,
-  Sparkles,
   ShieldCheck,
   Activity,
-  Code,
+  Layers,
+  Copy,
+  Check,
 } from "lucide-react";
 import dayjs from "dayjs";
-
-const ACTION_COLORS = {
-  USER_BAN: "rose",
-  USER_ROLE_CHANGE: "purple",
-  PRODUCT_APPROVE: "emerald",
-  PRODUCT_REJECT: "rose",
-  CATEGORY_CREATE: "blue",
-  BANNER_CREATE: "indigo",
-  NOTIFICATION_BROADCAST: "amber",
-  SYSTEM_CONFIG: "slate",
-};
 
 const AuditLogs = () => {
   const [search, setSearch] = useState("");
@@ -39,6 +25,7 @@ const AuditLogs = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [selectedLog, setSelectedLog] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["adminAuditLogs", page, pageSize, search],
@@ -62,7 +49,9 @@ const AuditLogs = () => {
   const stats = useMemo(() => {
     const total = totalLogs;
     const adminActions = rawLogs.filter((l) => l.adminId || l.admin).length;
-    const securityBans = rawLogs.filter((l) => l.action?.includes("BAN") || l.action?.includes("SPAM") || l.action?.includes("DELETE")).length;
+    const securityBans = rawLogs.filter(
+      (l) => l.action?.includes("BAN") || l.action?.includes("SPAM") || l.action?.includes("DELETE")
+    ).length;
     const uniqueTargets = new Set(rawLogs.map((l) => l.targetType).filter(Boolean)).size;
 
     return {
@@ -97,33 +86,32 @@ const AuditLogs = () => {
       title: "ID",
       dataIndex: "id",
       key: "id",
-      width: 65,
-      render: (id) => <span className="font-mono text-xs font-bold text-slate-400">#{id}</span>,
+      width: 70,
+      render: (id) => <span className="font-mono text-xs text-slate-500 font-semibold">#{id}</span>,
     },
     {
       title: "Vaqt & Sana",
       dataIndex: "createdAt",
       key: "createdAt",
-      width: 170,
+      width: 165,
       render: (date) => (
-        <div className="flex items-center gap-1 text-xs text-slate-500 font-mono">
-          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-          <span>{dayjs(date).format("YYYY-MM-DD HH:mm:ss")}</span>
-        </div>
+        <span className="text-xs text-slate-600 font-mono">
+          {date ? dayjs(date).format("YYYY-MM-DD HH:mm:ss") : "—"}
+        </span>
       ),
     },
     {
       title: "Admin Mas'ul",
       key: "admin",
-      width: 180,
+      width: 170,
       render: (_, record) => {
         const name = record.admin?.username || `Admin #${record.adminId || 1}`;
         return (
           <div className="flex items-center gap-2">
-            <Avatar className="bg-purple-100 text-purple-700 font-extrabold text-xs" size={26}>
+            <Avatar className="bg-blue-700 text-white font-bold text-xs" size={24}>
               {name[0]?.toUpperCase()}
             </Avatar>
-            <span className="font-extrabold text-slate-900 text-xs truncate max-w-[120px]">
+            <span className="font-semibold text-slate-800 text-xs truncate max-w-[120px]">
               @{name}
             </span>
           </div>
@@ -134,30 +122,28 @@ const AuditLogs = () => {
       title: "Amal (Action)",
       dataIndex: "action",
       key: "action",
-      width: 220,
+      width: 200,
       render: (action) => (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono font-extrabold text-xs">
-          <Activity className="w-3 h-3 text-indigo-500" />
-          <span>{action || "SYSTEM_EVENT"}</span>
+        <span className="font-mono font-semibold text-xs text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+          {action || "SYSTEM_EVENT"}
         </span>
       ),
     },
     {
       title: "Nishon Ob'ekti",
       key: "target",
-      width: 180,
+      width: 170,
       render: (_, record) => (
         <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold text-[11px] border border-slate-200">
-            <Layers className="w-3 h-3 text-slate-500" />
-            <span>{record.targetType || "SYSTEM"}</span>
+          <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+            {record.targetType || "SYSTEM"}
           </span>
-          <span className="font-mono text-xs text-slate-500 font-semibold">#{record.targetId || "0"}</span>
+          <span className="font-mono text-xs text-slate-500">#{record.targetId || "0"}</span>
         </div>
       ),
     },
     {
-      title: "Tafsilot & Metadata",
+      title: "Metadata / Tafsilot",
       dataIndex: "details",
       key: "details",
       render: (details, record) =>
@@ -167,34 +153,65 @@ const AuditLogs = () => {
               setSelectedLog(record);
               setIsDetailModalOpen(true);
             }}
-            className="font-mono text-[11px] text-slate-600 bg-slate-50 hover:bg-slate-100 p-1.5 px-2.5 rounded-xl border border-slate-200/80 max-w-xs truncate cursor-pointer transition-colors flex items-center justify-between gap-2"
+            className="font-mono text-[11px] text-slate-600 bg-slate-50 hover:bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 max-w-xs truncate cursor-pointer transition-colors flex items-center justify-between gap-2"
           >
             <span className="truncate">{typeof details === "string" ? details : JSON.stringify(details)}</span>
-            <Eye className="w-3 h-3 text-slate-400 flex-shrink-0" />
+            <Eye className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
           </div>
         ) : (
           <span className="text-slate-400 text-xs">—</span>
         ),
     },
+    {
+      title: "Amallar",
+      key: "actions",
+      width: 70,
+      fixed: "right",
+      render: (_, record) => (
+        <Tooltip title="Tafsilotlarni ko'rish">
+          <button
+            type="button"
+            aria-label="Audit tafsilotini ko'rish"
+            onClick={() => {
+              setSelectedLog(record);
+              setIsDetailModalOpen(true);
+            }}
+            className="btn-action-primary"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
+      ),
+    },
   ];
 
+  const handleCopyJson = () => {
+    if (!selectedLog) return;
+    navigator.clipboard.writeText(JSON.stringify(selectedLog.details, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+    <div className="space-y-6">
+      {/* 1. TOP HEADER */}
+      <div className="enterprise-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <History className="w-4 h-4" />
-            </div>
-            Tizim Xavfsizlik & Audit Tarixi (Audit Logs)
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold text-slate-900 m-0">
+              Audit Jurnali & Loglar Tarixi
+            </h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              TAMPER-PROOF AUDIT
+            </span>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            Barcha adminlar va tizim tomonidan amalga oshirilgan o'zgartirishlar, moderatsiya va operatsiyalar jurnali.
+            Barcha administratorlar va tizim tomonidan amalga oshirilgan o'zgartirishlar, moderatsiya va xavfsizlik operatsiyalari jurnali
           </p>
         </div>
+
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Amal, target yoki admin..."
@@ -203,85 +220,70 @@ const AuditLogs = () => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all w-72"
+            className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 w-64"
           />
         </div>
       </div>
 
-      {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Audit Loglar</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Qayd etilgan operatsiyalar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <History className="w-6 h-6" />
-            </div>
-          </div>
+      {/* 2. KPI METRICS */}
+      <Row gutter={[12, 12]}>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Jami Audit Loglar"
+            value={stats.total}
+            unit="yozuv"
+            icon={<History className="w-4 h-4" />}
+            color="blue"
+            description="Barcha qayd etilgan operatsiyalar"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
-                Admin Amallari
-              </div>
-              <div className="text-2xl font-black text-purple-600 mt-1">{stats.adminActions} ta</div>
-              <div className="text-[11px] text-purple-600/70 mt-0.5">Xodimlar harakatlari</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <User className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Admin Amallari"
+            value={stats.adminActions}
+            unit="harakat"
+            icon={<User className="w-4 h-4" />}
+            color="indigo"
+            description="Xodimlar tomonidan bajarilgan"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-rose-500 uppercase tracking-wider flex items-center gap-1">
-                Xavfsizlik & Jazolar
-              </div>
-              <div className="text-2xl font-black text-rose-600 mt-1">{stats.securityBans} ta</div>
-              <div className="text-[11px] text-rose-600/70 mt-0.5">Ban, rad va o'chirishlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <ShieldAlert className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Xavfsizlik & Jazolar"
+            value={stats.securityBans}
+            unit="chora"
+            icon={<ShieldAlert className="w-4 h-4" />}
+            color={stats.securityBans > 0 ? "rose" : "slate"}
+            description="Blok, ban va o'chirishlar"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Audit Butunligi
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">100% Himoyalangan</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">O'zgartirib bo'lmas loglar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Audit Butunligi"
+            value="100%"
+            unit="himoyalangan"
+            icon={<ShieldCheck className="w-4 h-4" />}
+            color="emerald"
+            description="O'zgartirib bo'lmas immutable loglar"
+          />
         </Col>
       </Row>
 
-      {/* Main Table with Tabs */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col gap-4">
-        {/* Filter Tabs */}
-        <div className="border-b border-slate-100 pb-2">
+      {/* 3. MAIN TABLE WITH TABS */}
+      <div className="enterprise-card p-4">
+        <div className="border-b border-slate-100 pb-2 mb-3">
           <Tabs
             activeKey={activeTab}
             onChange={(k) => setActiveTab(k)}
             className="!m-0"
             items={[
-              { key: "all", label: <span className="font-bold">Barcha Audit Loglar ({totalLogs})</span> },
-              { key: "moderation", label: <span className="font-bold text-purple-600">🛡️ Moderatsiya</span> },
-              { key: "security", label: <span className="font-bold text-rose-600">⚡ Xavfsizlik & Jazolar</span> },
-              { key: "user", label: <span className="font-bold text-blue-600">👤 Foydalanuvchilar</span> },
+              { key: "all", label: `Barchasi (${totalLogs})` },
+              { key: "moderation", label: "Moderatsiya" },
+              { key: "security", label: "Xavfsizlik & Jazolar" },
+              { key: "user", label: "Foydalanuvchilar" },
             ]}
           />
         </div>
@@ -300,48 +302,50 @@ const AuditLogs = () => {
               setPageSize(ps);
             },
             showSizeChanger: true,
-            className: "px-4 py-2 !m-0",
+            className: "pt-4 !m-0",
           }}
+          size="small"
         />
       </div>
 
-      {/* JSON Metadata Lightbox Modal */}
+      {/* 4. METADATA LIGHTBOX MODAL */}
       <Modal
         title={
-          <div className="flex items-center gap-2">
-            <Code className="w-5 h-5 text-indigo-600" />
-            <span className="font-black text-slate-900">
-              Audit Hodisasi Tafsilotlari (ID #{selectedLog?.id})
-            </span>
-          </div>
+          <span className="font-bold text-sm text-slate-900">
+            Audit Hodisasi Tafsilotlari (ID #{selectedLog?.id})
+          </span>
         }
         open={isDetailModalOpen}
         onCancel={() => setIsDetailModalOpen(false)}
-        footer={null}
-        width={680}
-        className="!rounded-3xl"
+        footer={[
+          <Button key="close" onClick={() => setIsDetailModalOpen(false)}>
+            Yopish
+          </Button>,
+        ]}
+        width={640}
+        centered
       >
         {selectedLog && (
-          <div className="flex flex-col gap-4 mt-3">
-            <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-xs">
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
               <div>
-                <span className="text-slate-400 block">Amal:</span>
-                <span className="font-extrabold text-slate-900 font-mono">{selectedLog.action}</span>
+                <span className="text-slate-500 block">Amal:</span>
+                <span className="font-semibold text-slate-900 font-mono">{selectedLog.action}</span>
               </div>
               <div>
-                <span className="text-slate-400 block">Admin:</span>
-                <span className="font-extrabold text-slate-900">
+                <span className="text-slate-500 block">Admin:</span>
+                <span className="font-semibold text-slate-900">
                   {selectedLog.admin ? `@${selectedLog.admin.username}` : `Admin #${selectedLog.adminId}`}
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block">Nishon Ob'ekti:</span>
-                <span className="font-extrabold text-slate-900">
+                <span className="text-slate-500 block">Nishon Ob'ekti:</span>
+                <span className="font-semibold text-slate-900">
                   {selectedLog.targetType} (#{selectedLog.targetId})
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block">Sana:</span>
+                <span className="text-slate-500 block">Sana:</span>
                 <span className="font-mono text-slate-700">
                   {dayjs(selectedLog.createdAt).format("YYYY-MM-DD HH:mm:ss")}
                 </span>
@@ -349,10 +353,20 @@ const AuditLogs = () => {
             </div>
 
             <div>
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-                Payload / Metadata JSON
-              </span>
-              <pre className="p-4 bg-slate-950 text-emerald-400 font-mono text-xs rounded-2xl overflow-x-auto max-h-80 leading-relaxed shadow-inner">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-slate-700">
+                  Metadata & Payload (JSON):
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyJson}
+                  className="text-xs text-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                  <span>{copied ? "Nusxalandi" : "Nusxa olish"}</span>
+                </button>
+              </div>
+              <pre className="p-3 bg-slate-900 text-slate-100 font-mono text-xs rounded-lg overflow-x-auto max-h-72">
                 {JSON.stringify(selectedLog.details, null, 2)}
               </pre>
             </div>

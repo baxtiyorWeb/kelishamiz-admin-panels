@@ -132,9 +132,9 @@ const UserDetail = () => {
       render: (images) => {
         const firstImg = get(images, "[0]", null);
         return firstImg ? (
-          <img src={firstImg} alt="" className="w-11 h-11 object-cover rounded-xl border border-slate-200" />
+          <img src={firstImg} alt="" className="w-9 h-9 object-cover rounded-lg border border-slate-200" />
         ) : (
-          <div className="w-11 h-11 bg-slate-100 flex items-center justify-center text-xs text-slate-400 font-bold rounded-xl">
+          <div className="w-9 h-9 bg-slate-100 flex items-center justify-center text-[10px] text-slate-400 font-bold rounded-lg">
             N/A
           </div>
         );
@@ -206,84 +206,85 @@ const UserDetail = () => {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Top Header */}
-      <div className="flex items-center justify-between">
+      <div className="enterprise-card p-3.5 flex items-center justify-between">
         <Button
           icon={<ArrowLeftOutlined />}
           onClick={() => navigate("/users")}
-          className="!rounded-xl font-bold"
+          size="small"
+          className="!rounded-md font-semibold text-xs"
         >
           Foydalanuvchilar Ro'yxatiga Qaytish
         </Button>
         <div className="flex items-center gap-2">
-          <Tag color="blue" className="!rounded-full px-3 py-1 font-bold">
+          <Tag color="blue" className="!rounded px-2 py-0.5 font-semibold text-xs m-0">
             ID: #{user.id}
           </Tag>
-          <Tag color={user.role === "ADMIN" ? "red" : "geekblue"} className="!rounded-full px-3 py-1 font-bold">
+          <Tag color={user.role === "ADMIN" ? "red" : "geekblue"} className="!rounded px-2 py-0.5 font-semibold text-xs m-0">
             {user.role}
           </Tag>
         </div>
       </div>
 
-      <Row gutter={[20, 20]}>
+      <Row gutter={[12, 12]}>
         {/* Left Profile Card */}
         <Col xs={24} lg={8}>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-5">
-            <div className="flex flex-col items-center text-center pb-4 border-b border-slate-100">
+          <div className="enterprise-card p-4 flex flex-col gap-4">
+            <div className="flex flex-col items-center text-center pb-3 border-b border-slate-100">
               <Avatar
-                size={84}
+                size={64}
                 src={get(user, "profile.avatar")}
                 icon={<UserOutlined />}
-                className="bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-black text-2xl shadow-md"
+                className="bg-blue-700 text-white font-bold text-xl border-2 border-white shadow-xs"
               >
                 {(user.username || "U")[0]?.toUpperCase()}
               </Avatar>
-              <h2 className="text-xl font-black text-slate-900 mt-3 m-0">
+              <h2 className="text-base font-bold text-slate-900 mt-2.5 m-0">
                 {get(user, "profile.fullName") || user.username || "Ismsiz"}
               </h2>
-              <div className="text-xs text-slate-400 font-mono mt-1 flex items-center gap-1">
+              <div className="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-1">
                 <PhoneOutlined /> {user.phone || "Telefon yo'q"}
               </div>
-              <div className="mt-3 flex gap-1.5 flex-wrap justify-center">
+              <div className="mt-2.5 flex gap-1.5 flex-wrap justify-center">
                 {user.isBlocked ? (
-                  <Tag color="error" className="!rounded-full font-bold">
-                    🚫 Bloklangan
+                  <Tag color="error" className="!rounded px-2 py-0.5 font-semibold text-[11px] m-0">
+                    Bloklangan
                   </Tag>
                 ) : (
-                  <Tag color="success" className="!rounded-full font-bold">
-                    🟢 Faol Akkaunt
+                  <Tag color="success" className="!rounded px-2 py-0.5 font-semibold text-[11px] m-0">
+                    Faol Akkaunt
                   </Tag>
                 )}
                 {user.isSpam && (
-                  <Tag color="warning" className="!rounded-full font-bold">
-                    ⚠️ Spam Belgisi
+                  <Tag color="warning" className="!rounded px-2 py-0.5 font-semibold text-[11px] m-0">
+                    Spam Belgisi
                   </Tag>
                 )}
               </div>
             </div>
 
             {/* User Meta Data */}
-            <div className="flex flex-col gap-3 text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-400 font-medium">Hamyon Balansi:</span>
-                <span className="font-black text-emerald-600 text-sm">
+            <div className="flex flex-col gap-2.5 text-xs">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Hamyon Balansi:</span>
+                <span className="font-bold text-emerald-700 text-sm">
                   {Number(user.balance || 0).toLocaleString("uz-UZ")} UZS
                 </span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-400 font-medium">Username:</span>
-                <span className="font-semibold text-slate-700">@{user.username || "yo'q"}</span>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Username:</span>
+                <span className="font-semibold text-slate-800">@{user.username || "yo'q"}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-50">
-                <span className="text-slate-400 font-medium">Hudud:</span>
-                <span className="font-semibold text-slate-700">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Hudud:</span>
+                <span className="font-semibold text-slate-800 text-right truncate max-w-[180px]">
                   {get(user, "profile.region.name", "N/A")} / {get(user, "profile.district.name", "N/A")}
                 </span>
               </div>
               <div className="flex justify-between py-1">
-                <span className="text-slate-400 font-medium">Manzil:</span>
-                <span className="font-semibold text-slate-700">{get(user, "profile.address") || "Kiritilmagan"}</span>
+                <span className="text-slate-500 font-medium">Manzil:</span>
+                <span className="font-semibold text-slate-800 text-right truncate max-w-[180px]">{get(user, "profile.address") || "Kiritilmagan"}</span>
               </div>
             </div>
 
@@ -293,7 +294,7 @@ const UserDetail = () => {
                 type="primary"
                 icon={<SendOutlined />}
                 onClick={() => setMsgModalOpen(true)}
-                className="!rounded-xl font-bold h-10"
+                className="!rounded-lg font-semibold h-9 !bg-blue-700 hover:!bg-blue-800 text-xs"
               >
                 Xabarnoma Yuborish
               </Button>
@@ -307,7 +308,7 @@ const UserDetail = () => {
                   setModSpamReason(user.spamReason || "");
                   setModModalOpen(true);
                 }}
-                className="!rounded-xl font-bold h-10"
+                className="!rounded-lg font-semibold h-9 text-xs"
               >
                 Intizomiy Boshqaruv (Ban / Spam)
               </Button>
@@ -317,39 +318,51 @@ const UserDetail = () => {
 
         {/* Right Content Tabs */}
         <Col xs={24} lg={16}>
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="enterprise-card p-4">
             <Tabs
               defaultActiveKey="1"
               items={[
                 {
                   key: "1",
                   label: (
-                    <span className="font-bold flex items-center gap-1.5">
+                    <span className="font-semibold text-xs flex items-center gap-1.5">
                       <ShoppingOutlined /> E'lonlar ({products.length})
                     </span>
                   ),
                   children: (
                     <Table
+                      size="small"
                       dataSource={products}
                       columns={productColumns}
                       rowKey="id"
-                      pagination={{ pageSize: 5 }}
+                      scroll={{ x: 600 }}
+                      pagination={{
+                        pageSize: 5,
+                        size: "small",
+                        showTotal: (total) => `Jami: ${total} ta e'lon`,
+                      }}
                     />
                   ),
                 },
                 {
                   key: "2",
                   label: (
-                    <span className="font-bold flex items-center gap-1.5">
+                    <span className="font-semibold text-xs flex items-center gap-1.5">
                       <CreditCardOutlined /> To'lovlar Tarixi ({transactions.length})
                     </span>
                   ),
                   children: (
                     <Table
+                      size="small"
                       dataSource={transactions}
                       columns={transactionColumns}
                       rowKey="id"
-                      pagination={{ pageSize: 5 }}
+                      scroll={{ x: 500 }}
+                      pagination={{
+                        pageSize: 5,
+                        size: "small",
+                        showTotal: (total) => `Jami: ${total} ta tranzaksiya`,
+                      }}
                     />
                   ),
                 },

@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "./../config/auth/api";
+import { CompactStatCard } from "../components/CompactStatCard";
 
 const PLACEMENT_OPTIONS = [
   { value: "home_hero", label: "Bosh sahifa (Katta banner)" },
@@ -334,32 +335,37 @@ const Banners = () => {
     {
       title: "Amallar",
       key: "actions",
-      width: 95,
+      width: 80,
+      fixed: "right",
       render: (_, r) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 justify-end">
           <Tooltip title="Tahrirlash">
             <button
               type="button"
+              aria-label="Bannerni tahrirlash"
               onClick={() => showModal(r)}
-              className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+              className="btn-action-primary"
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
 
           <Popconfirm
-            title="Bannerni o'chirishga ishonchingiz komilmi?"
+            title="Bannerni o'chirish"
+            description={`Haqiqatan ham #${r.id} bannerni o'chirmoqchimisiz?`}
             onConfirm={() => deleteMutation.mutate(r.id)}
             okText="Ha, o'chirish"
             cancelText="Bekor"
-            okButtonProps={{ danger: true }}
+            okButtonProps={{ danger: true, size: "small" }}
+            cancelButtonProps={{ size: "small" }}
           >
             <Tooltip title="O'chirish">
               <button
                 type="button"
-                className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                aria-label="Bannerni o'chirish"
+                className="btn-action-danger"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </Tooltip>
           </Popconfirm>
@@ -371,10 +377,10 @@ const Banners = () => {
   return (
     <div className="flex flex-col gap-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <h1 className="text-xl font-bold text-slate-900 m-0 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center">
               <MonitorPlay className="w-4 h-4" />
             </div>
             Promo & Bannerlar Boshqaruv Hubi
@@ -391,14 +397,14 @@ const Banners = () => {
               placeholder="Banner sarlavhasi..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-800 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all w-60"
+              className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white text-xs font-medium text-slate-800 outline-none focus:border-blue-700 transition-all w-60"
             />
           </div>
 
           <button
             type="button"
             onClick={() => showModal()}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs shadow-sm shadow-blue-700/20 transition-all active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Yangi Banner</span>
@@ -406,69 +412,55 @@ const Banners = () => {
         </div>
       </div>
 
-      {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Jami Bannerlar</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{stats.total} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Barcha joylashtirilganlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <ImageIcon className="w-6 h-6" />
-            </div>
-          </div>
+      {/* Compact KPI Cards */}
+      <Row gutter={[12, 12]}>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Jami Bannerlar"
+            value={stats.total}
+            unit="ta"
+            icon={<ImageIcon className="w-4 h-4" />}
+            color="blue"
+            description="Barcha joylashtirilganlar"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Faol Bannerlar
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">{stats.active} ta</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">Ilovada ko'rinayotganlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Faol Bannerlar"
+            value={stats.active}
+            unit="ta"
+            icon={<CheckCircle2 className="w-4 h-4" />}
+            color="emerald"
+            description="Ilovada ko'rinayotganlar"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
-                Video Promo
-              </div>
-              <div className="text-2xl font-black text-purple-600 mt-1">{stats.videoBanners} ta</div>
-              <div className="text-[11px] text-purple-600/70 mt-0.5">MP4 & HLS video bannerlar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Video className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Video Promo"
+            value={stats.videoBanners}
+            unit="ta"
+            icon={<Video className="w-4 h-4" />}
+            color="indigo"
+            description="MP4 & HLS video bannerlar"
+          />
         </Col>
 
-        <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
-                Ko'rishlar Soni
-              </div>
-              <div className="text-2xl font-black text-amber-600 mt-1">{stats.views.toLocaleString()}</div>
-              <div className="text-[11px] text-amber-600/70 mt-0.5">Mijozlar tomonidan ko'rilgan</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Eye className="w-6 h-6" />
-            </div>
-          </div>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Ko'rishlar Soni"
+            value={stats.views.toLocaleString()}
+            unit="ko'rish"
+            icon={<Eye className="w-4 h-4" />}
+            color="amber"
+            description="Mijozlar tomonidan ko'rilgan"
+          />
         </Col>
       </Row>
 
       {/* Main Table with Tabs */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 overflow-hidden flex flex-col gap-4">
+      <div className="enterprise-card p-4 overflow-hidden flex flex-col gap-4">
         {/* Type Tabs */}
         <div className="border-b border-slate-100 pb-2 flex justify-between items-center flex-wrap gap-3">
           <Tabs
@@ -522,6 +514,7 @@ const Banners = () => {
           rowKey="id"
           loading={isLoading}
           pagination={{ pageSize: 8 }}
+          size="small"
         />
       </div>
 

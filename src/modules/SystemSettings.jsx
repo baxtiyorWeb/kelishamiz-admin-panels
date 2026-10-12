@@ -69,6 +69,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import CompactStatCard from "../components/CompactStatCard";
 
 const { Text, Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -283,181 +284,212 @@ export default function SystemSettings() {
   }) => (
     <div
       key={keyName}
-      className={`p-4 rounded-xl border transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+      className={`p-3 px-3.5 rounded-xl border transition-all duration-150 flex flex-col md:flex-row md:items-center justify-between gap-3 ${
         disabled
           ? "bg-slate-50/70 border-slate-200 opacity-60"
           : isDanger
-          ? "bg-red-50/30 border-red-200 hover:border-red-300"
-          : "bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-xs"
+          ? "bg-rose-50/20 border-rose-200/80 hover:border-rose-300"
+          : "bg-white border-slate-200/80 hover:border-blue-300 hover:shadow-2xs"
       }`}
     >
-      <div className="flex items-start gap-3.5 max-w-xl">
+      <div className="flex items-start gap-3 max-w-xl">
         <div
-          className={`p-2.5 rounded-xl shrink-0 mt-0.5 ${
+          className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center mt-0.5 ${
             disabled
               ? "bg-slate-200 text-slate-400"
               : isDanger
-              ? "bg-red-100 text-red-600"
-              : "bg-indigo-50 text-indigo-600"
+              ? "bg-rose-50 text-rose-600 border border-rose-100"
+              : "bg-blue-50 text-blue-700 border border-blue-100"
           }`}
         >
-          <Icon className="w-5 h-5" />
+          <Icon className="w-4 h-4" />
         </div>
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-slate-900 text-[14.5px]">{name}</span>
-            <code className="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-bold text-slate-900 text-xs">{name}</span>
+            <code className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono">
               {keyName}
             </code>
             {isDanger && (
-              <Tag color="error" className="text-[10px] font-bold uppercase rounded-full">
-                Muhim Ta'sir
-              </Tag>
+              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200 uppercase">
+                Kritik
+              </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
+          <p className="text-[11.5px] text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
           {disabled && disabledTooltip && (
-            <p className="text-[11px] text-amber-600 font-medium mt-1 flex items-center gap-1">
+            <p className="text-[10.5px] text-amber-600 font-medium mt-0.5 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" /> {disabledTooltip}
             </p>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+      <div className="flex items-center gap-2.5 shrink-0 self-end md:self-center">
         {control}
         <Tooltip title="Zavod standart holatiga qaytarish">
-          <Button
-            type="text"
-            size="small"
-            icon={<RotateCcw className="w-3.5 h-3.5 text-slate-400 hover:text-slate-700" />}
+          <button
+            type="button"
+            className="btn-action-neutral"
+            aria-label="Standart holatga qaytarish"
             onClick={() => setResetModal({ isOpen: true, key: keyName, label: name })}
-          />
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
         </Tooltip>
       </div>
     </div>
   );
 
   return (
-    <div className="space-y-6 pb-16">
-      {/* 1. TOP HEADER & TELEMETRY CARD */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 md:p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div>
-            <div className="flex items-center gap-2.5 mb-1.5">
-              <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
-                <Sliders className="w-5 h-5" />
-              </div>
-              <Title level={4} style={{ margin: 0 }} className="text-slate-900 tracking-tight">
-                Tizim Boshqaruvi & Central Control Plane
-              </Title>
-              <Badge
-                count={`v${configVersion}`}
-                className="site-badge font-mono"
-                style={{ backgroundColor: "#6345ED", fontWeight: 700 }}
-              />
+    <div className="flex flex-col gap-4 pb-16">
+      {/* 1. TOP HEADER */}
+      <div className="enterprise-card p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center">
+              <Sliders className="w-4 h-4" />
             </div>
-            <p className="text-xs md:text-sm text-slate-500">
-              Platformaning barcha 15 ta funksional moduli, upload limitlari va operatsion qoidalarini real vaqt rejimida
-              boshqarish.
-            </p>
+            <h1 className="text-base font-bold text-slate-900 m-0 tracking-tight">
+              Tizim Boshqaruvi & Central Control Plane
+            </h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+              v{configVersion}
+            </span>
           </div>
-
-          {/* Telemetry Status Badges */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-2 ${
-                isMaintenance
-                  ? "bg-red-50 text-red-700 border-red-200"
-                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
-              }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full animate-pulse ${
-                  isMaintenance ? "bg-red-500" : "bg-emerald-500"
-                }`}
-              />
-              {isMaintenance ? "Texnik Profilaktika Rejimi" : "Tizim To'liq Ishchi Holatda"}
-            </div>
-
-            <div className="px-3.5 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600 text-xs flex items-center gap-1.5">
-              <History className="w-3.5 h-3.5 text-slate-400" />
-              <span>Oxirgi o'zgarish:</span>
-              <strong className="text-slate-800">{lastUpdatedAt}</strong>
-              <span className="text-slate-400">({lastUpdatedBy})</span>
-            </div>
-
-            <Button
-              icon={<RefreshCw className={`w-3.5 h-3.5 ${isRefetching ? "animate-spin" : ""}`} />}
-              onClick={() => {
-                refetch();
-                refetchAudit();
-                toast.info("Konfiguratsiya yangilandi");
-              }}
-              size="middle"
-            >
-              Yangilash
-            </Button>
-          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Platformaning barcha 15 ta funksional moduli, upload limitlari va operatsion qoidalarini real vaqt rejimida boshqarish
+          </p>
         </div>
 
-        {/* Search Bar & Quick Indicators */}
-        <div className="mt-5 pt-5 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
-          <Input
-            prefix={<Search className="w-4 h-4 text-slate-400 mr-1" />}
-            placeholder="Barcha 15 ta bo'lim bo'yicha qidirish (rasm, video, limit, do'kon, banner, cdn, xavfsizlik)..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:max-w-md rounded-xl py-2"
-            allowClear
-          />
-
-          <div className="flex items-center gap-2 text-xs text-slate-500 w-full md:w-auto justify-end overflow-x-auto pb-1">
-            <span className="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">
-              Tezkor:
-            </span>
-            <Tag
-              color={getValue("platform_enabled", true) ? "success" : "default"}
-              className="rounded-full px-2.5 py-0.5"
-            >
-              Platform: {getValue("platform_enabled", true) ? "ON" : "OFF"}
-            </Tag>
-            <Tag
-              color={getValue("ad_posting_enabled", true) ? "success" : "default"}
-              className="rounded-full px-2.5 py-0.5"
-            >
-              E'lonlar: {getValue("ad_posting_enabled", true) ? "ON" : "OFF"}
-            </Tag>
-            <Tag
-              color={getValue("chat_enabled", true) ? "success" : "default"}
-              className="rounded-full px-2.5 py-0.5"
-            >
-              Chat: {getValue("chat_enabled", true) ? "ON" : "OFF"}
-            </Tag>
-            <Tag
-              color={getValue("media_upload_enabled", true) ? "success" : "default"}
-              className="rounded-full px-2.5 py-0.5"
-            >
-              Upload: {getValue("media_upload_enabled", true) ? "ON" : "OFF"}
-            </Tag>
-            <Tag
-              color={getValue("shop_creation_enabled", true) ? "success" : "default"}
-              className="rounded-full px-2.5 py-0.5"
-            >
-              Do'konlar: {getValue("shop_creation_enabled", true) ? "ON" : "OFF"}
-            </Tag>
-            <Tag
-              color={isMaintenance ? "error" : "success"}
-              className="rounded-full px-2.5 py-0.5"
-            >
-              Maintenance: {isMaintenance ? "ON" : "OFF"}
-            </Tag>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div
+            className={`px-2.5 py-1 rounded-md border text-xs font-semibold flex items-center gap-1.5 ${
+              isMaintenance
+                ? "bg-rose-50 text-rose-700 border-rose-200"
+                : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full animate-pulse ${
+                isMaintenance ? "bg-rose-500" : "bg-emerald-500"
+              }`}
+            />
+            <span>{isMaintenance ? "Texnik Profilaktika Rejimi" : "100% Tizim Faol"}</span>
           </div>
+
+          <Button
+            size="small"
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${isRefetching ? "animate-spin" : ""}`} />}
+            onClick={() => {
+              refetch();
+              refetchAudit();
+              toast.info("Konfiguratsiya yangilandi");
+            }}
+            className="!rounded-md text-xs font-semibold"
+          >
+            Yangilash
+          </Button>
         </div>
       </div>
 
-      {/* 2. TABS & SECTIONS NAVIGATION (ALL 15 CATEGORIES) */}
-      <Card className="rounded-2xl border-slate-200/80 shadow-xs" bodyStyle={{ padding: "16px 20px" }}>
+      {/* 2. COMPACT STATS CARDS */}
+      <Row gutter={[12, 12]}>
+        <Col xs={24} sm={12} lg={6}>
+          <CompactStatCard
+            label="Tizim Operatsion Holati"
+            value={isMaintenance ? "TEXNIK REJIM" : "100% OPERATIONAL"}
+            unit="SLA"
+            subtitle={isMaintenance ? "Foydalanuvchilar to'xtatilgan" : "Barcha xizmatlar barqaror"}
+            icon={Activity}
+            color={isMaintenance ? "rose" : "emerald"}
+          />
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <CompactStatCard
+            label="Konfiguratsiya Versiyasi"
+            value={`v${configVersion}`}
+            unit="build"
+            subtitle={`${lastUpdatedBy} (${lastUpdatedAt})`}
+            icon={Sliders}
+            color="blue"
+          />
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <CompactStatCard
+            label="Boshqaruv Domenlari"
+            value="15"
+            unit="bo'lim"
+            subtitle="Upload, Auth, CDN, AI, Chat, Xavfsizlik"
+            icon={Layers}
+            color="indigo"
+          />
+        </Col>
+
+        <Col xs={24} sm={12} lg={6}>
+          <CompactStatCard
+            label="Audit Tarixi"
+            value={auditLogs.length}
+            unit="qayd"
+            subtitle="Admin o'zgarishlar jurnali"
+            icon={History}
+            color="amber"
+          />
+        </Col>
+      </Row>
+
+      {/* 3. SEARCH & QUICK TELEMETRY BAR */}
+      <div className="enterprise-card p-3 flex flex-col md:flex-row items-center justify-between gap-3">
+        <Input
+          prefix={<Search className="w-3.5 h-3.5 text-slate-400 mr-1" />}
+          placeholder="Barcha 15 ta bo'lim bo'yicha tezkor qidirish (rasm, limit, chat, cdn, do'kon)..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full md:max-w-md !rounded-lg text-xs h-9"
+          allowClear
+        />
+
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 w-full md:w-auto justify-end overflow-x-auto pb-0.5">
+          <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mr-1">
+            Status:
+          </span>
+          <Tag
+            color={getValue("platform_enabled", true) ? "success" : "default"}
+            className="!rounded px-2 py-0.5 text-[10px] font-mono m-0"
+          >
+            Platform: {getValue("platform_enabled", true) ? "ON" : "OFF"}
+          </Tag>
+          <Tag
+            color={getValue("ad_posting_enabled", true) ? "success" : "default"}
+            className="!rounded px-2 py-0.5 text-[10px] font-mono m-0"
+          >
+            E'lonlar: {getValue("ad_posting_enabled", true) ? "ON" : "OFF"}
+          </Tag>
+          <Tag
+            color={getValue("chat_enabled", true) ? "success" : "default"}
+            className="!rounded px-2 py-0.5 text-[10px] font-mono m-0"
+          >
+            Chat: {getValue("chat_enabled", true) ? "ON" : "OFF"}
+          </Tag>
+          <Tag
+            color={getValue("media_upload_enabled", true) ? "success" : "default"}
+            className="!rounded px-2 py-0.5 text-[10px] font-mono m-0"
+          >
+            Upload: {getValue("media_upload_enabled", true) ? "ON" : "OFF"}
+          </Tag>
+          <Tag
+            color={getValue("shop_creation_enabled", true) ? "success" : "default"}
+            className="!rounded px-2 py-0.5 text-[10px] font-mono m-0"
+          >
+            Do'konlar: {getValue("shop_creation_enabled", true) ? "ON" : "OFF"}
+          </Tag>
+        </div>
+      </div>
+
+      {/* 4. TABS & SECTIONS NAVIGATION (ALL 15 CATEGORIES) */}
+      <Card className="enterprise-card !border-slate-200" bodyStyle={{ padding: "12px 16px" }}>
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-3">
             <Spin size="large" />
@@ -754,8 +786,8 @@ export default function SystemSettings() {
                       </div>
                       <Button
                         type="primary"
-                        icon={<Save className="w-4 h-4" />}
-                        className="bg-[#6345ED] hover:bg-[#795EF5]"
+                        icon={<Save className="w-3.5 h-3.5" />}
+                        className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                         loading={updateMutation.isPending}
                         onClick={() =>
                           handleSaveDraft(
@@ -796,7 +828,7 @@ export default function SystemSettings() {
                     })}
 
                     {/* Image Settings */}
-                    <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-4">
+                    <div className="enterprise-card p-4 space-y-3">
                       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div className="flex items-center gap-2.5">
                           <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
@@ -911,7 +943,7 @@ export default function SystemSettings() {
                     </div>
 
                     {/* Video Settings */}
-                    <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-4">
+                    <div className="enterprise-card p-4 space-y-3">
                       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div className="flex items-center gap-2.5">
                           <div className="p-2 rounded-lg bg-sky-50 text-sky-600">
@@ -989,7 +1021,7 @@ export default function SystemSettings() {
                       <Button
                         type="primary"
                         icon={<Save className="w-4 h-4" />}
-                        className="bg-[#6345ED]"
+                        className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                         loading={updateMutation.isPending}
                         onClick={() =>
                           handleSaveDraft(
@@ -1120,7 +1152,7 @@ export default function SystemSettings() {
                       <Button
                         type="primary"
                         icon={<Save className="w-4 h-4" />}
-                        className="bg-[#6345ED]"
+                        className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                         loading={updateMutation.isPending}
                         onClick={() =>
                           handleSaveDraft(["max_shop_images", "max_shop_description_length"], "Do'kon Limitlari")
@@ -1242,7 +1274,7 @@ export default function SystemSettings() {
                       <Button
                         type="primary"
                         icon={<Save className="w-4 h-4" />}
-                        className="bg-[#6345ED]"
+                        className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                         loading={updateMutation.isPending}
                         onClick={() =>
                           handleSaveDraft(["max_message_length", "message_rate_limit"], "Chat Limitlari")
@@ -1446,7 +1478,7 @@ export default function SystemSettings() {
                       <Button
                         type="primary"
                         icon={<Save className="w-4 h-4" />}
-                        className="bg-[#6345ED]"
+                        className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                         loading={updateMutation.isPending}
                         onClick={() =>
                           handleSaveDraft(["max_banner_image_size_mb", "max_banner_duration_seconds"], "Banner Limitlari")
@@ -1553,7 +1585,7 @@ export default function SystemSettings() {
                       <Button
                         type="primary"
                         icon={<Save className="w-4 h-4" />}
-                        className="bg-[#6345ED]"
+                        className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                         loading={updateMutation.isPending}
                         onClick={() =>
                           handleSaveDraft(["username_min_length", "username_max_length", "bio_max_length"], "Profil Limitlari")
@@ -1708,7 +1740,7 @@ export default function SystemSettings() {
                       <Button
                         type="primary"
                         icon={<Save className="w-4 h-4" />}
-                        className="bg-[#6345ED]"
+                        className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                         loading={updateMutation.isPending}
                         onClick={() =>
                           handleSaveDraft(["max_user_storage_mb", "max_shop_storage_mb"], "Xotira Limitlari")
@@ -1807,7 +1839,7 @@ export default function SystemSettings() {
                       <Button
                         type="primary"
                         icon={<Save className="w-4 h-4" />}
-                        className="bg-[#6345ED]"
+                        className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                         loading={updateMutation.isPending}
                         onClick={() =>
                           handleSaveDraft(
@@ -1929,7 +1961,7 @@ export default function SystemSettings() {
                       <Button
                         type="primary"
                         icon={<Save className="w-4 h-4" />}
-                        className="bg-[#6345ED]"
+                        className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                         loading={updateMutation.isPending}
                         onClick={() =>
                           handleSaveDraft(["deletion_grace_period_days"], "O'chirish Limitlari")
@@ -2015,7 +2047,7 @@ export default function SystemSettings() {
                 children: (
                   <div className="space-y-6 pt-2">
                     {/* Maintenance Mode Card */}
-                    <div className="p-5 rounded-2xl border border-red-200 bg-red-50/20 space-y-4">
+                    <div className="enterprise-card p-4 border border-rose-200 bg-rose-50/20 space-y-3">
                       <div className="flex items-center justify-between pb-3 border-b border-red-100">
                         <div className="flex items-center gap-3">
                           <div className="p-2.5 rounded-xl bg-red-100 text-red-700">
@@ -2087,7 +2119,7 @@ export default function SystemSettings() {
                     </div>
 
                     {/* Site Notice Card */}
-                    <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-4">
+                    <div className="enterprise-card p-4 space-y-3">
                       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div className="flex items-center gap-2.5">
                           <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
@@ -2181,7 +2213,7 @@ export default function SystemSettings() {
                         <div className="flex justify-end pt-2">
                           <Button
                             type="primary"
-                            className="bg-[#6345ED]"
+                            className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                             icon={<Save className="w-4 h-4" />}
                             loading={updateMutation.isPending}
                             onClick={() => {
@@ -2197,7 +2229,7 @@ export default function SystemSettings() {
       
 
                     {/* App Version & In-App Update Control Card */}
-                    <div className="p-5 rounded-2xl border border-slate-200 bg-white space-y-4">
+                    <div className="enterprise-card p-4 space-y-3">
                       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div className="flex items-center gap-2.5">
                           <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
@@ -2370,7 +2402,7 @@ export default function SystemSettings() {
                         <div className="flex justify-end pt-2">
                           <Button
                             type="primary"
-                            className="bg-[#6345ED]"
+                            className="!bg-blue-700 hover:!bg-blue-800 text-white font-semibold !rounded-lg text-xs shadow-xs"
                             icon={<Save className="w-4 h-4" />}
                             loading={updateMutation.isPending}
                             onClick={() => {
@@ -2432,10 +2464,16 @@ export default function SystemSettings() {
                     </div>
 
                     <Table
+                      size="small"
                       dataSource={auditLogs}
                       rowKey="id"
                       loading={isAuditLoading}
-                      pagination={{ pageSize: 10 }}
+                      scroll={{ x: 800 }}
+                      pagination={{
+                        pageSize: 10,
+                        size: "small",
+                        showTotal: (total) => `Jami: ${total} ta audit qaydi`,
+                      }}
                       className="border border-slate-200 rounded-xl overflow-hidden"
                       columns={[
                         {

@@ -33,6 +33,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "./../config/auth/api";
 import dayjs from "dayjs";
+import CompactStatCard from "../components/CompactStatCard";
 
 const { TextArea } = Input;
 
@@ -148,84 +149,72 @@ const BroadcastNotification = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="enterprise-card p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-black text-slate-900 m-0 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Bell className="w-4 h-4" />
-            </div>
-            Ommaviy Push Bildirishnomalar Markazi
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Barcha foydalanuvchilarning smartfonlariga bir zumda rasmiy mobil push va e'lon xabarlari yuborish.
+          <div className="flex items-center gap-2">
+            <h1 className="text-base font-bold text-slate-900 m-0">
+              Ommaviy Push Bildirishnomalar Markazi
+            </h1>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              FCM BROADCAST
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Foydalanuvchilarning smartfonlariga bir zumda rasmiy mobil push va e'lon xabarlari yuborish
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-xs">
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold text-xs">
           <Radio className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
           <span>FCM Live Push Server Faol</span>
         </div>
       </div>
 
       {/* KPI Cards Bar */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[12, 12]}>
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Faol Auditoriya</div>
-              <div className="text-2xl font-black text-slate-900 mt-1">{totalUsersCount.toLocaleString()} ta</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">Mobil ilovadagi qurilmalar</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Users className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Faol Auditoriya"
+            value={totalUsersCount}
+            unit="qurilma"
+            subtitle="Mobil ilovadagi faol hisoblar"
+            icon={Users}
+            color="blue"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                Yetkazish Ko'rsatkichi
-              </div>
-              <div className="text-2xl font-black text-emerald-600 mt-1">99.8%</div>
-              <div className="text-[11px] text-emerald-600/70 mt-0.5">Firebase FCM orqali</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Yetkazish Ko'rsatkichi"
+            value="99.8%"
+            unit="SLA"
+            subtitle="Firebase Cloud Messaging orqali"
+            icon={CheckCircle2}
+            color="emerald"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
-                Yetkazish Tezligi
-              </div>
-              <div className="text-2xl font-black text-amber-600 mt-1">&lt; 1.8 soniya</div>
-              <div className="text-[11px] text-amber-600/70 mt-0.5">Real-time socket va push</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <Zap className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Yetkazish Tezligi"
+            value="< 1.8"
+            unit="soniya"
+            subtitle="Real-time socket va push tezligi"
+            icon={Zap}
+            color="amber"
+          />
         </Col>
 
         <Col xs={24} sm={12} lg={6}>
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-purple-500 uppercase tracking-wider flex items-center gap-1">
-                Tayyor Shablonlar
-              </div>
-              <div className="text-2xl font-black text-purple-600 mt-1">{TEMPLATES.length} ta</div>
-              <div className="text-[11px] text-purple-600/70 mt-0.5">1-klikda to'ldiriladi</div>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Sparkles className="w-6 h-6" />
-            </div>
-          </div>
+          <CompactStatCard
+            label="Tayyor Shablonlar"
+            value={TEMPLATES.length}
+            unit="shablon"
+            subtitle="1-klikda to'ldiriladi"
+            icon={Sparkles}
+            color="indigo"
+          />
         </Col>
       </Row>
 
