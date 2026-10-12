@@ -109,8 +109,13 @@ const Banners = () => {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/banners/${id}`),
     onSuccess: () => {
-      message.success("Banner o'chirildi");
+      message.success("Banner muvaffaqiyatli o'chirildi");
       queryClient.invalidateQueries(["banners"]);
+    },
+    onError: (err) => {
+      message.error(
+        err.response?.data?.message || "Bannerni o'chirishda xatolik yuz berdi",
+      );
     },
   });
 
@@ -352,18 +357,23 @@ const Banners = () => {
 
           <Popconfirm
             title="Bannerni o'chirish"
-            description={`Haqiqatan ham #${r.id} bannerni o'chirmoqchimisiz?`}
+            description={`Haqiqatan ham #${r.id} (${r.title || "Nomsiz"}) bannerni o'chirmoqchimisiz? Ushbu amal qaytarilmaydi.`}
             onConfirm={() => deleteMutation.mutate(r.id)}
             okText="Ha, o'chirish"
             cancelText="Bekor"
-            okButtonProps={{ danger: true, size: "small" }}
+            okButtonProps={{
+              danger: true,
+              size: "small",
+              loading: deleteMutation.isPending && deleteMutation.variables === r.id,
+            }}
             cancelButtonProps={{ size: "small" }}
           >
             <Tooltip title="O'chirish">
               <button
                 type="button"
                 aria-label="Bannerni o'chirish"
-                className="btn-action-danger"
+                disabled={deleteMutation.isPending && deleteMutation.variables === r.id}
+                className="btn-action-danger disabled:opacity-50"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

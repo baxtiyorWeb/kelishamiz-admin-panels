@@ -325,7 +325,7 @@ const Reports = () => {
     });
   };
 
-  const renderTargetTag = (targetType, targetId) => {
+  const renderTargetTag = (targetType, targetId, targetDetails) => {
     let icon = <AlertTriangle className="w-3.5 h-3.5" />;
     let bg = "bg-slate-100 text-slate-700 border-slate-200";
     let linkPath = null;
@@ -341,7 +341,7 @@ const Reports = () => {
       case "LISTING":
         icon = <TagIcon className="w-3.5 h-3.5 text-blue-600" />;
         bg = "bg-blue-50 text-blue-700 border-blue-200";
-        linkPath = "/products";
+        linkPath = `/products?search=${targetId}`;
         break;
       case "SHOP":
         icon = <Store className="w-3.5 h-3.5 text-amber-600" />;
@@ -357,24 +357,49 @@ const Reports = () => {
     }
 
     return (
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-bold ${bg}`}>
-          {icon}
-          <span>{targetType}</span>
-        </span>
-        <span className="font-mono text-xs font-bold text-slate-700">#{targetId}</span>
-        {linkPath && (
-          <button
-            type="button"
-            className="inline-flex items-center gap-0.5 text-xs text-indigo-600 hover:text-indigo-800 font-bold ml-1 cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(linkPath);
-            }}
-          >
-            <span>Ochish</span>
-            <ExternalLink className="w-3 h-3" />
-          </button>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-bold ${bg}`}>
+            {icon}
+            <span>{targetType}</span>
+          </span>
+          <span className="font-mono text-xs font-bold text-slate-700">#{targetId}</span>
+          {linkPath && (
+            <button
+              type="button"
+              className="inline-flex items-center gap-0.5 text-xs text-indigo-600 hover:text-indigo-800 font-bold ml-1 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(linkPath);
+              }}
+            >
+              <span>Ochish</span>
+              <ExternalLink className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+        {targetDetails && (
+          <div className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200/80 rounded-lg p-1.5 flex items-center gap-2 mt-0.5">
+            {targetDetails.imageUrl && (
+              <img
+                src={targetDetails.imageUrl}
+                alt=""
+                className="w-7 h-7 rounded object-cover border border-slate-200 flex-shrink-0"
+              />
+            )}
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-slate-900 truncate max-w-[170px]">
+                {targetDetails.title || targetDetails.fullName || targetDetails.username}
+              </span>
+              {(targetDetails.price !== undefined || targetDetails.phone) && (
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {targetDetails.price !== undefined
+                    ? `${Number(targetDetails.price).toLocaleString("uz-UZ")} UZS`
+                    : targetDetails.phone}
+                </span>
+              )}
+            </div>
+          </div>
         )}
       </div>
     );
@@ -391,11 +416,11 @@ const Reports = () => {
     {
       title: "Nishon Ob'ekti (Target)",
       key: "target",
-      width: 220,
+      width: 250,
       render: (_, record) => (
         <div className="flex flex-col gap-1">
-          {renderTargetTag(record.targetType, record.targetId)}
-          <div className="text-[11px] text-slate-400 font-medium flex items-center gap-1 font-mono">
+          {renderTargetTag(record.targetType, record.targetId, record.targetDetails)}
+          <div className="text-[11px] text-slate-400 font-medium flex items-center gap-1 font-mono mt-0.5">
             <Clock className="w-3 h-3 text-slate-400" />
             <span>{dayjs(record.createdAt).format("YYYY-MM-DD HH:mm")}</span>
           </div>

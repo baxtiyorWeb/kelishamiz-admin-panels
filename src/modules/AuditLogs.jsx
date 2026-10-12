@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "../config/auth/api";
 import { Table, Tag, Input, Row, Col, Tabs, Modal, Avatar, Button, Tooltip } from "antd";
 import { CompactStatCard } from "../components/CompactStatCard";
+import SafeJsonViewer from "../components/SafeJsonViewer";
 import {
   History,
   ShieldAlert,
@@ -353,22 +354,12 @@ const AuditLogs = () => {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-2">
                 <span className="text-xs font-bold text-slate-700">
                   Metadata & Payload (JSON):
                 </span>
-                <button
-                  type="button"
-                  onClick={handleCopyJson}
-                  className="text-xs text-blue-700 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                  <span>{copied ? "Nusxalandi" : "Nusxa olish"}</span>
-                </button>
               </div>
-              <pre className="p-3 bg-slate-900 text-slate-100 font-mono text-xs rounded-lg overflow-x-auto max-h-72">
-                {JSON.stringify(selectedLog.details, null, 2)}
-              </pre>
+              <SafeJsonViewer data={selectedLog.details} maxHeight="300px" />
             </div>
           </div>
         )}

@@ -124,6 +124,10 @@ const Products = () => {
   const [isBgModalOpen, setIsBgModalOpen] = useState(false);
   const [selectedBgImages, setSelectedBgImages] = useState([]);
   const [selectedGalleryImageIds, setSelectedGalleryImageIds] = useState([]);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectTargetListing, setRejectTargetListing] = useState(null);
+  const [rejectReasonType, setRejectReasonType] = useState("Talablarga javob bermaydi");
+  const [rejectCustomReason, setRejectCustomReason] = useState("");
   const [form] = Form.useForm();
 
   // Fetch products list via Admin Listings API with server-side pagination, status filter, and search
@@ -236,6 +240,9 @@ const Products = () => {
       message.success("E'lon rad etildi.");
       refetchProducts();
       refetchStats();
+      setRejectModalOpen(false);
+      setRejectTargetListing(null);
+      setRejectCustomReason("");
     },
     onError: (error) => {
       const serverMessage = get(error, "response.data.message");
@@ -243,6 +250,24 @@ const Products = () => {
     },
     onSettled: () => setStatusUpdatingId(null),
   });
+
+  const openRejectModal = (listing) => {
+    setRejectTargetListing(listing);
+    setRejectReasonType("Talablarga javob bermaydi");
+    setRejectCustomReason("");
+    setRejectModalOpen(true);
+  };
+
+  const handleConfirmReject = () => {
+    if (!rejectTargetListing) return;
+    const finalReason =
+      rejectReasonType === "Boshqa"
+        ? rejectCustomReason.trim() || "Talablarga javob bermaydi"
+        : rejectCustomReason.trim()
+        ? `${rejectReasonType}: ${rejectCustomReason.trim()}`
+        : rejectReasonType;
+    rejectListing({ id: rejectTargetListing.id, reason: finalReason });
+  };
 
   // Mutations
   const { mutate: updateProductTopStatus } = useMutation({
@@ -457,19 +482,22 @@ const Products = () => {
       render: (_, record) => {
         const owner = record.profile?.fullName || record.profile?.user?.username || "Noma'lum";
         const phone = record.profile?.phone || record.profile?.user?.phone;
-        const userId = record.profile?.userId || record.userId;
+        const userId = record.profile?.user?.id || record.profile?.userId || record.userId || record.profile?.id;
         return (
           <div className="flex items-center gap-2.5">
             <Avatar className="bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold text-xs flex-shrink-0 shadow-sm" size={32}>
               {owner[0]?.toUpperCase()}
             </Avatar>
             <div className="flex flex-col min-w-0">
-              <div
-                className="font-bold text-slate-800 text-xs hover:text-indigo-600 cursor-pointer truncate transition-colors"
-                onClick={() => userId && navigate(`/users/${userId}`)}
-              >
-                {owner}
-              </div>
+              <Tooltip title={userId ? `Foydalanuvchi #${userId} profilini ko'rish` : "Profil"}>
+                <div
+                  className="font-bold text-slate-800 text-xs hover:text-indigo-600 cursor-pointer truncate transition-colors flex items-center gap-1"
+                  onClick={() => userId && navigate(`/users/${userId}`)}
+                >
+                  <span>{owner}</span>
+                  {userId && <ExternalLink className="w-2.5 h-2.5 text-slate-400" />}
+                </div>
+              </Tooltip>
               {phone && (
                 <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
                   <Phone className="w-3 h-3 text-slate-400" />
@@ -495,7 +523,7 @@ const Products = () => {
             disabled={statusUpdatingId === record.id}
             onChange={(val) => {
               if (val === "active") approveListing(record.id);
-              else if (val === "rejected") rejectListing({ id: record.id, reason: "Admin tomonidan rad etildi" });
+              else if (val === "rejected") openRejectModal(record);
               else updateProductStatus({ id: record.id, status: val });
             }}
             className="w-36 !rounded-xl"
@@ -531,11 +559,11 @@ const Products = () => {
                   <span>Qabul</span>
                 </button>
               </Tooltip>
-              <Tooltip title="Rad etish">
+              <Tooltip title="Rad etish (Sabab ko'rsatish)">
                 <button
                   type="button"
                   disabled={statusUpdatingId === record.id}
-                  onClick={() => rejectListing({ id: record.id, reason: "Talablarga javob bermaydi" })}
+                  onClick={() => openRejectModal(record)}
                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
                 >
                   <XCircle className="w-3.5 h-3.5 text-rose-600" />
@@ -886,7 +914,7 @@ const Products = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      updateProductStatus({ id: selectedProductData.id, status: "active" });
+                      approveListing(selectedProductData.id);
                       setIsViewModalOpen(false);
                     }}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition-all cursor-pointer"
@@ -899,7 +927,7 @@ const Products = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      updateProductStatus({ id: selectedProductData.id, status: "rejected" });
+                      openRejectModal(selectedProductData);
                       setIsViewModalOpen(false);
                     }}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-600/30 transition-all cursor-pointer"
@@ -1151,6 +1179,89 @@ const Products = () => {
           setSelectedGalleryImageIds([]);
         }}
       />
+
+      {/* Rejection Reason Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <XCircle className="w-5 h-5 text-rose-600" />
+            <span className="font-extrabold text-slate-900">
+              E'lonni Rad Etish Sababi (ID #{rejectTargetListing?.id})
+            </span>
+          </div>
+        }
+        open={rejectModalOpen}
+        onCancel={() => {
+          setRejectModalOpen(false);
+          setRejectTargetListing(null);
+          setRejectCustomReason("");
+        }}
+        onOk={handleConfirmReject}
+        okText="Rad etishni tasdiqlash"
+        cancelText="Bekor qilish"
+        okButtonProps={{ danger: true, loading: statusUpdatingId === rejectTargetListing?.id }}
+        className="!rounded-3xl"
+        width={540}
+      >
+        <div className="flex flex-col gap-3 py-2">
+          {rejectTargetListing && (
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+              <Avatar
+                src={rejectTargetListing.images?.[0]?.url}
+                shape="square"
+                size={44}
+                className="rounded-lg bg-slate-200"
+              />
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-xs text-slate-900 truncate">
+                  {rejectTargetListing.title}
+                </span>
+                <span className="text-[11px] text-slate-500 font-mono">
+                  {Number(rejectTargetListing.price || 0).toLocaleString("uz-UZ")}{" "}
+                  {rejectTargetListing.currencyType || "UZS"}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-slate-700">Asosiy rad etish sababi:</label>
+            <Select
+              value={rejectReasonType}
+              onChange={(val) => setRejectReasonType(val)}
+              className="w-full !rounded-xl"
+            >
+              <Select.Option value="Talablarga javob bermaydi">Talablarga javob bermaydi</Select.Option>
+              <Select.Option value="Taqiqlangan yoki noqonuniy mahsulot">
+                Taqiqlangan yoki noqonuniy mahsulot
+              </Select.Option>
+              <Select.Option value="Rasm sifatsiz yoki qoidalarga zid">
+                Rasm sifatsiz yoki qoidalarga zid
+              </Select.Option>
+              <Select.Option value="Noto'g'ri narx yoki soxta ma'lumot">
+                Noto'g'ri narx yoki soxta ma'lumot
+              </Select.Option>
+              <Select.Option value="Takroriy (dublikat) e'lon">
+                Takroriy (dublikat) e'lon
+              </Select.Option>
+              <Select.Option value="Boshqa">Boshqa sabab (Qo'lda kiritish)</Select.Option>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold text-slate-700">
+              Qo'shimcha izoh yoki foydalanuvchiga xabar:
+            </label>
+            <Input.TextArea
+              rows={3}
+              value={rejectCustomReason}
+              onChange={(e) => setRejectCustomReason(e.target.value)}
+              placeholder="Foydalanuvchiga e'loni nima sababdan rad etilgani va qanday tuzatishi mumkinligini tushuntiring..."
+              className="!rounded-xl text-xs"
+            />
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

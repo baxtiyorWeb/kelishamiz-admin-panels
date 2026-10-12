@@ -81,20 +81,36 @@ const Users = () => {
   const [modNotificationMessage, setModNotificationMessage] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["users", page, pageSize],
+    queryKey: ["admin-users", page, pageSize, searchTerm, roleTab],
     queryFn: async () => {
-      const response = await api.get(`/users?pageSize=${pageSize}&page=${page}`);
-      if (response.status !== 200 || !response.data) {
-        throw new Error("Failed to fetch users");
-      }
-      return response.data;
+      let roleParam = "";
+      let statusParam = "";
+      if (roleTab === "admin") roleParam = "ADMIN";
+      else if (roleTab === "user") roleParam = "USER";
+      else if (roleTab === "blocked") statusParam = "blocked";
+      else if (roleTab === "spam") statusParam = "spam";
+      else if (roleTab === "active") statusParam = "active";
+
+      const response = await api.get("/admin/users", {
+        params: {
+          page,
+          limit: pageSize,
+          search: searchTerm ? searchTerm.trim() : undefined,
+          role: roleParam || undefined,
+          status: statusParam || undefined,
+        },
+      });
+      return response.data?.content || response.data;
     },
     retry: 2,
+    keepPreviousData: true,
   });
 
-  const userItems = useMemo(() => get(data, "content.users", []), [data]);
-  const totalUsers = get(data, "content.total", 0);
-  const currentPage = get(data, "content.page", 1);
+  const userItems = useMemo(() => {
+    return data?.data || data?.content?.users || data?.users || [];
+  }, [data]);
+  const totalUsers = data?.total ?? data?.content?.total ?? 0;
+  const currentPage = data?.page ?? page;
 
   // Stats calculation
   const stats = useMemo(() => {
@@ -453,7 +469,10 @@ const Users = () => {
             type="text"
             placeholder="Ism, telefon yoki ID..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPage(1);
+            }}
             className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 w-64"
           />
         </div>
@@ -511,10 +530,14 @@ const Users = () => {
         <div className="border-b border-slate-100 pb-2 mb-4">
           <Tabs
             activeKey={roleTab}
-            onChange={(k) => setRoleTab(k)}
+            onChange={(k) => {
+              setRoleTab(k);
+              setPage(1);
+            }}
             className="!m-0"
             items={[
               { key: "all", label: `Barchasi (${totalUsers})` },
+              { key: "active", label: `Faol (${stats.active})` },
               { key: "user", label: "Oddiy Foydalanuvchilar" },
               { key: "admin", label: `Adminlar (${stats.admins})` },
               { key: "blocked", label: `Bloklanganlar (${stats.blocked})` },
@@ -524,7 +547,7 @@ const Users = () => {
         </div>
 
         <Table
-          dataSource={filteredUsers}
+          dataSource={userItems}
           columnDefs={columns}
           isLoading={isLoading}
           page={currentPage}

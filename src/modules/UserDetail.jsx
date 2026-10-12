@@ -59,11 +59,16 @@ const UserDetail = () => {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["user_details", id],
     queryFn: async () => {
-      const response = await api.get(`/users/${id}/details`);
-      if (response.status !== 200 || !response.data) {
-        throw new Error("Failed to fetch user details");
+      try {
+        const response = await api.get(`/users/${id}/details`);
+        if (response.status === 200 && response.data) {
+          return response.data;
+        }
+      } catch (err) {
+        // Resilient fallback to admin user details
+        const fallback = await api.get(`/admin/users/${id}`);
+        return fallback.data;
       }
-      return response.data;
     },
   });
 
