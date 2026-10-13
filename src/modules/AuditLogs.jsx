@@ -4,6 +4,7 @@ import api from "../config/auth/api";
 import { Table, Tag, Input, Row, Col, Tabs, Modal, Avatar, Button, Tooltip, Select } from "antd";
 import { CompactStatCard } from "../components/CompactStatCard";
 import SafeJsonViewer from "../components/SafeJsonViewer";
+import UserReference from "../components/UserReference";
 import {
   History,
   ShieldAlert,
@@ -75,8 +76,11 @@ const AuditLogs = () => {
         return (
           log.action?.toLowerCase().includes(q) ||
           log.targetType?.toLowerCase().includes(q) ||
+          log.targetName?.toLowerCase().includes(q) ||
+          log.targetSubtext?.toLowerCase().includes(q) ||
           log.admin?.username?.toLowerCase().includes(q) ||
-          log.id?.toString().includes(q)
+          log.id?.toString().includes(q) ||
+          log.targetId?.toString().includes(q)
         );
       }
       return true;
@@ -105,26 +109,22 @@ const AuditLogs = () => {
     {
       title: "Admin Mas'ul",
       key: "admin",
-      width: 170,
-      render: (_, record) => {
-        const name = record.admin?.username || `Admin #${record.adminId || 1}`;
-        return (
-          <div className="flex items-center gap-2">
-            <Avatar className="bg-blue-700 text-white font-bold text-xs" size={24}>
-              {name[0]?.toUpperCase()}
-            </Avatar>
-            <span className="font-semibold text-slate-800 text-xs truncate max-w-[120px]">
-              @{name}
-            </span>
-          </div>
-        );
-      },
+      width: 175,
+      render: (_, record) => (
+        <UserReference
+          user={record.admin}
+          id={record.adminId}
+          fallbackName={`Admin #${record.adminId || 1}`}
+          showPhone={false}
+          size="sm"
+        />
+      ),
     },
     {
       title: "Amal (Action)",
       dataIndex: "action",
       key: "action",
-      width: 200,
+      width: 190,
       render: (action) => (
         <span className="font-mono font-semibold text-xs text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
           {action || "SYSTEM_EVENT"}
@@ -134,15 +134,55 @@ const AuditLogs = () => {
     {
       title: "Nishon Ob'ekti",
       key: "target",
-      width: 170,
-      render: (_, record) => (
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-            {record.targetType || "SYSTEM"}
-          </span>
-          <span className="font-mono text-xs text-slate-500">#{record.targetId || "0"}</span>
-        </div>
-      ),
+      width: 230,
+      render: (_, record) => {
+        const typeUpper = (record.targetType || "SYSTEM").toUpperCase();
+        const typeLabel =
+          typeUpper === "PRODUCT"
+            ? "E'lon"
+            : typeUpper === "USER"
+            ? "Foydalanuvchi"
+            : typeUpper === "REPORT"
+            ? "Shikoyat"
+            : typeUpper === "BANNER"
+            ? "Banner"
+            : record.targetType || "Tizim";
+
+        const typeBadgeColor =
+          typeUpper === "PRODUCT"
+            ? "bg-blue-50 text-blue-700 border-blue-200"
+            : typeUpper === "USER"
+            ? "bg-purple-50 text-purple-700 border-purple-200"
+            : typeUpper === "REPORT"
+            ? "bg-amber-50 text-amber-700 border-amber-200"
+            : "bg-slate-100 text-slate-700 border-slate-200";
+
+        return (
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${typeBadgeColor}`}>
+                {typeLabel}
+              </span>
+              <span className="font-mono text-[11px] text-slate-400 font-semibold">
+                #{record.targetId || "0"}
+              </span>
+            </div>
+            {record.targetName ? (
+              <span
+                className="text-xs font-semibold text-slate-800 truncate max-w-[210px]"
+                title={record.targetName}
+              >
+                {record.targetName}
+              </span>
+            ) : null}
+            {record.targetSubtext ? (
+              <span className="text-[11px] text-slate-500 truncate max-w-[210px]">
+                {record.targetSubtext}
+              </span>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       title: "Metadata / Tafsilot",

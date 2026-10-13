@@ -47,6 +47,9 @@ import {
 } from "lucide-react";
 import dayjs from "dayjs";
 import { CompactStatCard } from "../components/CompactStatCard";
+import { UserReference } from "../components/UserReference";
+import { ProductReference } from "../components/ProductReference";
+import { StatusBadge } from "../components/StatusBadge";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -326,81 +329,55 @@ const Reports = () => {
   };
 
   const renderTargetTag = (targetType, targetId, targetDetails) => {
-    let icon = <AlertTriangle className="w-3.5 h-3.5" />;
-    let bg = "bg-slate-100 text-slate-700 border-slate-200";
-    let linkPath = null;
+    const typeUpper = (targetType || "").toUpperCase();
+    const isProduct = typeUpper === "PRODUCT" || typeUpper === "LISTING";
+    const isUser = typeUpper === "USER" || typeUpper === "CHAT_USER";
 
-    switch (targetType) {
-      case "CHAT_USER":
-      case "USER":
-        icon = <User className="w-3.5 h-3.5 text-purple-600" />;
-        bg = "bg-purple-50 text-purple-700 border-purple-200";
-        linkPath = `/users/${targetId}`;
-        break;
-      case "PRODUCT":
-      case "LISTING":
-        icon = <TagIcon className="w-3.5 h-3.5 text-blue-600" />;
-        bg = "bg-blue-50 text-blue-700 border-blue-200";
-        linkPath = `/products?search=${targetId}`;
-        break;
-      case "SHOP":
-        icon = <Store className="w-3.5 h-3.5 text-amber-600" />;
-        bg = "bg-amber-50 text-amber-700 border-amber-200";
-        linkPath = "/shops";
-        break;
-      case "MESSAGE":
-        icon = <MessageSquare className="w-3.5 h-3.5 text-cyan-600" />;
-        bg = "bg-cyan-50 text-cyan-700 border-cyan-200";
-        break;
-      default:
-        bg = "bg-rose-50 text-rose-700 border-rose-200";
+    if (targetDetails?.isDeleted) {
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-bold bg-slate-100 text-slate-700 border-slate-200">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+              <span>{typeUpper}</span>
+            </span>
+            <span className="font-mono text-xs font-bold text-slate-500">#{targetId}</span>
+          </div>
+          <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 flex items-center gap-1">
+            <span>Obyekt avval o‘chirilgan yoki topilmadi</span>
+          </div>
+        </div>
+      );
     }
 
+    if (isProduct) {
+      return (
+        <ProductReference
+          product={targetDetails}
+          id={targetId}
+          size="small"
+        />
+      );
+    }
+
+    if (isUser) {
+      return (
+        <UserReference
+          user={targetDetails}
+          id={targetId}
+          size="small"
+        />
+      );
+    }
+
+    // Fallback for shop, message, etc.
     return (
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-bold ${bg}`}>
-            {icon}
-            <span>{targetType}</span>
-          </span>
-          <span className="font-mono text-xs font-bold text-slate-700">#{targetId}</span>
-          {linkPath && (
-            <button
-              type="button"
-              className="inline-flex items-center gap-0.5 text-xs text-indigo-600 hover:text-indigo-800 font-bold ml-1 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(linkPath);
-              }}
-            >
-              <span>Ochish</span>
-              <ExternalLink className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-        {targetDetails && (
-          <div className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200/80 rounded-lg p-1.5 flex items-center gap-2 mt-0.5">
-            {targetDetails.imageUrl && (
-              <img
-                src={targetDetails.imageUrl}
-                alt=""
-                className="w-7 h-7 rounded object-cover border border-slate-200 flex-shrink-0"
-              />
-            )}
-            <div className="flex flex-col min-w-0">
-              <span className="font-bold text-slate-900 truncate max-w-[170px]">
-                {targetDetails.title || targetDetails.fullName || targetDetails.username}
-              </span>
-              {(targetDetails.price !== undefined || targetDetails.phone) && (
-                <span className="text-[10px] text-slate-400 font-mono">
-                  {targetDetails.price !== undefined
-                    ? `${Number(targetDetails.price).toLocaleString("uz-UZ")} UZS`
-                    : targetDetails.phone}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-bold bg-amber-50 text-amber-700 border-amber-200">
+          <Store className="w-3.5 h-3.5 text-amber-600" />
+          <span>{typeUpper}</span>
+        </span>
+        <span className="font-mono text-xs font-bold text-slate-700">#{targetId}</span>
       </div>
     );
   };
@@ -454,29 +431,14 @@ const Reports = () => {
       },
     },
     {
-      title: "Shikoyatchi (Reporter)",
+      title: "Shikoyatchi (Mijoz)",
       key: "reporter",
       width: 190,
       render: (_, record) => {
         if (!record.reporter) {
-          return <span className="text-xs text-slate-400 font-semibold">Anonim User</span>;
+          return <span className="text-xs text-slate-400 font-semibold">Anonim foydalanuvchi</span>;
         }
-        return (
-          <div className="flex items-center gap-2.5">
-            <Avatar className="bg-indigo-100 text-indigo-700 font-extrabold text-xs shadow-xs" size={34}>
-              {(record.reporter.username || "U")[0]?.toUpperCase()}
-            </Avatar>
-            <div className="flex flex-col min-w-0">
-              <span
-                className="font-bold text-slate-900 text-xs hover:text-indigo-600 cursor-pointer truncate max-w-[120px]"
-                onClick={() => navigate(`/users/${record.reporter.id}`)}
-              >
-                {record.reporter.username || "Ismsiz"}
-              </span>
-              <span className="text-[11px] text-slate-400 font-mono">{record.reporter.phone}</span>
-            </div>
-          </div>
-        );
+        return <UserReference user={record.reporter} size="small" />;
       },
     },
     {
@@ -484,15 +446,7 @@ const Reports = () => {
       dataIndex: "status",
       key: "status",
       width: 150,
-      render: (status) => {
-        const cfg = STATUS_CONFIG[status] || { bg: "bg-slate-100 text-slate-700 border-slate-200", icon: null, label: status };
-        return (
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${cfg.bg}`}>
-            {cfg.icon}
-            <span>{cfg.label}</span>
-          </span>
-        );
-      },
+      render: (status) => <StatusBadge status={status} />,
     },
     {
       title: "Amallar",

@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { ProductImageBgModal } from "../components/ProductImageBgModal";
 import { CompactStatCard } from "../components/CompactStatCard";
+import UserReference from "../components/UserReference";
 
 const STATUS_CONFIG = {
   pending: {
@@ -555,34 +556,25 @@ const Products = () => {
     {
       title: "Sotuvchi",
       key: "seller",
-      width: 190,
+      width: 195,
       render: (_, record) => {
         const owner = record.profile?.fullName || record.profile?.user?.username || "Noma'lum";
         const phone = record.profile?.phone || record.profile?.user?.phone;
         const userId = record.profile?.user?.id || record.profile?.userId || record.userId || record.profile?.id;
         return (
-          <div className="flex items-center gap-2.5">
-            <Avatar className="bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold text-xs flex-shrink-0 shadow-sm" size={32}>
-              {owner[0]?.toUpperCase()}
-            </Avatar>
-            <div className="flex flex-col min-w-0">
-              <Tooltip title={userId ? `Foydalanuvchi #${userId} profilini ko'rish` : "Profil"}>
-                <div
-                  className="font-bold text-slate-800 text-xs hover:text-indigo-600 cursor-pointer truncate transition-colors flex items-center gap-1"
-                  onClick={() => userId && navigate(`/users/${userId}`)}
-                >
-                  <span>{owner}</span>
-                  {userId && <ExternalLink className="w-2.5 h-2.5 text-slate-400" />}
-                </div>
-              </Tooltip>
-              {phone && (
-                <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-slate-400" />
-                  {phone}
-                </div>
-              )}
-            </div>
-          </div>
+          <UserReference
+            user={{
+              id: userId,
+              fullName: record.profile?.fullName,
+              username: record.profile?.user?.username,
+              phoneNumber: phone,
+              isBlocked: record.profile?.user?.isBlocked,
+              isSpam: record.profile?.user?.isSpam,
+            }}
+            id={userId}
+            fallbackName={owner}
+            size="sm"
+          />
         );
       },
     },
@@ -744,8 +736,8 @@ const Products = () => {
           )}
 
           <Popconfirm
-            title="E'lonni o'chirish"
-            description={`Haqiqatan ham #${record.id} e'lonni o'chirmoqchimisiz?`}
+            title="E'lonni butunlay o'chirish"
+            description={`“${record.title || "E'lon"}” (${record.id ? `#${record.id}` : ''}) e’lonini butunlay o‘chirmoqchimisiz? Ushbu amal qaytarilmaydi.`}
             onConfirm={() => deleteProduct(record.id)}
             okText="Ha, o'chirish"
             cancelText="Bekor"
@@ -1340,8 +1332,13 @@ const Products = () => {
           <div className="flex items-center gap-2">
             <XCircle className="w-5 h-5 text-rose-600" />
             <span className="font-extrabold text-slate-900">
-              E'lonni Rad Etish Sababi (ID #{rejectTargetListing?.id})
+              {rejectTargetListing?.title ? `“${rejectTargetListing.title}” e'lonini rad etish` : "E'lonni Rad Etish"}
             </span>
+            {rejectTargetListing?.id && (
+              <span className="font-mono text-xs text-slate-400 font-semibold">
+                #{rejectTargetListing.id}
+              </span>
+            )}
           </div>
         }
         open={rejectModalOpen}

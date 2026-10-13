@@ -40,6 +40,8 @@ import {
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import { CompactStatCard } from "../components/CompactStatCard";
+import UserReference from "../components/UserReference";
+import ProductReference from "../components/ProductReference";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -609,30 +611,12 @@ const Dashboard = () => {
                             key={item.id}
                             className="p-2.5 rounded-lg border border-slate-200/80 hover:border-slate-300 bg-slate-50/50 flex items-center justify-between gap-3 text-xs"
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              {item.images?.[0] ? (
-                                <img
-                                  src={item.images[0]}
-                                  alt=""
-                                  className="w-10 h-10 rounded-md object-cover border border-slate-200 flex-shrink-0"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-md bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
-                                  <TagIcon className="w-4 h-4" />
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <div className="font-semibold text-slate-800 truncate" title={item.title}>
-                                  {item.title}
-                                </div>
-                                <div className="text-[11px] text-slate-500 font-mono">
-                                  {Number(item.price || 0).toLocaleString()} UZS •{" "}
-                                  <span className="text-slate-400 font-sans">
-                                    {dayjs(item.createdAt).format("HH:mm")}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+                            <ProductReference
+                              product={item}
+                              id={item.id}
+                              size="sm"
+                              className="min-w-0"
+                            />
 
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <Tooltip title="Tezkor tasdiqlash">
@@ -680,7 +664,7 @@ const Dashboard = () => {
                   key: "reports",
                   label: (
                     <span className="text-xs font-semibold flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
                       Shikoyatlar ({urgentPendingReports.length})
                     </span>
                   ),
@@ -692,33 +676,44 @@ const Dashboard = () => {
                           Barcha shikoyatlar ko'rib chiqilgan.
                         </div>
                       ) : (
-                        urgentPendingReports.map((report) => (
-                          <div
-                            key={report.id}
-                            className="p-2.5 rounded-lg border border-slate-200/80 bg-slate-50/50 flex items-center justify-between gap-3 text-xs"
-                          >
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <Tag color="error" className="m-0 text-[10px] font-bold">
-                                  {report.targetType || "E'LON"}
-                                </Tag>
-                                <span className="font-semibold text-slate-800 truncate">
-                                  {report.reason || "Qoidabuzarlik shikoyati"}
-                                </span>
-                              </div>
-                              <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                                #{report.targetId} • {dayjs(report.createdAt).format("DD MMM HH:mm")}
-                              </div>
-                            </div>
-                            <Button
-                              size="small"
-                              onClick={() => navigate("/reports?status=PENDING")}
-                              className="text-xs font-semibold flex-shrink-0"
+                        urgentPendingReports.map((report) => {
+                          const targetLabel = report.targetDetails?.title
+                            ? `“${report.targetDetails.title}” e’loni`
+                            : report.targetDetails?.fullName
+                            ? `${report.targetDetails.fullName}`
+                            : (report.targetType === "product" || report.targetType === "PRODUCT")
+                            ? `E'lon #${report.targetId}`
+                            : `Foydalanuvchi #${report.targetId}`;
+
+                          return (
+                            <div
+                              key={report.id}
+                              className="p-2.5 rounded-lg border border-amber-200 bg-amber-50/40 hover:bg-amber-50/70 transition-colors flex items-center justify-between gap-3 text-xs"
                             >
-                              Ko'rish
-                            </Button>
-                          </div>
-                        ))
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                                  <span className="text-amber-800 font-semibold">{targetLabel}</span>
+                                  <span className="text-slate-400 font-normal">bo‘yicha</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                  <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                                    {report.reason || "Qoidabuzarlik"}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-mono">
+                                    #{report.id} • {dayjs(report.createdAt).format("DD MMM HH:mm")}
+                                  </span>
+                                </div>
+                              </div>
+                              <Button
+                                size="small"
+                                onClick={() => navigate("/reports?status=PENDING")}
+                                className="text-xs font-semibold flex-shrink-0 !border-amber-300 text-amber-900 hover:!bg-amber-100"
+                              >
+                                Ko'rish
+                              </Button>
+                            </div>
+                          );
+                        })
                       )}
                       <div className="pt-2 text-center">
                         <Button
@@ -753,19 +748,12 @@ const Dashboard = () => {
                             key={u.id}
                             className="p-2 rounded-lg border border-slate-200/80 bg-slate-50/50 flex items-center justify-between gap-3 text-xs"
                           >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Avatar size={28} className="bg-blue-700 text-white font-bold text-xs flex-shrink-0">
-                                {(u.username || "U")[0]?.toUpperCase()}
-                              </Avatar>
-                              <div className="min-w-0">
-                                <div className="font-semibold text-slate-800 truncate">
-                                  {u.username || "Yangi a'zo"}
-                                </div>
-                                <div className="text-[11px] text-slate-500 font-mono truncate">
-                                  {u.phone || "Telefon kiritilmagan"}
-                                </div>
-                              </div>
-                            </div>
+                            <UserReference
+                              user={u}
+                              id={u.id}
+                              size="sm"
+                              fallbackName="Yangi a'zo"
+                            />
                             <Button
                               size="small"
                               type="default"

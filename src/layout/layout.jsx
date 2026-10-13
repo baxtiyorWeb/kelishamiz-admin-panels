@@ -39,6 +39,7 @@ import {
   KeyRound,
   Database,
   ExternalLink,
+  BookOpen,
 } from "lucide-react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -204,6 +205,19 @@ const NAV_GROUPS = [
         icon: Settings,
         label: "Tizim Sozlamalari & Flags",
         desc: "Control Plane, Kill Switches & Konfiguratsiya",
+      },
+    ],
+  },
+  {
+    group: "QO'LLANMA & HUJJATLAR",
+    items: [
+      {
+        path: "/guide",
+        icon: BookOpen,
+        label: "Admin Qo'llanma & Yordam",
+        desc: "To'liq foydalanish yo'riqnomasi & FAQ",
+        badge: "V2.1",
+        badgeColor: "bg-emerald-100 text-emerald-800",
       },
     ],
   },

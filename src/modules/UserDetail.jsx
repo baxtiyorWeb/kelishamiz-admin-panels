@@ -27,15 +27,15 @@ import {
   SendOutlined,
   StopOutlined,
   PhoneOutlined,
-  DollarOutlined,
   ShoppingOutlined,
   CreditCardOutlined,
-  SafetyCertificateOutlined,
-  ClockCircleOutlined,
   AlertOutlined,
   HistoryOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import ProductReference from "../components/ProductReference";
+import UserReference from "../components/UserReference";
+import StatusBadge from "../components/StatusBadge";
 
 const UserDetail = () => {
   const { id } = useParams();
@@ -146,25 +146,15 @@ const UserDetail = () => {
 
   const productColumns = [
     {
-      title: "Rasm",
-      dataIndex: "images",
-      key: "images",
-      render: (images) => {
-        const firstImg = get(images, "[0]", null);
-        return firstImg ? (
-          <img src={firstImg} alt="" className="w-9 h-9 object-cover rounded-lg border border-slate-200" />
-        ) : (
-          <div className="w-9 h-9 bg-slate-100 flex items-center justify-center text-[10px] text-slate-400 font-bold rounded-lg">
-            N/A
-          </div>
-        );
-      },
-    },
-    {
-      title: "E'lon nomi",
-      dataIndex: "title",
-      key: "title",
-      render: (text) => <span className="font-bold text-slate-800 text-sm">{text}</span>,
+      title: "E'lon Ma'lumoti",
+      key: "product",
+      render: (_, record) => (
+        <ProductReference
+          product={record}
+          id={record.id}
+          size="sm"
+        />
+      ),
     },
     {
       title: "Kategoriya",
@@ -176,18 +166,19 @@ const UserDetail = () => {
       title: "Narx",
       dataIndex: "price",
       key: "price",
-      render: (price) => (
+      render: (price, record) => (
         <span className="font-extrabold text-slate-900">
-          {Number(price || 0).toLocaleString("uz-UZ")} UZS
+          {Number(price || 0).toLocaleString("uz-UZ")} {record.currencyType || "UZS"}
         </span>
       ),
     },
     {
       title: "Holati",
-      dataIndex: "published",
-      key: "published",
-      render: (pub) =>
-        pub ? <Tag color="success">Faol</Tag> : <Tag color="warning">Kutilmoqda</Tag>,
+      dataIndex: "status",
+      key: "status",
+      render: (st, record) => (
+        <StatusBadge status={st || (record.published ? "active" : "pending")} domain="listing" />
+      ),
     },
   ];
 
@@ -241,18 +232,18 @@ const UserDetail = () => {
       title: "Sabab / Izoh",
       dataIndex: "reason",
       key: "reason",
-      render: (text) => <span className="font-semibold text-xs text-slate-800">{text || "Sabab ko'rsatilmagan"}</span>,
+      render: (text) => (
+        <span className="font-bold text-xs text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+          {text || "Sabab ko'rsatilmagan"}
+        </span>
+      ),
     },
     {
       title: "Holati",
       dataIndex: "status",
       key: "status",
-      width: 110,
-      render: (st) => (
-        <Tag color={st === "RESOLVED" ? "success" : st === "REJECTED" ? "default" : "warning"} className="font-bold text-[11px]">
-          {st || "PENDING"}
-        </Tag>
-      ),
+      width: 130,
+      render: (st) => <StatusBadge status={st} domain="report" />,
     },
     {
       title: "Sana",
@@ -276,10 +267,18 @@ const UserDetail = () => {
       ),
     },
     {
-      title: "Admin",
+      title: "Admin Mas'ul",
       key: "admin",
-      width: 130,
-      render: (_, r) => <span className="font-semibold text-xs text-slate-700">@{r.admin?.username || `Admin #${r.adminId || 1}`}</span>,
+      width: 170,
+      render: (_, r) => (
+        <UserReference
+          user={r.admin}
+          id={r.adminId}
+          fallbackName={`Admin #${r.adminId || 1}`}
+          showPhone={false}
+          size="sm"
+        />
+      ),
     },
     {
       title: "Tafsilot",
