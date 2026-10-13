@@ -609,14 +609,26 @@ const Dashboard = () => {
                         urgentPendingListings.map((item) => (
                           <div
                             key={item.id}
-                            className="p-2.5 rounded-lg border border-slate-200/80 hover:border-slate-300 bg-slate-50/50 flex items-center justify-between gap-3 text-xs"
+                            className={`p-2.5 rounded-lg border transition-colors flex items-center justify-between gap-3 text-xs ${
+                              item.isSlaBreached
+                                ? "border-rose-300 bg-rose-50/40"
+                                : "border-slate-200/80 hover:border-slate-300 bg-slate-50/50"
+                            }`}
                           >
-                            <ProductReference
-                              product={item}
-                              id={item.id}
-                              size="sm"
-                              className="min-w-0"
-                            />
+                            <div className="flex flex-col gap-1 min-w-0">
+                              <ProductReference
+                                product={item}
+                                id={item.id}
+                                size="sm"
+                                className="min-w-0"
+                              />
+                              {item.isSlaBreached && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-100/80 border border-rose-200 px-1.5 py-0.5 rounded w-fit">
+                                  <AlertTriangle className="w-3 h-3 text-rose-600" />
+                                  SLA Cheklovi: {item.ageHours} soatdan beri kutilmoqda
+                                </span>
+                              )}
+                            </div>
 
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <Tooltip title="Tezkor tasdiqlash">
@@ -699,6 +711,11 @@ const Dashboard = () => {
                                   <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300">
                                     {report.reason || "Qoidabuzarlik"}
                                   </span>
+                                  {report.isSlaBreached && (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 border border-rose-300">
+                                      SLA: {report.ageHours} soat
+                                    </span>
+                                  )}
                                   <span className="text-[10px] text-slate-400 font-mono">
                                     #{report.id} • {dayjs(report.createdAt).format("DD MMM HH:mm")}
                                   </span>

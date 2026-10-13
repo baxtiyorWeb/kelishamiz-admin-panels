@@ -55,6 +55,14 @@ const NAV_GROUPS = [
         label: "Boshqaruv Paneli",
         desc: "Telemetriya & asosiy ko'rsatkichlar",
       },
+      {
+        path: "/health",
+        icon: Activity,
+        label: "Platforma Salomatligi",
+        desc: "Infratuzilma, DB, kesh & xizmatlar",
+        badge: "V2.2",
+        badgeColor: "bg-emerald-100 text-emerald-800",
+      },
     ],
   },
   {

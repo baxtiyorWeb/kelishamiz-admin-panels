@@ -107,8 +107,58 @@ export const AdminGuide = () => {
       ),
     },
     {
+      id: "health",
+      title: "2. Platforma Salomatligi & Telemetriya (V2.2)",
+      shortTitle: "Salomatlik & Telemetriya",
+      icon: <Activity className="w-4 h-4 text-emerald-600" />,
+      content: (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+            <div>
+              <h3 className="font-extrabold text-emerald-900 text-sm">V2.2 Infratuzilma Monitoringi</h3>
+              <p className="text-xs text-emerald-800/90 mt-1">
+                PostgreSQL kechikishi (ping), Redis kesh, Bunny CDN, Payme va bildirishnomalar holatini kuzatish.
+              </p>
+            </div>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => navigate("/health")}
+              className="!bg-emerald-700 hover:!bg-emerald-800 text-xs font-semibold"
+            >
+              Salomatlik sahifasiga o'tish &rarr;
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div className="p-4 border border-slate-200 rounded-xl bg-white space-y-2">
+              <div className="font-bold text-slate-800 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                Haqiqiy Holat Standarti (No Fake Status)
+              </div>
+              <p className="text-slate-600 leading-relaxed">
+                Platformada hech qachon ulanmagan xizmatlar soxta yashil qilib ko'rsatilmaydi. Agar Redis o'rnatilmagan bo'lsa,
+                tizim halol ravishda <code>In-Memory Kesh Faol</code> deb xabar beradi. Payme to'lovlari esa <code>Test rejimida</code> ekani ochiq ko'rsatiladi.
+              </p>
+            </div>
+
+            <div className="p-4 border border-slate-200 rounded-xl bg-white space-y-2">
+              <div className="font-bold text-slate-800 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                Moderatsiya SLA Cheklovlari
+              </div>
+              <p className="text-slate-600 leading-relaxed">
+                24 soatdan ortiq kutilayotgan e'lonlar va 12 soatdan ortiq ko'rib chiqilmagan shikoyatlar avtomatik ravishda
+                qizil <strong>SLA Ogohlantirish nishoni</strong> bilan operatsion navbatning yuqorisiga chiqariladi.
+              </p>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
       id: "users",
-      title: "2. Foydalanuvchilar CRM & Profil Boshqaruvi",
+      title: "3. Foydalanuvchilar CRM & Profil Boshqaruvi",
       shortTitle: "Foydalanuvchilar",
       icon: <Users className="w-4 h-4 text-purple-600" />,
       content: (
@@ -377,8 +427,54 @@ export const AdminGuide = () => {
       ),
     },
     {
+      id: "payments",
+      title: "7. To'lovlar & Tranzaksiyalar (V7.0)",
+      shortTitle: "To'lovlar & Payme",
+      icon: <CreditCard className="w-4 h-4 text-emerald-600" />,
+      content: (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+            <div>
+              <h3 className="font-extrabold text-emerald-900 text-sm">Payme Tranzaksiyalari & Audit</h3>
+              <p className="text-xs text-emerald-800/90 mt-1">
+                Barcha to'lovlar, kaskad holatlari, UZS summalari va mijoz profillari bilan integratsiya.
+              </p>
+            </div>
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => navigate("/payments")}
+              className="!bg-emerald-700 hover:!bg-emerald-800 text-xs font-semibold"
+            >
+              To'lovlar markaziga o'tish &rarr;
+            </Button>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            <div className="p-4 border border-slate-200 rounded-xl bg-white space-y-2">
+              <div className="font-bold text-slate-900">Payme Integratsiyasi Ishlash Tamoyili</div>
+              <p className="text-slate-600 leading-relaxed">
+                Backend Payme JSON-RPC 2.0 protokoli bilan to'liq jihozlangan: tranzaksiya yaratish, tasdiqlash va bekor qilish (revert).
+                Hozirgi paytda test/ishlab chiqish rejimida barcha operatsiyalar real vaqtda bazaga yoziladi va monitoringda aks ettiriladi.
+              </p>
+            </div>
+
+            <div className="p-4 border border-slate-200 rounded-xl bg-white space-y-2">
+              <div className="font-bold text-slate-900">Tranzaksiya Holatlari (Statuses)</div>
+              <ul className="list-disc pl-5 space-y-1 text-slate-600">
+                <li><strong>Muvaffaqiyatli (success):</strong> To'lov qabul qilingan va hisobga o'tkazilgan.</li>
+                <li><strong>Kutilmoqda (pending):</strong> Payme tasdig'i kutilayotgan tranzaksiya.</li>
+                <li><strong>Qaytarilgan (cancelled_with_revert):</strong> Bekor qilinib, pul foydalanuvchiga qaytarilgan.</li>
+                <li><strong>Bekor qilingan (failed/cancelled):</strong> Xatolik yoki bekor qilish sababli yakunlanmagan.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
       id: "audit",
-      title: "7. Audit Jurnali & Xavfsizlik SOC",
+      title: "8. Audit Jurnali & Xavfsizlik SOC",
       shortTitle: "Audit & SOC",
       icon: <History className="w-4 h-4 text-blue-600" />,
       content: (

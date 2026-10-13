@@ -25,6 +25,7 @@ import SystemSettings from "../modules/SystemSettings";
 import OtpPolicyManagement from "../modules/OtpPolicyManagement";
 import SecurityOperationsCenter from "../modules/SecurityOperationsCenter";
 import AdminGuide from "../modules/AdminGuide";
+import PlatformHealth from "../modules/PlatformHealth";
 
 export const AppRouter = () => {
   return (
@@ -38,6 +39,7 @@ export const AppRouter = () => {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/health" element={<PlatformHealth />} />
         <Route path="/guide" element={<AdminGuide />} />
         <Route path="/soc" element={<SecurityOperationsCenter />} />
         <Route path="/security-center" element={<SecurityOperationsCenter />} />
