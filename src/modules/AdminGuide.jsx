@@ -23,7 +23,7 @@ import {
   FileText,
   KeyRound,
   Info,
-  ChevronRight,
+  Activity,
   Check,
 } from "lucide-react";
 

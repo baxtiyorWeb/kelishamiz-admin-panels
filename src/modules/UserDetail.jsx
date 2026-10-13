@@ -58,7 +58,7 @@ const UserDetail = () => {
   const [modSendNotif, setModSendNotif] = useState(true);
   const [modNotifText, setModNotifText] = useState("Hisobingiz bo‘yicha moderatsiya cheklovi o‘rnatildi.");
 
-  // Fetch full User 360° Profile
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["user_details_360", id],
     queryFn: async () => {

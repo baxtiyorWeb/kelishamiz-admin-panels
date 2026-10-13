@@ -162,7 +162,7 @@ const PlatformHealth = () => {
             value={formatUptime(apiService.uptimeSeconds)}
             icon={<Clock className="w-4 h-4 text-blue-600" />}
             color="blue"
-            description={`Node ${apiService.nodeVersion || process.version}`}
+            description={`Node ${apiService.nodeVersion || "LTS"}`}
           />
         </Col>
 
