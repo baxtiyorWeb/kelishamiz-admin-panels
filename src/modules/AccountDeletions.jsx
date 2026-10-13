@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Row, Col, Steps, Alert, Table, Modal, message, Tag, Tooltip } from "antd";
+import { useQuery } from "@tanstack/react-query";
+import api from "../config/auth/api";
+import { Row, Col, Steps, Table, Tag, Input, Empty, Button, Tooltip } from "antd";
 import {
   UserX,
   ShieldCheck,
@@ -7,58 +9,52 @@ import {
   Key,
   CloudUpload,
   Database,
-  AlertTriangle,
   CheckCircle2,
   Lock,
   RefreshCw,
-  FileText,
-  Clock,
+  Search,
   Sparkles,
   Smartphone,
   Check,
+  Shield,
+  Layers,
 } from "lucide-react";
 import dayjs from "dayjs";
 import { CompactStatCard } from "../components/CompactStatCard";
 
 const AccountDeletions = () => {
-  const [activeTab, setActiveTab] = useState("all");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  const sampleDeletions = [
-    {
-      id: 1042,
-      username: "jasur_test",
-      phone: "+998 90 123 45 67",
-      reason: "Boshqa raqamga o'tish",
-      status: "completed",
-      requestedAt: dayjs().subtract(2, "day").toISOString(),
-      purgedAt: dayjs().subtract(2, "day").add(1, "minute").toISOString(),
+  // Fetch real account deletion records from backend audit log
+  const { data, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["accountDeletions", page, pageSize, search],
+    queryFn: async () => {
+      const params = {
+        page,
+        limit: pageSize,
+        search: search.trim() || undefined,
+      };
+      const res = await api.get("/admin/audit-logs/account-deletions", { params });
+      return res.data?.content || res.data;
     },
-    {
-      id: 1089,
-      username: "user_privacy",
-      phone: "+998 99 888 77 66",
-      reason: "Shaxsiy ma'lumotlarni o'chirish",
-      status: "completed",
-      requestedAt: dayjs().subtract(5, "day").toISOString(),
-      purgedAt: dayjs().subtract(5, "day").add(2, "minute").toISOString(),
-    },
-    {
-      id: 1120,
-      username: "avto_savdo",
-      phone: "+998 93 456 78 90",
-      reason: "Savdo yakunlandi",
-      status: "completed",
-      requestedAt: dayjs().subtract(12, "day").toISOString(),
-      purgedAt: dayjs().subtract(12, "day").add(1, "minute").toISOString(),
-    },
-  ];
+  });
+
+  const records = Array.isArray(data?.records) ? data.records : [];
+  const total = data?.total || 0;
+  const stats = data?.stats || {
+    totalDeletions: total,
+    selfServiceCount: 0,
+    adminPurgeCount: 0,
+  };
 
   const columns = [
     {
       title: "ID",
       dataIndex: "id",
       key: "id",
-      width: 70,
+      width: 65,
       render: (id) => <span className="font-mono text-xs font-bold text-slate-400">#{id}</span>,
     },
     {
@@ -66,34 +62,49 @@ const AccountDeletions = () => {
       key: "user",
       render: (_, r) => (
         <div className="flex flex-col">
-          <span className="font-extrabold text-slate-900 text-sm">@{r.username}</span>
+          <span className="font-extrabold text-slate-900 text-sm">
+            {r.username?.startsWith("@") ? r.username : `@${r.username}`}
+          </span>
           <span className="text-xs text-slate-400 font-mono">{r.phone}</span>
         </div>
       ),
     },
     {
-      title: "O'chirish Sababi",
-      dataIndex: "reason",
+      title: "O'chirish Sababi & Usul",
       key: "reason",
-      render: (text) => (
-        <span className="text-xs text-slate-700 font-medium px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200">
-          {text}
-        </span>
+      render: (_, r) => (
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-slate-700 font-medium px-2 py-0.5 rounded-lg bg-slate-50 border border-slate-200">
+            {r.reason || "Shaxsiy ma'lumotlarni o'chirish"}
+          </span>
+          <div>
+            {r.method === "ADMIN_PURGE" ? (
+              <Tag color="purple" className="text-[10px] font-semibold m-0">
+                Admin Tomonidan
+              </Tag>
+            ) : (
+              <Tag color="blue" className="text-[10px] font-semibold m-0">
+                Self-Service
+              </Tag>
+            )}
+          </div>
+        </div>
       ),
     },
     {
       title: "Holati",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+      width: 170,
+      render: () => (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           <span>To'liq Tozalandi (Purged)</span>
         </span>
       ),
     },
     {
-      title: "So'rov & O'chirilgan Vaqt",
+      title: "So'rov & Purge Vaqti",
       key: "dates",
       render: (_, r) => (
         <div className="text-xs text-slate-500 font-mono flex flex-col">
@@ -177,11 +188,11 @@ const AccountDeletions = () => {
         <Col xs={12} sm={6} lg={6}>
           <CompactStatCard
             label="Jami O'chirishlar"
-            value={sampleDeletions.length}
+            value={stats.totalDeletions}
             unit="hisob"
             icon={<UserX className="w-4 h-4" />}
             color="rose"
-            description="Muvaffaqiyatli yakunlangan"
+            description={`${stats.selfServiceCount || 0} self, ${stats.adminPurgeCount || 0} admin`}
           />
         </Col>
       </Row>
@@ -241,22 +252,68 @@ const AccountDeletions = () => {
 
         {/* Live Deletions Audit Table */}
         <div className="lg:col-span-7 enterprise-card p-4 flex flex-col gap-3">
-          <div className="border-b border-slate-100 pb-2 flex justify-between items-center">
+          <div className="border-b border-slate-100 pb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="text-sm font-bold text-slate-800 m-0">O'chirish So'rovlari Jurnali</h2>
               <div className="text-xs text-slate-400 mt-0.5">Avtomatlashtirilgan purge operatsiyalari tarixi</div>
             </div>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">
-              <Check className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{sampleDeletions.length} ta yozuv</span>
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{total} ta yozuv</span>
+              </span>
+              <Button
+                icon={<RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />}
+                size="small"
+                onClick={() => refetch()}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mb-1">
+            <Input
+              placeholder="Foydalanuvchi, telefon yoki sabab bo'yicha qidirish..."
+              prefix={<Search className="w-3.5 h-3.5 text-slate-400" />}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              allowClear
+              size="small"
+              className="w-full"
+            />
           </div>
 
           <Table
             columns={columns}
-            dataSource={sampleDeletions}
+            dataSource={records}
             rowKey="id"
-            pagination={false}
+            loading={isLoading}
+            pagination={{
+              current: page,
+              pageSize,
+              total,
+              onChange: (p, ps) => {
+                setPage(p);
+                setPageSize(ps);
+              },
+              showSizeChanger: true,
+              pageSizeOptions: ["10", "20", "50"],
+              size: "small",
+            }}
+            locale={{
+              emptyText: (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={
+                    <span className="text-xs text-slate-500">
+                      Hozircha hisob o'chirish yozuvlari mavjud emas. Barcha o'chirishlar xavfsiz audit jurnali orqali qayd etiladi.
+                    </span>
+                  }
+                />
+              ),
+            }}
             size="small"
           />
         </div>

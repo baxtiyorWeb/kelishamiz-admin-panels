@@ -271,7 +271,12 @@ const AppLayout = () => {
     refetchInterval: 30000,
   });
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post("/admin/auth/logout");
+    } catch (e) {
+      console.warn("Logout notification failed:", e);
+    }
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     window.location.href = "/auth/login";

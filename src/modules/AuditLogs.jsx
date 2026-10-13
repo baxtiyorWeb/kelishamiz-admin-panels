@@ -67,8 +67,10 @@ const AuditLogs = () => {
 
   const filteredLogs = useMemo(() => {
     return rawLogs.filter((log) => {
+      if (activeTab === "auth" && !log.action?.includes("LOGIN") && !log.action?.includes("LOGOUT")) return false;
+      if (activeTab === "lifecycle" && !log.action?.includes("DELETE") && !log.action?.includes("RESTORE") && !log.action?.includes("PURGE") && !log.action?.includes("SUSPEND")) return false;
       if (activeTab === "moderation" && !log.action?.includes("PRODUCT") && !log.action?.includes("SHOP")) return false;
-      if (activeTab === "security" && !log.action?.includes("BAN") && !log.action?.includes("DELETE") && !log.action?.includes("ROLE")) return false;
+      if (activeTab === "security" && !log.action?.includes("BAN") && !log.action?.includes("DELETE") && !log.action?.includes("ROLE") && !log.action?.includes("DENIED") && !log.action?.includes("FAILED")) return false;
       if (activeTab === "user" && !log.action?.includes("USER")) return false;
 
       if (search.trim()) {
@@ -340,6 +342,8 @@ const AuditLogs = () => {
             className="!m-0"
             items={[
               { key: "all", label: `Barchasi (${totalLogs})` },
+              { key: "auth", label: "Kirish & Chiqish (Auth)" },
+              { key: "lifecycle", label: "Hisob O'chirish & Tiklash" },
               { key: "moderation", label: "Moderatsiya" },
               { key: "security", label: "Xavfsizlik & Jazolar" },
               { key: "user", label: "Foydalanuvchilar" },
