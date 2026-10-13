@@ -25,6 +25,7 @@ import {
   Info,
   Activity,
   Check,
+  CreditCard,
 } from "lucide-react";
 
 export const AdminGuide = () => {
