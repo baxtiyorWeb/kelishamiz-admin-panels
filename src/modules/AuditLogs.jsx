@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "../config/auth/api";
-import { Table, Tag, Input, Row, Col, Tabs, Modal, Avatar, Button, Tooltip } from "antd";
+import { Table, Tag, Input, Row, Col, Tabs, Modal, Avatar, Button, Tooltip, Select } from "antd";
 import { CompactStatCard } from "../components/CompactStatCard";
 import SafeJsonViewer from "../components/SafeJsonViewer";
 import {
@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 
 const AuditLogs = () => {
   const [search, setSearch] = useState("");
+  const [targetTypeFilter, setTargetTypeFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
   const [activeTab, setActiveTab] = useState("all");
@@ -29,11 +30,11 @@ const AuditLogs = () => {
   const [copied, setCopied] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["adminAuditLogs", page, pageSize, search],
+    queryKey: ["adminAuditLogs", page, pageSize, search, targetTypeFilter],
     queryFn: async () => {
-      const res = await api.get("/admin/audit-logs", {
-        params: { page, limit: pageSize, search },
-      });
+      const params = { page, limit: pageSize, search: search.trim() || undefined };
+      if (targetTypeFilter !== "all") params.targetType = targetTypeFilter;
+      const res = await api.get("/admin/audit-logs", { params });
       return res.data?.content || res.data;
     },
   });
@@ -211,18 +212,35 @@ const AuditLogs = () => {
           </p>
         </div>
 
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Amal, target yoki admin..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={targetTypeFilter}
+            onChange={(val) => {
+              setTargetTypeFilter(val);
               setPage(1);
             }}
-            className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 w-64"
-          />
+            className="w-36 text-xs"
+          >
+            <Select.Option value="all">Barcha Targetlar</Select.Option>
+            <Select.Option value="PRODUCT">E'lon (PRODUCT)</Select.Option>
+            <Select.Option value="USER">Foydalanuvchi (USER)</Select.Option>
+            <Select.Option value="SHOP">Do'kon (SHOP)</Select.Option>
+            <Select.Option value="BANNER">Banner (BANNER)</Select.Option>
+          </Select>
+
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Amal, target yoki admin..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 w-52"
+            />
+          </div>
         </div>
       </div>
 

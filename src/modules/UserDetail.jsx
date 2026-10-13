@@ -32,6 +32,8 @@ import {
   CreditCardOutlined,
   SafetyCertificateOutlined,
   ClockCircleOutlined,
+  AlertOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -56,18 +58,23 @@ const UserDetail = () => {
   const [modSendNotif, setModSendNotif] = useState(true);
   const [modNotifText, setModNotifText] = useState("Hisobingiz bo‘yicha moderatsiya cheklovi o‘rnatildi.");
 
+  // Fetch full User 360° Profile
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["user_details", id],
+    queryKey: ["user_details_360", id],
     queryFn: async () => {
       try {
-        const response = await api.get(`/users/${id}/details`);
+        const response = await api.get(`/admin/users/${id}/360`);
         if (response.status === 200 && response.data) {
           return response.data;
         }
       } catch (err) {
-        // Resilient fallback to admin user details
-        const fallback = await api.get(`/admin/users/${id}`);
-        return fallback.data;
+        try {
+          const fallback = await api.get(`/users/${id}/details`);
+          return fallback.data;
+        } catch {
+          const fallbackAdmin = await api.get(`/admin/users/${id}`);
+          return fallbackAdmin.data;
+        }
       }
     },
   });
@@ -106,9 +113,17 @@ const UserDetail = () => {
     },
   });
 
-  const user = get(data, "content.user", null);
-  const products = get(data, "content.products", []);
-  const transactions = get(data, "content.transactions", []);
+  const user = get(data, "content.user", get(data, "user", null));
+  const products = get(data, "content.products", get(data, "products", []));
+  const transactions = get(data, "content.transactions", get(data, "transactions", []));
+  const reportsFiled = get(data, "content.reports.filed", get(data, "reports.filed", []));
+  const reportsAgainst = get(data, "content.reports.against", get(data, "reports.against", []));
+  const auditHistory = get(data, "content.auditHistory", get(data, "auditHistory", []));
+
+  const allReports = [
+    ...reportsAgainst.map((r) => ({ ...r, direction: "AGAINST" })),
+    ...reportsFiled.map((r) => ({ ...r, direction: "FILED" })),
+  ];
 
   if (isLoading) {
     return (
@@ -210,6 +225,80 @@ const UserDetail = () => {
     },
   ];
 
+  const reportColumns = [
+    {
+      title: "Yo'nalish",
+      dataIndex: "direction",
+      key: "direction",
+      width: 140,
+      render: (dir) => (
+        <Tag color={dir === "AGAINST" ? "error" : "blue"} className="font-bold text-[11px]">
+          {dir === "AGAINST" ? "Mijoz ustidan" : "Mijoz yozgan"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Sabab / Izoh",
+      dataIndex: "reason",
+      key: "reason",
+      render: (text) => <span className="font-semibold text-xs text-slate-800">{text || "Sabab ko'rsatilmagan"}</span>,
+    },
+    {
+      title: "Holati",
+      dataIndex: "status",
+      key: "status",
+      width: 110,
+      render: (st) => (
+        <Tag color={st === "RESOLVED" ? "success" : st === "REJECTED" ? "default" : "warning"} className="font-bold text-[11px]">
+          {st || "PENDING"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Sana",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      width: 130,
+      render: (d) => <span className="font-mono text-xs text-slate-500">{d ? dayjs(d).format("YYYY-MM-DD HH:mm") : "—"}</span>,
+    },
+  ];
+
+  const auditColumns = [
+    {
+      title: "Amal",
+      dataIndex: "action",
+      key: "action",
+      width: 170,
+      render: (action) => (
+        <span className="font-mono font-semibold text-xs text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+          {action}
+        </span>
+      ),
+    },
+    {
+      title: "Admin",
+      key: "admin",
+      width: 130,
+      render: (_, r) => <span className="font-semibold text-xs text-slate-700">@{r.admin?.username || `Admin #${r.adminId || 1}`}</span>,
+    },
+    {
+      title: "Tafsilot",
+      dataIndex: "details",
+      key: "details",
+      render: (det) => {
+        const text = det?.reason || (typeof det === "string" ? det : JSON.stringify(det || {}));
+        return <span className="text-xs text-slate-600 line-clamp-2">{text || "—"}</span>;
+      },
+    },
+    {
+      title: "Vaqt",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      width: 140,
+      render: (d) => <span className="font-mono text-xs text-slate-500">{d ? dayjs(d).format("YYYY-MM-DD HH:mm") : "—"}</span>,
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-4">
       {/* Top Header */}
@@ -224,7 +313,7 @@ const UserDetail = () => {
         </Button>
         <div className="flex items-center gap-2">
           <Tag color="blue" className="!rounded px-2 py-0.5 font-semibold text-xs m-0">
-            ID: #{user.id}
+            360° PROFIL #{user.id}
           </Tag>
           <Tag color={user.role === "ADMIN" ? "red" : "geekblue"} className="!rounded px-2 py-0.5 font-semibold text-xs m-0">
             {user.role}
@@ -321,7 +410,7 @@ const UserDetail = () => {
           </div>
         </Col>
 
-        {/* Right Content Tabs */}
+        {/* Right Content 360° Tabs */}
         <Col xs={24} lg={16}>
           <div className="enterprise-card p-4">
             <Tabs
@@ -351,6 +440,50 @@ const UserDetail = () => {
                 },
                 {
                   key: "2",
+                  label: (
+                    <span className="font-semibold text-xs flex items-center gap-1.5">
+                      <AlertOutlined /> Shikoyatlar ({allReports.length})
+                    </span>
+                  ),
+                  children: (
+                    <Table
+                      size="small"
+                      dataSource={allReports}
+                      columns={reportColumns}
+                      rowKey={(r, i) => r.id || i}
+                      scroll={{ x: 500 }}
+                      pagination={{
+                        pageSize: 5,
+                        size: "small",
+                        showTotal: (total) => `Jami: ${total} ta shikoyat`,
+                      }}
+                    />
+                  ),
+                },
+                {
+                  key: "3",
+                  label: (
+                    <span className="font-semibold text-xs flex items-center gap-1.5">
+                      <HistoryOutlined /> Moderatsiya Tarixi ({auditHistory.length})
+                    </span>
+                  ),
+                  children: (
+                    <Table
+                      size="small"
+                      dataSource={auditHistory}
+                      columns={auditColumns}
+                      rowKey={(r, i) => r.id || i}
+                      scroll={{ x: 500 }}
+                      pagination={{
+                        pageSize: 5,
+                        size: "small",
+                        showTotal: (total) => `Jami: ${total} ta ma'muriy amal`,
+                      }}
+                    />
+                  ),
+                },
+                {
+                  key: "4",
                   label: (
                     <span className="font-semibold text-xs flex items-center gap-1.5">
                       <CreditCardOutlined /> To'lovlar Tarixi ({transactions.length})

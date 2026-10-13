@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "./../config/auth/api";
-import { Table, Tag, Tooltip, DatePicker, Select, Button, Avatar, Row, Col } from "antd";
+import { Table, Tag, Tooltip, DatePicker, Select, Button, Avatar, Row, Col, Tabs, Modal, Input, message } from "antd";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -24,6 +24,9 @@ import {
   ExternalLink,
   ChevronRight,
   Zap,
+  UserCheck,
+  Image as ImageIcon,
+  XCircle,
 } from "lucide-react";
 import {
   AreaChart,
@@ -40,7 +43,11 @@ import { CompactStatCard } from "../components/CompactStatCard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [interval, setInterval] = useState("day");
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectTargetId, setRejectTargetId] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   // 1. Core Admin Operational Stats (KPI, Needs Attention, System Health, Recent Audit)
   const {
@@ -121,6 +128,7 @@ const Dashboard = () => {
   const needsAttention = adminStats?.needsAttention || {};
   const systemHealth = adminStats?.systemHealth || {};
   const recentActivity = adminStats?.recentActivity || [];
+  const queues = adminStats?.queues || {};
 
   const totalUsers = kpi.totalUsers ?? analyticsStats?.totalUsers ?? 0;
   const totalListings = kpi.totalListings ?? analyticsStats?.totalProducts ?? 0;
@@ -129,6 +137,50 @@ const Dashboard = () => {
   const totalShops = kpi.totalShops ?? analyticsStats?.totalShops ?? 0;
   const pendingReports = kpi.pendingReports ?? needsAttention.pendingReports ?? 0;
   const totalRevenue = kpi.totalRevenue ?? 0;
+
+  const todayRegistrations = kpi.todayRegistrations ?? 0;
+  const todayListings = kpi.todayListings ?? 0;
+  const blockedUsers = kpi.blockedUsers ?? 0;
+  const spamUsers = kpi.spamUsers ?? 0;
+  const activeBanners = kpi.activeBanners ?? 0;
+
+  const urgentPendingListings = queues.urgentPendingListings || [];
+  const urgentPendingReports = queues.urgentPendingReports || [];
+  const recentUsers = queues.recentUsers || [];
+
+  // Direct quick moderation actions
+  const approveListingMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await api.post(`/admin/listings/${id}/approve`);
+      return res.data;
+    },
+    onSuccess: () => {
+      message.success("E'lon tasdiqlandi!");
+      refetchAdminStats();
+      queryClient.invalidateQueries({ queryKey: ["admin-listings"] });
+    },
+    onError: (err) => {
+      message.error(err.response?.data?.message || "Tasdiqlashda xatolik yuz berdi");
+    },
+  });
+
+  const rejectListingMutation = useMutation({
+    mutationFn: async ({ id, reason }) => {
+      const res = await api.post(`/admin/listings/${id}/reject`, { reason });
+      return res.data;
+    },
+    onSuccess: () => {
+      message.success("E'lon rad etildi!");
+      setRejectModalOpen(false);
+      setRejectTargetId(null);
+      setRejectReason("");
+      refetchAdminStats();
+      queryClient.invalidateQueries({ queryKey: ["admin-listings"] });
+    },
+    onError: (err) => {
+      message.error(err.response?.data?.message || "Rad etishda xatolik yuz berdi");
+    },
+  });
 
   // Chart data formatting
   const chartData = useMemo(() => {
@@ -221,11 +273,11 @@ const Dashboard = () => {
               Operatsion Boshqaruv Markazi
             </h1>
             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-              LIVE TELEMETRY
+              OPERATIONS CENTER V2
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Real vaqtdagi marketplace operatsiyalari, server holati va xavfsizlik telemetriyasi
+            Real vaqtdagi marketplace operatsiyalari, moderatorlar navbati va tizim telemetriyasi
           </p>
         </div>
 
@@ -242,7 +294,7 @@ const Dashboard = () => {
 
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
             <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-            <span>30s Polling</span>
+            <span>Real-Time Live</span>
           </div>
 
           <Button
@@ -315,12 +367,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 3. CORE KPI METRICS GRID */}
+      {/* 3. CORE KPI METRICS GRID — ROW 1: PRIMARY METRICS */}
       <Row gutter={[12, 12]}>
-        {/* KPI 1: Total Users */}
         <Col xs={12} sm={6} lg={6}>
           <CompactStatCard
-            label="Foydalanuvchilar"
+            label="Jami Foydalanuvchilar"
             value={totalUsers.toLocaleString()}
             unit="mijoz"
             icon={<Users className="w-4 h-4" />}
@@ -330,7 +381,6 @@ const Dashboard = () => {
           />
         </Col>
 
-        {/* KPI 2: Listings Moderation */}
         <Col xs={12} sm={6} lg={6}>
           <CompactStatCard
             label="E'lonlar & Moderatsiya"
@@ -339,12 +389,11 @@ const Dashboard = () => {
             icon={<TagIcon className="w-4 h-4" />}
             color="blue"
             badge={pendingListings > 0 ? `${pendingListings} kutilmoqda` : undefined}
-            description={`${activeListings.toLocaleString()} faol e'lon`}
-            onClick={() => navigate("/products")}
+            description={`${activeListings.toLocaleString()} faol sotuvda`}
+            onClick={() => navigate("/products?status=pending")}
           />
         </Col>
 
-        {/* KPI 3: Shops */}
         <Col xs={12} sm={6} lg={6}>
           <CompactStatCard
             label="Rasmiy Do'konlar"
@@ -357,7 +406,6 @@ const Dashboard = () => {
           />
         </Col>
 
-        {/* KPI 4: Pending Reports */}
         <Col xs={12} sm={6} lg={6}>
           <CompactStatCard
             label="Shikoyatlar Markazi"
@@ -365,16 +413,67 @@ const Dashboard = () => {
             unit="murojaat"
             icon={<AlertTriangle className="w-4 h-4" />}
             color={pendingReports > 0 ? "amber" : "emerald"}
-            description={pendingReports > 0 ? "Diqqat talab etiladi" : "Barchasi hal etilgan"}
-            onClick={() => navigate("/reports")}
+            description={pendingReports > 0 ? "Tezkor ko'rib chiqish zarur" : "Barchasi hal etilgan"}
+            onClick={() => navigate("/reports?status=PENDING")}
           />
         </Col>
       </Row>
 
-      {/* 4. ANALYTICS CHART & ATTENTION QUEUE */}
+      {/* 3.1 SECONDARY OPERATIONAL INDICATORS — ROW 2 */}
+      <Row gutter={[12, 12]}>
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Bugun Ro'yxatdan O'tganlar"
+            value={todayRegistrations.toLocaleString()}
+            unit="yangi"
+            icon={<UserCheck className="w-4 h-4" />}
+            color="emerald"
+            description="Oxirgi 24 soat ichida"
+            onClick={() => navigate("/users")}
+          />
+        </Col>
+
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Bugungi Yangi E'lonlar"
+            value={todayListings.toLocaleString()}
+            unit="e'lon"
+            icon={<TagIcon className="w-4 h-4" />}
+            color="blue"
+            description="Bugun joylashtirilgan"
+            onClick={() => navigate("/products")}
+          />
+        </Col>
+
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Cheklangan Akkauntlar"
+            value={(blockedUsers + spamUsers).toLocaleString()}
+            unit="akkaunt"
+            icon={<ShieldAlert className="w-4 h-4" />}
+            color={blockedUsers + spamUsers > 0 ? "rose" : "slate"}
+            description={`${blockedUsers} bloklangan, ${spamUsers} spam`}
+            onClick={() => navigate("/soc")}
+          />
+        </Col>
+
+        <Col xs={12} sm={6} lg={6}>
+          <CompactStatCard
+            label="Faol Bannerlar"
+            value={activeBanners.toLocaleString()}
+            unit="banner"
+            icon={<ImageIcon className="w-4 h-4" />}
+            color="indigo"
+            description="Ilovada ko'rsatilmoqda"
+            onClick={() => navigate("/banner")}
+          />
+        </Col>
+      </Row>
+
+      {/* 4. ANALYTICS CHART & OPERATIONAL WORKSPACE QUEUES */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Visitors & Registrations Flow */}
-        <div className="lg:col-span-8 enterprise-card p-5 flex flex-col justify-between">
+        <div className="lg:col-span-7 enterprise-card p-5 flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div>
               <div className="text-xs font-bold text-slate-800 uppercase tracking-wider">
@@ -466,95 +565,236 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Actionable Tasks & Operations Queue */}
-        <div className="lg:col-span-4 enterprise-card p-5 flex flex-col justify-between gap-4">
+        {/* Actionable Unified Operations Workspace (Queues) */}
+        <div className="lg:col-span-5 enterprise-card p-5 flex flex-col justify-between">
           <div>
-            <div className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Tezkor Operatsion Navbat
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <div className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-blue-700" />
+                  Operatsion Navbat & Tezkor Harakatlar
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Moderatsiya navbati va tezkor ko'rib chiqish
+                </div>
+              </div>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold">
+                {pendingListings} kutilmoqda
+              </span>
             </div>
-            <div className="text-[11px] text-slate-500 mt-0.5">
-              Admin diqqatini talab qiladigan ustuvor vazifalar
-            </div>
+
+            <Tabs
+              defaultActiveKey="listings"
+              size="small"
+              className="mt-2"
+              items={[
+                {
+                  key: "listings",
+                  label: (
+                    <span className="text-xs font-semibold flex items-center gap-1.5">
+                      <TagIcon className="w-3.5 h-3.5 text-amber-500" />
+                      E'lonlar ({urgentPendingListings.length})
+                    </span>
+                  ),
+                  children: (
+                    <div className="space-y-2.5 py-1 max-h-72 overflow-y-auto">
+                      {urgentPendingListings.length === 0 ? (
+                        <div className="py-8 text-center text-xs text-slate-400">
+                          <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-1 opacity-70" />
+                          Hozirda kutilayotgan e'lonlar mavjud emas.
+                        </div>
+                      ) : (
+                        urgentPendingListings.map((item) => (
+                          <div
+                            key={item.id}
+                            className="p-2.5 rounded-lg border border-slate-200/80 hover:border-slate-300 bg-slate-50/50 flex items-center justify-between gap-3 text-xs"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {item.images?.[0] ? (
+                                <img
+                                  src={item.images[0]}
+                                  alt=""
+                                  className="w-10 h-10 rounded-md object-cover border border-slate-200 flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded-md bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
+                                  <TagIcon className="w-4 h-4" />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <div className="font-semibold text-slate-800 truncate" title={item.title}>
+                                  {item.title}
+                                </div>
+                                <div className="text-[11px] text-slate-500 font-mono">
+                                  {Number(item.price || 0).toLocaleString()} UZS •{" "}
+                                  <span className="text-slate-400 font-sans">
+                                    {dayjs(item.createdAt).format("HH:mm")}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Tooltip title="Tezkor tasdiqlash">
+                                <Button
+                                  size="small"
+                                  type="primary"
+                                  className="!bg-emerald-600 hover:!bg-emerald-700 !h-7 !px-2 text-xs font-semibold"
+                                  loading={approveListingMutation.isPending}
+                                  onClick={() => approveListingMutation.mutate(item.id)}
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </Tooltip>
+                              <Tooltip title="Rad etish">
+                                <Button
+                                  size="small"
+                                  danger
+                                  className="!h-7 !px-2 text-xs font-semibold"
+                                  onClick={() => {
+                                    setRejectTargetId(item.id);
+                                    setRejectModalOpen(true);
+                                  }}
+                                >
+                                  <XCircle className="w-3.5 h-3.5" />
+                                </Button>
+                              </Tooltip>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                      <div className="pt-2 text-center">
+                        <Button
+                          size="small"
+                          type="link"
+                          onClick={() => navigate("/products?status=pending")}
+                          className="text-xs font-semibold"
+                        >
+                          Barcha kutilayotgan e'lonlar ({pendingListings}) &rarr;
+                        </Button>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: "reports",
+                  label: (
+                    <span className="text-xs font-semibold flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+                      Shikoyatlar ({urgentPendingReports.length})
+                    </span>
+                  ),
+                  children: (
+                    <div className="space-y-2.5 py-1 max-h-72 overflow-y-auto">
+                      {urgentPendingReports.length === 0 ? (
+                        <div className="py-8 text-center text-xs text-slate-400">
+                          <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-1 opacity-70" />
+                          Barcha shikoyatlar ko'rib chiqilgan.
+                        </div>
+                      ) : (
+                        urgentPendingReports.map((report) => (
+                          <div
+                            key={report.id}
+                            className="p-2.5 rounded-lg border border-slate-200/80 bg-slate-50/50 flex items-center justify-between gap-3 text-xs"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <Tag color="error" className="m-0 text-[10px] font-bold">
+                                  {report.targetType || "E'LON"}
+                                </Tag>
+                                <span className="font-semibold text-slate-800 truncate">
+                                  {report.reason || "Qoidabuzarlik shikoyati"}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                                #{report.targetId} • {dayjs(report.createdAt).format("DD MMM HH:mm")}
+                              </div>
+                            </div>
+                            <Button
+                              size="small"
+                              onClick={() => navigate("/reports?status=PENDING")}
+                              className="text-xs font-semibold flex-shrink-0"
+                            >
+                              Ko'rish
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                      <div className="pt-2 text-center">
+                        <Button
+                          size="small"
+                          type="link"
+                          onClick={() => navigate("/reports?status=PENDING")}
+                          className="text-xs font-semibold"
+                        >
+                          Shikoyatlar markaziga o'tish &rarr;
+                        </Button>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: "users",
+                  label: (
+                    <span className="text-xs font-semibold flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-blue-500" />
+                      Yangi Foydalanuvchilar ({recentUsers.length})
+                    </span>
+                  ),
+                  children: (
+                    <div className="space-y-2 py-1 max-h-72 overflow-y-auto">
+                      {recentUsers.length === 0 ? (
+                        <div className="py-8 text-center text-xs text-slate-400">
+                          Yangi foydalanuvchilar yo'q.
+                        </div>
+                      ) : (
+                        recentUsers.map((u) => (
+                          <div
+                            key={u.id}
+                            className="p-2 rounded-lg border border-slate-200/80 bg-slate-50/50 flex items-center justify-between gap-3 text-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Avatar size={28} className="bg-blue-700 text-white font-bold text-xs flex-shrink-0">
+                                {(u.username || "U")[0]?.toUpperCase()}
+                              </Avatar>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-slate-800 truncate">
+                                  {u.username || "Yangi a'zo"}
+                                </div>
+                                <div className="text-[11px] text-slate-500 font-mono truncate">
+                                  {u.phone || "Telefon kiritilmagan"}
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              size="small"
+                              type="default"
+                              onClick={() => navigate(`/users/${u.id}`)}
+                              className="text-xs font-semibold flex-shrink-0"
+                            >
+                              360° Profil
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                      <div className="pt-2 text-center">
+                        <Button
+                          size="small"
+                          type="link"
+                          onClick={() => navigate("/users")}
+                          className="text-xs font-semibold"
+                        >
+                          Barcha foydalanuvchilar &rarr;
+                        </Button>
+                      </div>
+                    </div>
+                  ),
+                },
+              ]}
+            />
           </div>
 
-          <div className="space-y-3">
-            {/* Task 1: Pending Listings */}
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-md bg-blue-100/70 text-blue-700 flex items-center justify-center flex-shrink-0">
-                  <TagIcon className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-slate-800">
-                    E'lonlar moderatsiyasi
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    {pendingListings > 0 ? `${pendingListings} ta tekshirish kutilmoqda` : "Navbat bo'sh"}
-                  </div>
-                </div>
-              </div>
-              <Button
-                size="small"
-                type="default"
-                onClick={() => navigate("/products")}
-                className="text-xs font-semibold"
-              >
-                Ko'rish
-              </Button>
-            </div>
-
-            {/* Task 2: Complaints */}
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-md bg-amber-100/70 text-amber-800 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-slate-800">
-                    Shikoyatlar tahlili
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    {pendingReports > 0 ? `${pendingReports} ta ochiq murojaat` : "Barchasi hal qilingan"}
-                  </div>
-                </div>
-              </div>
-              <Button
-                size="small"
-                type="default"
-                onClick={() => navigate("/reports")}
-                className="text-xs font-semibold"
-              >
-                Hal qilish
-              </Button>
-            </div>
-
-            {/* Task 3: Security & SOC */}
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-md bg-rose-100/70 text-rose-700 flex items-center justify-center flex-shrink-0">
-                  <ShieldAlert className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-slate-800">
-                    SOC xavfsizlik tekshiruvi
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Sessiyalar & bloklar auditi
-                  </div>
-                </div>
-              </div>
-              <Button
-                size="small"
-                type="default"
-                onClick={() => navigate("/soc")}
-                className="text-xs font-semibold"
-              >
-                SOC
-              </Button>
-            </div>
-          </div>
-
-          <div className="p-3 rounded-lg bg-blue-50/70 border border-blue-100 flex items-center gap-2 text-xs text-blue-900">
+          <div className="p-3 rounded-lg bg-blue-50/70 border border-blue-100 flex items-center gap-2 text-xs text-blue-900 mt-3">
             <CheckCircle2 className="w-4 h-4 text-blue-700 flex-shrink-0" />
             <span className="font-medium">
               Operatsion tizim me'yoriy parametrlar asosida ishlamoqda.
@@ -635,6 +875,38 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* REJECT MODAL FOR QUICK OPERATIONS */}
+      <Modal
+        title="E'lonni Rad Etish Sababi"
+        open={rejectModalOpen}
+        onCancel={() => {
+          setRejectModalOpen(false);
+          setRejectTargetId(null);
+          setRejectReason("");
+        }}
+        onOk={() => {
+          if (!rejectReason.trim()) {
+            message.warning("Iltimos, rad etish sababini kiriting");
+            return;
+          }
+          rejectListingMutation.mutate({ id: rejectTargetId, reason: rejectReason.trim() });
+        }}
+        confirmLoading={rejectListingMutation.isPending}
+        okText="Rad etish"
+        cancelText="Bekor"
+        okButtonProps={{ danger: true }}
+      >
+        <div className="py-2 space-y-2">
+          <p className="text-xs text-slate-500">Ushbu sabab sotuvchiga bildirishnoma sifatida yuboriladi:</p>
+          <Input.TextArea
+            rows={3}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Masalan: Rasm sifatsiz yoki mahsulot tavsifi qoidalarga mos emas..."
+          />
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -3,7 +3,7 @@ import Table from "./../components/Table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "./../config/auth/api";
 import { get, isArray } from "lodash";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   DatePicker,
   Form,
@@ -109,11 +109,20 @@ const checkerboardStyle = {
 
 const Products = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [statusTab, setStatusTab] = useState("all");
+  const initialStatus = searchParams.get("status") || "all";
+  const [statusTab, setStatusTab] = useState(initialStatus);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [bulkRejectModalOpen, setBulkRejectModalOpen] = useState(false);
+  const [bulkRejectReason, setBulkRejectReason] = useState("");
+  const [revertModalOpen, setRevertModalOpen] = useState(false);
+  const [revertTargetListing, setRevertTargetListing] = useState(null);
+  const [revertTargetStatus, setRevertTargetStatus] = useState("pending");
+  const [revertReason, setRevertReason] = useState("");
   const [isTopModalOpen, setIsTopModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(null);
@@ -268,6 +277,74 @@ const Products = () => {
         : rejectReasonType;
     rejectListing({ id: rejectTargetListing.id, reason: finalReason });
   };
+
+  // Safe Bulk Operations
+  const bulkApproveMutation = useMutation({
+    mutationFn: async (listingIds) => {
+      const res = await api.post("/admin/listings/bulk-approve", { listingIds });
+      return res.data;
+    },
+    onSuccess: (resData) => {
+      const results = resData?.content?.results || [];
+      const successes = results.filter((r) => r.success).length;
+      const failures = results.filter((r) => !r.success).length;
+      if (failures === 0) {
+        message.success(`${successes} ta e'lon muvaffaqiyatli tasdiqlandi!`);
+      } else {
+        message.warning(`${successes} ta tasdiqlandi, ${failures} tasida xatolik yuz berdi.`);
+      }
+      setSelectedRowKeys([]);
+      refetchProducts();
+      refetchStats();
+    },
+    onError: (err) => {
+      message.error(err.response?.data?.message || "Ommaviy tasdiqlashda xatolik");
+    },
+  });
+
+  const bulkRejectMutation = useMutation({
+    mutationFn: async ({ listingIds, reason }) => {
+      const res = await api.post("/admin/listings/bulk-reject", { listingIds, reason });
+      return res.data;
+    },
+    onSuccess: (resData) => {
+      const results = resData?.content?.results || [];
+      const successes = results.filter((r) => r.success).length;
+      const failures = results.filter((r) => !r.success).length;
+      if (failures === 0) {
+        message.success(`${successes} ta e'lon rad etildi.`);
+      } else {
+        message.warning(`${successes} ta rad etildi, ${failures} tasida xatolik yuz berdi.`);
+      }
+      setSelectedRowKeys([]);
+      setBulkRejectModalOpen(false);
+      setBulkRejectReason("");
+      refetchProducts();
+      refetchStats();
+    },
+    onError: (err) => {
+      message.error(err.response?.data?.message || "Ommaviy rad etishda xatolik");
+    },
+  });
+
+  // Safe Revert Status (Compensating Undo)
+  const revertStatusMutation = useMutation({
+    mutationFn: async ({ id, targetStatus, reason }) => {
+      const res = await api.post(`/admin/listings/${id}/revert-status`, { targetStatus, reason });
+      return res.data;
+    },
+    onSuccess: (resData) => {
+      message.success(resData?.message || "E'lon holati qaytarildi!");
+      setRevertModalOpen(false);
+      setRevertTargetListing(null);
+      setRevertReason("");
+      refetchProducts();
+      refetchStats();
+    },
+    onError: (err) => {
+      message.error(err.response?.data?.message || "Holatni qaytarishda xatolik");
+    },
+  });
 
   // Mutations
   const { mutate: updateProductTopStatus } = useMutation({
@@ -630,7 +707,7 @@ const Products = () => {
     {
       title: "Amallar",
       key: "actions",
-      width: 90,
+      width: 120,
       fixed: "right",
       render: (_, record) => (
         <div className="flex items-center gap-1">
@@ -647,6 +724,24 @@ const Products = () => {
               <Eye className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
+
+          {record.status !== "pending" && (
+            <Tooltip title="Holatni qaytarish (Revert / Bekor qilish)">
+              <button
+                type="button"
+                aria-label="Holatni qaytarish"
+                onClick={() => {
+                  setRevertTargetListing(record);
+                  setRevertTargetStatus("pending");
+                  setRevertReason("");
+                  setRevertModalOpen(true);
+                }}
+                className="btn-action-neutral hover:!text-amber-700 hover:!bg-amber-50"
+              >
+                <Undo2 className="w-3.5 h-3.5 text-amber-600" />
+              </button>
+            </Tooltip>
+          )}
 
           <Popconfirm
             title="E'lonni o'chirish"
@@ -780,6 +875,8 @@ const Products = () => {
             onChange={(key) => {
               setStatusTab(key);
               setPage(1);
+              setSelectedRowKeys([]);
+              setSearchParams(key === "all" ? {} : { status: key });
             }}
             className="!m-0"
             items={[
@@ -832,10 +929,67 @@ const Products = () => {
           />
         </div>
 
+        {/* Safe Bulk Operations Action Bar */}
+        {selectedRowKeys.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50/90 border border-blue-200 rounded-xl flex flex-wrap items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+              <span className="text-xs font-bold text-blue-900">
+                {selectedRowKeys.length} ta e'lon tanlandi (Joriy sahifa)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Popconfirm
+                title="Tanlangan barcha e'lonlarni tasdiqlaysizmi?"
+                description={`${selectedRowKeys.length} ta e'lon saytda faol ko'rinadigan bo'ladi.`}
+                onConfirm={() => bulkApproveMutation.mutate(selectedRowKeys)}
+                okText="Ha, tasdiqlash"
+                cancelText="Bekor"
+                disabled={bulkApproveMutation.isPending}
+              >
+                <Button
+                  type="primary"
+                  size="small"
+                  loading={bulkApproveMutation.isPending}
+                  className="!bg-emerald-600 hover:!bg-emerald-700 text-xs font-semibold !rounded-lg"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Ommaviy Qabul Qilish ({selectedRowKeys.length})</span>
+                </Button>
+              </Popconfirm>
+
+              <Button
+                danger
+                size="small"
+                onClick={() => {
+                  setBulkRejectReason("");
+                  setBulkRejectModalOpen(true);
+                }}
+                className="text-xs font-semibold !rounded-lg"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Ommaviy Rad Etish ({selectedRowKeys.length})</span>
+              </Button>
+
+              <Button
+                size="small"
+                onClick={() => setSelectedRowKeys([])}
+                className="text-xs font-medium !rounded-lg"
+              >
+                Tanlovni bekor qilish
+              </Button>
+            </div>
+          </div>
+        )}
+
         <Table
           dataSource={filteredItems}
           columnDefs={columns}
           isLoading={isLoading}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (newSelectedKeys) => setSelectedRowKeys(newSelectedKeys),
+          }}
           page={currentPage}
           pageSize={pageSize}
           total={totalProducts}
@@ -1261,6 +1415,110 @@ const Products = () => {
             />
           </div>
         </div>
+      </Modal>
+
+      {/* Bulk Reject Modal */}
+      <Modal
+        title="Ommaviy Rad Etish"
+        open={bulkRejectModalOpen}
+        onCancel={() => {
+          setBulkRejectModalOpen(false);
+          setBulkRejectReason("");
+        }}
+        onOk={() => {
+          if (!bulkRejectReason.trim()) {
+            message.warning("Rad etish sababini kiriting!");
+            return;
+          }
+          bulkRejectMutation.mutate({
+            listingIds: selectedRowKeys,
+            reason: bulkRejectReason.trim(),
+          });
+        }}
+        confirmLoading={bulkRejectMutation.isPending}
+        okText={`Rad etish (${selectedRowKeys.length} ta)`}
+        cancelText="Bekor"
+        okButtonProps={{ danger: true }}
+      >
+        <div className="py-2 space-y-3">
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+            Tanlangan <strong>{selectedRowKeys.length} ta</strong> e'lon rad etiladi va egalariga sabab yuboriladi.
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700">Umumiy rad etish sababi:</label>
+            <Input.TextArea
+              rows={3}
+              value={bulkRejectReason}
+              onChange={(e) => setBulkRejectReason(e.target.value)}
+              placeholder="Masalan: Sayt qoidalariga mos kelmasligi sababli ommaviy rad etildi..."
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Safe Revert Status (Compensating Undo) Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <Undo2 className="w-4 h-4 text-amber-600" />
+            <span>E'lon Holatini Qaytarish (Revert)</span>
+          </div>
+        }
+        open={revertModalOpen}
+        onCancel={() => {
+          setRevertModalOpen(false);
+          setRevertTargetListing(null);
+          setRevertReason("");
+        }}
+        onOk={() => {
+          if (!revertReason.trim()) {
+            message.warning("Holatni qaytarish sababi yoki admin izohini kiriting!");
+            return;
+          }
+          revertStatusMutation.mutate({
+            id: revertTargetListing.id,
+            targetStatus: revertTargetStatus,
+            reason: revertReason.trim(),
+          });
+        }}
+        confirmLoading={revertStatusMutation.isPending}
+        okText="Holatni Qaytarish"
+        cancelText="Bekor"
+      >
+        {revertTargetListing && (
+          <div className="py-2 space-y-3 text-xs">
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <div className="font-bold text-slate-900 truncate">
+                #{revertTargetListing.id} — {revertTargetListing.title}
+              </div>
+              <div className="text-slate-500 mt-1">
+                Joriy holat: <Tag color="default" className="font-bold">{revertTargetListing.status}</Tag>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700">Qaytariladigan yangi holat:</label>
+              <Select
+                value={revertTargetStatus}
+                onChange={setRevertTargetStatus}
+                className="w-full"
+              >
+                <Select.Option value="pending">Kutilmoqda (Qayta moderatsiyaga)</Select.Option>
+                <Select.Option value="active">Faol (Saytda e'lon qilish)</Select.Option>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700">Audit va Ma'muriy Izoh (Sabab):</label>
+              <Input.TextArea
+                rows={3}
+                value={revertReason}
+                onChange={(e) => setRevertReason(e.target.value)}
+                placeholder="Qarorni qaytarish asosi (masalan: Moderatsiya xatosi tuzatildi yoki sotuvchi bilan kelishildi)..."
+              />
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

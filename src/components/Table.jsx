@@ -24,6 +24,7 @@ const AppTable = ({
   size = "middle",
   onRow,
   rowClassName,
+  rowSelection,
 }) => {
   return (
     <div className="w-full bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
@@ -37,6 +38,7 @@ const AppTable = ({
         loading={isLoading}
         scroll={scroll}
         onRow={onRow}
+        rowSelection={rowSelection}
         rowClassName={rowClassName || (() => "transition-colors duration-100 hover:bg-slate-50/80")}
         pagination={
           page !== undefined && pageSize !== undefined
