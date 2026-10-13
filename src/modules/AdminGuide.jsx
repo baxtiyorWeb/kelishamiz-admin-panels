@@ -26,6 +26,7 @@ import {
   Activity,
   Check,
   CreditCard,
+  ChevronRight
 } from "lucide-react";
 
 export const AdminGuide = () => {
