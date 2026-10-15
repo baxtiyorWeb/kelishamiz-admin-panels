@@ -485,6 +485,12 @@ export default function SystemSettings() {
           >
             Do'konlar: {getValue("shop_creation_enabled", true) ? "ON" : "OFF"}
           </Tag>
+          <Tag
+            color={getValue("shop_phone_verification_required", true) ? "processing" : "default"}
+            className="!rounded px-2 py-0.5 text-[10px] font-mono m-0"
+          >
+            SMS Do'kon: {getValue("shop_phone_verification_required", true) ? "Yoniq" : "O'chiq"}
+          </Tag>
         </div>
       </div>
 
@@ -1170,12 +1176,35 @@ export default function SystemSettings() {
                         desc: "Tadbirkorlar tomonidan yangi rasmiy do'kon ochish.",
                         control: (
                           <Switch
+                            checkedChildren="Yoniq"
+                            unCheckedChildren="O'chiq"
                             checked={getValue("shop_creation_enabled", true)}
                             onChange={() =>
                               handleToggle(
                                 "shop_creation_enabled",
                                 getValue("shop_creation_enabled", true),
                                 "Do'kon Ochish"
+                              )
+                            }
+                          />
+                        ),
+                      })}
+
+                      {renderSettingRow({
+                        icon: Smartphone,
+                        name: "Do'kon Ochishda Raqamni Tasdiqlash",
+                        keyName: "shop_phone_verification_required",
+                        desc: "Do'kon ochishda telefon raqamini SMS kod orqali tasdiqlash talabi.",
+                        control: (
+                          <Switch
+                            checkedChildren="Yoniq"
+                            unCheckedChildren="O'chiq"
+                            checked={getValue("shop_phone_verification_required", true)}
+                            onChange={() =>
+                              handleToggle(
+                                "shop_phone_verification_required",
+                                getValue("shop_phone_verification_required", true),
+                                "Do'kon raqamini tasdiqlash"
                               )
                             }
                           />
