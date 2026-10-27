@@ -51,6 +51,9 @@ const { TextArea } = Input;
 const UserRole = {
   USER: "USER",
   ADMIN: "ADMIN",
+  SUPER_ADMIN: "SUPER_ADMIN",
+  MODERATOR: "MODERATOR",
+  SUPPORT: "SUPPORT",
 };
 
 const Users = () => {
@@ -60,6 +63,21 @@ const Users = () => {
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleTab, setRoleTab] = useState("all");
+  const [updatingRoleId, setUpdatingRoleId] = useState(null);
+
+  const { data: meData } = useQuery({
+    queryKey: ["admin-me"],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/admin/auth/me");
+        return res.data;
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 60000,
+  });
+  const currentAdminRole = meData?.role || "ADMIN";
 
   // Modals state
   const [messageModalVisible, setMessageModalVisible] = useState(false);
@@ -115,7 +133,7 @@ const Users = () => {
   // Stats calculation
   const stats = useMemo(() => {
     const total = totalUsers || userItems.length;
-    const admins = userItems.filter((u) => u.role === "ADMIN").length;
+    const admins = userItems.filter((u) => u.role === "ADMIN" || u.role === "SUPER_ADMIN").length;
     const blocked = userItems.filter((u) => u.isBlocked).length;
     const spam = userItems.filter((u) => u.isSpam).length;
 
@@ -130,15 +148,23 @@ const Users = () => {
 
   const { mutate: updateUserRole } = useMutation({
     mutationFn: async ({ id, newRole }) => {
-      const response = await api.patch(`/users/${id}/role`, { role: newRole });
+      setUpdatingRoleId(id);
+      const response = await api.patch(`/admin/users/${id}/role`, { role: newRole });
       return response.data;
     },
-    onSuccess: () => {
-      message.success("Foydalanuvchi roli muvaffaqiyatli yangilandi");
+    onSuccess: (res) => {
+      message.success(res?.message || "Foydalanuvchi roli muvaffaqiyatli yangilandi");
       refetch();
     },
-    onError: () => {
-      message.error("Foydalanuvchi rolini yangilashda xatolik yuz berdi.");
+    onError: (err) => {
+      const errorMsg =
+        err?.response?.data?.message ||
+        "Foydalanuvchi rolini yangilashda xatolik yuz berdi.";
+      message.error(errorMsg);
+      refetch();
+    },
+    onSettled: () => {
+      setUpdatingRoleId(null);
     },
   });
 
@@ -280,8 +306,10 @@ const Users = () => {
             <Avatar
               size={40}
               className={`${
-                record.role === "ADMIN"
-                  ? "bg-gradient-to-tr from-purple-600 to-indigo-600 ring-2 ring-purple-200"
+                record.role === UserRole.SUPER_ADMIN
+                  ? "bg-gradient-to-tr from-amber-500 to-orange-500 ring-2 ring-amber-300 text-white"
+                  : record.role === UserRole.ADMIN
+                  ? "bg-gradient-to-tr from-purple-600 to-indigo-600 ring-2 ring-purple-200 text-white"
                   : "bg-indigo-100 text-indigo-700"
               } font-black text-sm flex-shrink-0 shadow-xs`}
             >
@@ -293,7 +321,12 @@ const Users = () => {
                 onClick={() => navigate(`/users/${record.id}`)}
               >
                 <span>{username}</span>
-                {record.role === "ADMIN" && (
+                {record.role === UserRole.SUPER_ADMIN && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 font-extrabold text-[9px] border border-amber-300">
+                    <ShieldAlert className="w-2.5 h-2.5 text-amber-700" /> SUPER ADMIN
+                  </span>
+                )}
+                {record.role === UserRole.ADMIN && (
                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-md bg-purple-100 text-purple-700 font-extrabold text-[9px]">
                     <Shield className="w-2.5 h-2.5" /> ADMIN
                   </span>
@@ -324,21 +357,46 @@ const Users = () => {
       title: "Tizimdagi Roli",
       dataIndex: "role",
       key: "role",
-      width: 140,
-      render: (role, record) => (
-        <Select
-          defaultValue={role || "USER"}
-          onChange={(newRole) => updateUserRole({ id: record.id, newRole })}
-          className="w-28 !rounded-xl"
-        >
-          <Option value={UserRole.USER}>
-            <span className="font-bold text-xs text-slate-700">USER</span>
-          </Option>
-          <Option value={UserRole.ADMIN}>
-            <span className="font-bold text-xs text-purple-700">ADMIN</span>
-          </Option>
-        </Select>
-      ),
+      width: 170,
+      render: (role, record) => {
+        const isTargetSuperAdmin = record.role === UserRole.SUPER_ADMIN;
+        const canManageTarget =
+          currentAdminRole === UserRole.SUPER_ADMIN ||
+          (!isTargetSuperAdmin && currentAdminRole === UserRole.ADMIN);
+        const isLoading = updatingRoleId === record.id;
+
+        return (
+          <Select
+            value={role || UserRole.USER}
+            loading={isLoading}
+            disabled={isLoading || !canManageTarget}
+            onChange={(newRole) => updateUserRole({ id: record.id, newRole })}
+            className="w-36 !rounded-xl"
+            dropdownMatchSelectWidth={false}
+          >
+            <Option value={UserRole.USER}>
+              <span className="font-semibold text-xs text-slate-700">USER</span>
+            </Option>
+            <Option value={UserRole.ADMIN}>
+              <span className="font-bold text-xs text-purple-700">ADMIN</span>
+            </Option>
+            <Option
+              value={UserRole.SUPER_ADMIN}
+              disabled={currentAdminRole !== UserRole.SUPER_ADMIN}
+            >
+              <span className="font-bold text-xs text-amber-600">
+                SUPER ADMIN
+              </span>
+            </Option>
+            <Option value={UserRole.MODERATOR}>
+              <span className="font-semibold text-xs text-blue-600">MODERATOR</span>
+            </Option>
+            <Option value={UserRole.SUPPORT}>
+              <span className="font-semibold text-xs text-teal-600">SUPPORT</span>
+            </Option>
+          </Select>
+        );
+      },
     },
     {
       title: "Holat & Xavfsizlik",
