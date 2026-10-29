@@ -17,6 +17,7 @@ import {
   Tabs,
   Row,
   Col,
+  Popconfirm,
 } from "antd";
 import dayjs from "dayjs";
 import {
@@ -36,6 +37,7 @@ import {
   Calendar,
   Sparkles,
   ShoppingBag,
+  Trash2,
 } from "lucide-react";
 import { CompactStatCard } from "../components/CompactStatCard";
 
@@ -116,6 +118,23 @@ const Shops = () => {
     },
     onError: () => {
       message.error("Do'konni tasdiqlashda xatolik yuz berdi");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      return (await api.delete(`/admin/shops/${id}`)).data;
+    },
+    onSuccess: () => {
+      message.success("Do'kon muvaffaqiyatli o'chirildi!");
+      queryClient.invalidateQueries({ queryKey: ["adminShops"] });
+      if (isDetailModalOpen) {
+        setIsDetailModalOpen(false);
+        setSelectedShop(null);
+      }
+    },
+    onError: (err) => {
+      message.error(err?.response?.data?.message || "Do'konni o'chirishda xatolik yuz berdi");
     },
   });
 
@@ -275,6 +294,25 @@ const Shops = () => {
               <Eye className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
+
+          <Popconfirm
+            title="Do'konni o'chirish"
+            description="Haqiqatan ham ushbu do'konni o'chirmoqchimisiz? Barcha mahsulotlar do'kondan ajratiladi."
+            okText="Ha, o'chirish"
+            cancelText="Bekor qilish"
+            okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
+            onConfirm={() => deleteMutation.mutate(record.id)}
+          >
+            <Tooltip title="Do'konni o'chirish">
+              <button
+                type="button"
+                aria-label="Do'konni o'chirish"
+                className="btn-action-neutral hover:!text-rose-700 hover:!bg-rose-50 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+              </button>
+            </Tooltip>
+          </Popconfirm>
         </div>
       ),
     },
@@ -448,30 +486,49 @@ const Shops = () => {
               <span className="text-xs text-slate-400">
                 Yaratilgan: {dayjs(selectedShop.createdAt).format("YYYY-MM-DD HH:mm")}
               </span>
-              <button
-                type="button"
-                onClick={() => {
-                  verifyMutation.mutate(selectedShop.id);
-                  setIsDetailModalOpen(false);
-                }}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer ${
-                  selectedShop.isVerified
-                    ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
-                    : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30"
-                }`}
-              >
-                {selectedShop.isVerified ? (
-                  <>
-                    <XCircle className="w-4 h-4" />
-                    <span>Verifikatsiyani Bekor Qilish</span>
-                  </>
-                ) : (
-                  <>
-                    <BadgeCheck className="w-4 h-4" />
-                    <span>Rasmiy Verifikatsiya Berish</span>
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2">
+                <Popconfirm
+                  title="Do'konni o'chirish"
+                  description="Haqiqatan ham ushbu do'konni o'chirmoqchimisiz? Barcha mahsulotlar do'kondan ajratiladi."
+                  okText="Ha, o'chirish"
+                  cancelText="Bekor qilish"
+                  okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
+                  onConfirm={() => deleteMutation.mutate(selectedShop.id)}
+                >
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Do'konni O'chirish</span>
+                  </button>
+                </Popconfirm>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    verifyMutation.mutate(selectedShop.id);
+                    setIsDetailModalOpen(false);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer ${
+                    selectedShop.isVerified
+                      ? "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
+                      : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30"
+                  }`}
+                >
+                  {selectedShop.isVerified ? (
+                    <>
+                      <XCircle className="w-4 h-4" />
+                      <span>Verifikatsiyani Bekor Qilish</span>
+                    </>
+                  ) : (
+                    <>
+                      <BadgeCheck className="w-4 h-4" />
+                      <span>Rasmiy Verifikatsiya Berish</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           ) : null
         }
