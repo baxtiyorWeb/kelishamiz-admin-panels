@@ -147,6 +147,14 @@ const NAV_GROUPS = [
         desc: "Parametrlar & xususiyatlar",
       },
       {
+        path: "/product-parameters",
+        icon: TagIcon,
+        label: "Mahsulot Parametrlari",
+        desc: "Holat & to'lov (Kategoriyaga bog'lash)",
+        badge: "Yangi",
+        badgeColor: "bg-purple-100 text-purple-700",
+      },
+      {
         path: "/banners",
         icon: Sparkles,
         label: "Promo & Bannerlar",
