@@ -26,6 +26,7 @@ import OtpPolicyManagement from "../modules/OtpPolicyManagement";
 import SecurityOperationsCenter from "../modules/SecurityOperationsCenter";
 import AdminGuide from "../modules/AdminGuide";
 import PlatformHealth from "../modules/PlatformHealth";
+import ProductParameters from "../modules/ProductParameters";
 
 export const AppRouter = () => {
   return (
@@ -44,6 +45,7 @@ export const AppRouter = () => {
         <Route path="/soc" element={<SecurityOperationsCenter />} />
         <Route path="/security-center" element={<SecurityOperationsCenter />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/product-parameters" element={<ProductParameters />} />
         <Route path="/shops" element={<Shops />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/categories" element={<Category />} />

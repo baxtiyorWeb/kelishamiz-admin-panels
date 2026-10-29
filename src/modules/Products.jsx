@@ -536,22 +536,50 @@ const Products = () => {
       },
     },
     {
-      title: "Narxi",
+      title: "Narxi & To'lov",
       key: "price",
-      width: 160,
-      render: (_, record) => (
-        <div className="flex flex-col">
-          <div className="font-black text-slate-900 text-sm tracking-tight flex items-center gap-1">
-            <span>{Number(record.price || 0).toLocaleString("uz-UZ")}</span>
-            <span className="text-xs text-slate-500 font-bold">{record.currencyType || "UZS"}</span>
+      width: 175,
+      render: (_, record) => {
+        const isFree = record.paymentType === "Tekin" || record.paymentType === "Bepul";
+        const isExchange = record.paymentType === "Almashtirish" || record.paymentType === "Ayirboshlash";
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="font-black text-slate-900 text-sm tracking-tight flex items-center gap-1">
+              {isFree ? (
+                <span className="text-emerald-600 font-extrabold text-xs bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                  🎁 Tekin / Bepul
+                </span>
+              ) : isExchange ? (
+                <span className="text-purple-600 font-extrabold text-xs bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md">
+                  🔄 Almashtirish
+                </span>
+              ) : (
+                <>
+                  <span>{Number(record.price || 0).toLocaleString("uz-UZ")}</span>
+                  <span className="text-xs text-slate-500 font-bold">{record.currencyType || "UZS"}</span>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-1 flex-wrap">
+              {record.condition && (
+                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md">
+                  🏷️ {record.condition}
+                </span>
+              )}
+              {record.paymentType && !isFree && !isExchange && record.paymentType !== "Pullik" && (
+                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md">
+                  💳 {record.paymentType}
+                </span>
+              )}
+              {record.negotiable && (
+                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md">
+                  🤝 Kelishiladi
+                </span>
+              )}
+            </div>
           </div>
-          {record.negotiable && (
-            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded-md w-max mt-0.5">
-              🤝 Kelishiladi
-            </span>
-          )}
-        </div>
-      ),
+        );
+      },
     },
     {
       title: "Sotuvchi",

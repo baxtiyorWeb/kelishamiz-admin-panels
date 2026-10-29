@@ -314,7 +314,16 @@ const UserDetail = () => {
           <Tag color="blue" className="!rounded px-2 py-0.5 font-semibold text-xs m-0">
             360° PROFIL #{user.id}
           </Tag>
-          <Tag color={user.role === "ADMIN" ? "red" : "geekblue"} className="!rounded px-2 py-0.5 font-semibold text-xs m-0">
+          <Tag
+            color={
+              user.role === "SUPER_ADMIN"
+                ? "gold"
+                : user.role === "ADMIN"
+                ? "purple"
+                : "geekblue"
+            }
+            className="!rounded px-2 py-0.5 font-bold text-xs m-0"
+          >
             {user.role}
           </Tag>
         </div>
