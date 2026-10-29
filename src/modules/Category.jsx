@@ -367,11 +367,18 @@ const CategoryPage = () => {
   );
 
   const handleBack = useCallback(() => {
-    const prev = history[history.length - 1];
-    setSelectedId(prev !== undefined ? prev : null);
-    setHistory((h) => h.slice(0, -1));
+    if (history.length > 0) {
+      const prev = history[history.length - 1];
+      setSelectedId(prev !== undefined ? prev : null);
+      setHistory((h) => h.slice(0, -1));
+    } else if (selectedId !== null) {
+      const currentCat = allCategories?.find((c) => c.id === selectedId);
+      const parentId = currentCat?.parentId ?? currentCat?.parent?.id ?? null;
+      setSelectedId(parentId);
+      setHistory([]);
+    }
     setSelectedCatForProps(null);
-  }, [history]);
+  }, [history, selectedId, allCategories]);
 
   const handleInlineAdd = useCallback(() => {
     const name = inlineName.trim();
@@ -413,7 +420,7 @@ const CategoryPage = () => {
     createPropertyMutation.mutate({
       name: inlinePropData.name.trim(),
       type: inlinePropData.type,
-      categoryId: String(selectedCatForProps.id),
+      categoryId: Number(selectedCatForProps.id),
       options: inlinePropData.type === "SELECT" ? inlinePropData.options : [],
     });
   }, [selectedCatForProps, inlinePropData, createPropertyMutation]);
@@ -714,8 +721,13 @@ const CategoryPage = () => {
             }}
             className="cursor-text"
           >
-            <div className="font-extrabold text-slate-900 text-sm hover:text-indigo-600 transition-colors">
-              {name}
+            <div
+              onClick={() => handleDrill(cat)}
+              className="font-extrabold text-slate-900 text-sm hover:text-indigo-600 transition-colors cursor-pointer flex items-center gap-1.5 group"
+              title="Ichki bo'limlariga o'tish"
+            >
+              <span>{name}</span>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
             </div>
             {cat.parent && <div className="text-[11px] text-slate-400 mt-0.5">↳ {cat.parent.name}</div>}
           </div>
@@ -866,7 +878,7 @@ const CategoryPage = () => {
       {/* Top Header Card */}
       <div className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          {history.length > 0 && (
+          {(selectedId !== null || history.length > 0) && (
             <button
               type="button"
               onClick={handleBack}
@@ -983,9 +995,20 @@ const CategoryPage = () => {
         </Col>
       </Row>
 
-      {/* Breadcrumb path toolbar */}
       <div className="px-5 py-3 enterprise-card flex items-center justify-between flex-wrap gap-3">
-        <Breadcrumb
+        <div className="flex items-center gap-3 flex-wrap">
+          {(selectedId !== null || history.length > 0) && (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs transition-all cursor-pointer shadow-xs active:scale-95"
+              title="Bitta orqaga qaytish"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Orqaga</span>
+            </button>
+          )}
+          <Breadcrumb
           items={[
             {
               title: (
@@ -1023,6 +1046,7 @@ const CategoryPage = () => {
             })),
           ]}
         />
+        </div>
 
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
