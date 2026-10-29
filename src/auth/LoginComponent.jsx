@@ -31,6 +31,9 @@ const LoginComponent = () => {
   const [countdown, setCountdown] = useState(0);
   const [success, setSuccess] = useState("");
   const [responseCode, setResponseCode] = useState("");
+  const [mfaToken, setMfaToken] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [isBackupCode, setIsBackupCode] = useState(false);
 
   // Fetch regions when step becomes register
   useEffect(() => {
@@ -169,10 +172,36 @@ const LoginComponent = () => {
           setError(verifyRes.data?.message || "OTP kodi noto'g'ri yoki muddati o'tgan.");
         }
       } else {
-        const loginRes = await api.post("/auth/login/verify-otp", {
-          phone: `+${phoneDigits}`,
-          code: otpCode,
-        });
+        let loginRes;
+        try {
+          loginRes = await api.post("/admin/auth/login", {
+            phone: `+${phoneDigits}`,
+            otp: otpCode,
+          });
+        } catch (adminErr) {
+          if (adminErr?.response?.status === 423) {
+            setError(
+              adminErr.response?.data?.message ||
+              "Xavfsizlik: Hisob bir nechta noto'g'ri urinishlar sababli 15 daqiqaga bloklangan.",
+            );
+            setLoading(false);
+            return;
+          }
+          loginRes = await api.post("/auth/login/verify-otp", {
+            phone: `+${phoneDigits}`,
+            code: otpCode,
+          });
+        }
+
+        if (loginRes.data?.requiresMfa) {
+          setMfaToken(loginRes.data.mfaToken);
+          setStep("mfa");
+          setSuccess(
+            "Ikki bosqichli autentifikatsiya (MFA) faol. Authenticator yoki zaxira kodini kiriting.",
+          );
+          setLoading(false);
+          return;
+        }
 
         const token = loginRes.data?.accessToken || loginRes.data?.content?.accessToken;
         const refreshToken = loginRes.data?.refreshToken || loginRes.data?.content?.refreshToken;
@@ -203,6 +232,43 @@ const LoginComponent = () => {
       return;
     }
     executeLogin(responseCode || code, phone, isNewUser);
+  };
+
+  const handleVerifyMfa = async () => {
+    if (!mfaCode.trim()) {
+      setError("Iltimos, tasdiqlash kodini kiriting");
+      return;
+    }
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await api.post("/admin/auth/mfa/verify", {
+        mfaToken,
+        code: mfaCode.trim(),
+      });
+
+      const token = res.data?.accessToken;
+      const refreshToken = res.data?.refreshToken;
+
+      if (token) {
+        localStorage.setItem("accessToken", token);
+        if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+        setSuccess("MFA tasdiqlandi! Boshqaruv paneliga yo'naltirilmoqda...");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 800);
+      } else {
+        setError("Autentifikatsiya kodi noto'g'ri.");
+      }
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+        "2FA kodi noto'g'ri yoki muddati o'tgan. Qaytadan urinib ko'ring.",
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreateAccount = async () => {
@@ -340,11 +406,13 @@ const LoginComponent = () => {
             <h2 className="text-lg font-bold text-white">
               {step === "phone" && "Tizimga Kirish"}
               {step === "otp" && "SMS Tasdiqlash"}
+              {step === "mfa" && "2FA Himoya (TOTP)"}
               {step === "register" && "Admin Ma'lumotlari"}
             </h2>
             <p className="text-xs text-indigo-100/80 mt-0.5">
               {step === "phone" && "Telefon raqamingizni kiritib tasdiqlang"}
               {step === "otp" && "SMS orqali yuborilgan 6 xonali kod"}
+              {step === "mfa" && (isBackupCode ? "Zaxira tiklash kodini kiriting" : "Authenticator ilovangizdagi 6 xonali kod")}
               {step === "register" && "Yangi administrator hisobini to'ldiring"}
             </p>
           </div>
@@ -464,6 +532,59 @@ const LoginComponent = () => {
                     Kodni qayta yuborish
                   </button>
                 )}
+              </div>
+            </div>
+          )}
+
+          {step === "mfa" && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  {isBackupCode ? "Zaxira (Backup) Kodingiz" : "Authenticator 6 xonali kodi"}
+                </label>
+                <div className="relative">
+                  <Shield className="w-5 h-5 text-indigo-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value)}
+                    placeholder={isBackupCode ? "XXXX-XXXX" : "123456"}
+                    maxLength={isBackupCode ? 16 : 8}
+                    disabled={loading}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-indigo-200 bg-indigo-50/30 focus:bg-white text-slate-900 font-mono font-bold text-center tracking-widest text-base outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleVerifyMfa}
+                disabled={loading || !mfaCode.trim()}
+                className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>2FA Tasdiqlash & Kirish</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              <div className="text-center mt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBackupCode(!isBackupCode);
+                    setMfaCode("");
+                    setError("");
+                  }}
+                  className="text-xs font-bold text-indigo-600 hover:underline"
+                >
+                  {isBackupCode
+                    ? "← Authenticator ilovasi kodidan foydalanish"
+                    : "Zaxira (backup recovery) kodidan foydalanish"}
+                </button>
               </div>
             </div>
           )}
