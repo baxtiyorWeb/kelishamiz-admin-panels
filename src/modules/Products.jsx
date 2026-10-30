@@ -23,6 +23,7 @@ import {
   Tabs,
   Row,
   Col,
+  Switch,
 } from "antd";
 import dayjs from "dayjs";
 import {
@@ -42,6 +43,7 @@ import {
   Heart,
   ExternalLink,
   ShieldCheck,
+  ShieldAlert,
   AlertTriangle,
   Clock,
   Sparkles,
@@ -138,6 +140,12 @@ const Products = () => {
   const [rejectTargetListing, setRejectTargetListing] = useState(null);
   const [rejectReasonType, setRejectReasonType] = useState("Talablarga javob bermaydi");
   const [rejectCustomReason, setRejectCustomReason] = useState("");
+  const [moderation18ModalOpen, setModeration18ModalOpen] = useState(false);
+  const [moderationTargetListing, setModerationTargetListing] = useState(null);
+  const [modContentRating, setModContentRating] = useState("GENERAL");
+  const [modIsAgeRestricted, setModIsAgeRestricted] = useState(false);
+  const [modDecisionStatus, setModDecisionStatus] = useState("APPROVED");
+  const [modReason, setModReason] = useState("");
   const [form] = Form.useForm();
 
   // Fetch products list via Admin Listings API with server-side pagination, status filter, and search
@@ -149,10 +157,13 @@ const Products = () => {
   } = useQuery({
     queryKey: ["admin-listings", page, pageSize, statusTab, searchFilter],
     queryFn: async () => {
-      const statusParam = statusTab === "all" || statusTab === "top" ? "" : statusTab;
-      const response = await api.get(
-        `/admin/listings?page=${page}&limit=${pageSize}&status=${statusParam}&search=${encodeURIComponent(searchFilter)}`
-      );
+      let url = `/admin/listings?page=${page}&limit=${pageSize}&search=${encodeURIComponent(searchFilter)}`;
+      if (statusTab === "adult_queue") {
+        url += `&contentRating=ADULT`;
+      } else if (statusTab !== "all" && statusTab !== "top") {
+        url += `&status=${statusTab}`;
+      }
+      const response = await api.get(url);
       if (response.status !== 200 || !response.data) {
         throw new Error("Network response was not ok");
       }
@@ -217,8 +228,43 @@ const Products = () => {
       pending: kpi?.pendingListings ?? productItems.filter((p) => p.status === "pending").length,
       active: kpi?.activeListings ?? productItems.filter((p) => p.status === "active").length,
       top: productItems.filter((p) => p.isTop).length,
+      adult: productItems.filter((p) => p.contentRating === "ADULT" || p.isAgeRestricted).length,
     };
   }, [dashboardStatsData, totalProducts, productItems]);
+
+  // Dedicated 18+ Moderation Decision Mutation
+  const { mutate: submitModerationDecision, isPending: isSubmittingModeration } = useMutation({
+    mutationFn: async ({ id, status, contentRating, isAgeRestricted, reason }) => {
+      const response = await api.post(`/admin/listings/${id}/moderate`, {
+        status,
+        contentRating,
+        isAgeRestricted,
+        reason,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      message.success("18+ Moderatsiya qarori muvaffaqiyatli saqlandi va audit logda qayd etildi.");
+      setModeration18ModalOpen(false);
+      setModerationTargetListing(null);
+      refetchProducts();
+      refetchStats();
+      queryClient.invalidateQueries(["admin-listings"]);
+    },
+    onError: (error) => {
+      const serverMessage = get(error, "response.data.message");
+      message.error(serverMessage || "Moderatsiya qarorini saqlashda xatolik yuz berdi.");
+    },
+  });
+
+  const openModerationModal = (listing) => {
+    setModerationTargetListing(listing);
+    setModContentRating(listing.contentRating || (listing.isAgeRestricted ? "ADULT" : "GENERAL"));
+    setModIsAgeRestricted(Boolean(listing.isAgeRestricted || listing.contentRating === "ADULT"));
+    setModDecisionStatus(listing.moderationStatus || "APPROVED");
+    setModReason(listing.moderationReason || "");
+    setModeration18ModalOpen(true);
+  };
 
   // Approve listing mutation
   const { mutate: approveListing } = useMutation({
@@ -638,6 +684,31 @@ const Products = () => {
       },
     },
     {
+      title: "18+ Reyting",
+      key: "contentRating",
+      width: 135,
+      render: (_, record) => {
+        const isAdult = record.contentRating === "ADULT" || record.isAgeRestricted;
+        return (
+          <div
+            onClick={() => openModerationModal(record)}
+            className="cursor-pointer inline-flex items-center gap-1"
+          >
+            {isAdult ? (
+              <Tag color="red" className="font-extrabold flex items-center gap-1 px-2 py-0.5 rounded-lg border-red-300">
+                <ShieldAlert className="w-3.5 h-3.5 text-red-600" />
+                <span>🔞 18+ Adult</span>
+              </Tag>
+            ) : (
+              <Tag color="default" className="font-medium text-slate-500 px-2 py-0.5 rounded-lg hover:border-slate-400">
+                General
+              </Tag>
+            )}
+          </div>
+        );
+      },
+    },
+    {
       title: "Tezkor Moderatsiya",
       key: "quick_actions",
       width: 180,
@@ -727,7 +798,7 @@ const Products = () => {
     {
       title: "Amallar",
       key: "actions",
-      width: 120,
+      width: 150,
       fixed: "right",
       render: (_, record) => (
         <div className="flex items-center gap-1">
@@ -742,6 +813,17 @@ const Products = () => {
               className="btn-action-neutral hover:!text-blue-700 hover:!bg-blue-50"
             >
               <Eye className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
+
+          <Tooltip title="18+ Moderatsiya tekshiruvi & qarori">
+            <button
+              type="button"
+              aria-label="18+ Moderatsiya qarori"
+              onClick={() => openModerationModal(record)}
+              className="btn-action-neutral hover:!text-purple-700 hover:!bg-purple-50"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-purple-600" />
             </button>
           </Tooltip>
 
@@ -915,6 +997,15 @@ const Products = () => {
                   <span className="font-bold text-amber-600 flex items-center gap-1.5">
                     <Clock className="w-4 h-4 text-amber-500" />
                     Kutilmoqda ({stats.pending})
+                  </span>
+                ),
+              },
+              {
+                key: "adult_queue",
+                label: (
+                  <span className="font-bold text-rose-600 flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-rose-500" />
+                    🔞 18+ Moderatsiya ({stats.adult})
                   </span>
                 ),
               },
@@ -1541,6 +1632,274 @@ const Products = () => {
                 onChange={(e) => setRevertReason(e.target.value)}
                 placeholder="Qarorni qaytarish asosi (masalan: Moderatsiya xatosi tuzatildi yoki sotuvchi bilan kelishildi)..."
               />
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Dedicated 18+ Content Moderation Queue Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-black text-slate-900 text-base">
+                🔞 18+ Kontent Moderatsiyasi & Tekshiruvi
+              </span>
+              {moderationTargetListing && (
+                <div className="text-xs text-slate-500 font-normal">
+                  ID: #{moderationTargetListing.id} • {moderationTargetListing.category?.name || "Kategoriya"}
+                </div>
+              )}
+            </div>
+          </div>
+        }
+        open={moderation18ModalOpen}
+        onCancel={() => {
+          setModeration18ModalOpen(false);
+          setModerationTargetListing(null);
+        }}
+        footer={
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
+            <Button
+              onClick={() => {
+                setModeration18ModalOpen(false);
+                setModerationTargetListing(null);
+              }}
+            >
+              Bekor qilish
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="primary"
+                danger={modDecisionStatus === "REJECTED" || modDecisionStatus === "REMOVED"}
+                loading={isSubmittingModeration}
+                onClick={() => {
+                  if ((modDecisionStatus === "REJECTED" || modDecisionStatus === "REMOVED") && !modReason.trim()) {
+                    message.warning("Rad etish yoki olib tashlash uchun izoh / sabab kiritish majburiy!");
+                    return;
+                  }
+                  submitModerationDecision({
+                    id: moderationTargetListing.id,
+                    status: modDecisionStatus,
+                    contentRating: modContentRating,
+                    isAgeRestricted: modIsAgeRestricted,
+                    reason: modReason.trim(),
+                  });
+                }}
+                className="font-bold"
+              >
+                Qarorni Tasdiqlash & Saqlash
+              </Button>
+            </div>
+          </div>
+        }
+        width={780}
+        className="!rounded-2xl"
+      >
+        {moderationTargetListing && (
+          <div className="py-2 space-y-4 text-xs max-h-[75vh] overflow-y-auto pr-1">
+            {/* Basic product info cards */}
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <span className="text-slate-400 font-bold block text-[10px] uppercase">Mahsulot nomi</span>
+                <span className="font-extrabold text-slate-900 text-sm leading-snug block mt-0.5">
+                  {moderationTargetListing.title}
+                </span>
+                <span className="text-slate-500 text-[11px] block mt-1">
+                  Yaratilgan sana: {dayjs(moderationTargetListing.createdAt).format("DD.MM.YYYY HH:mm")}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-bold block text-[10px] uppercase">E'lon Muallifi</span>
+                <div className="mt-0.5">
+                  <UserReference
+                    user={{
+                      id: moderationTargetListing.profile?.user?.id || moderationTargetListing.userId,
+                      fullName: moderationTargetListing.profile?.fullName,
+                      username: moderationTargetListing.profile?.user?.username,
+                      phoneNumber: moderationTargetListing.profile?.phone || moderationTargetListing.profile?.user?.phone,
+                    }}
+                    id={moderationTargetListing.profile?.user?.id || moderationTargetListing.userId}
+                    fallbackName={moderationTargetListing.profile?.fullName || "Muallif"}
+                    size="sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <span className="text-slate-400 font-bold block text-[10px] uppercase mb-1">Mahsulot tavsifi</span>
+              <p className="text-slate-700 text-xs whitespace-pre-wrap m-0 leading-relaxed max-h-36 overflow-y-auto">
+                {moderationTargetListing.description || "Tavsif kiritilmagan"}
+              </p>
+            </div>
+
+            {/* Images for Moderator Review (Always unblurred for authenticated moderator) */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-slate-500" />
+                  Mahsulot Rasmlari (Moderator Ko'rigi - Unblurred Original)
+                </span>
+                <span className="text-slate-400 text-[11px]">
+                  {Array.isArray(moderationTargetListing.images) ? moderationTargetListing.images.length : 0} ta rasm
+                </span>
+              </div>
+              <Image.PreviewGroup>
+                <div className="flex flex-wrap gap-2.5 p-3 bg-slate-950/5 rounded-2xl border border-dashed border-slate-200">
+                  {Array.isArray(moderationTargetListing.images) && moderationTargetListing.images.length > 0 ? (
+                    moderationTargetListing.images.map((img, idx) => {
+                      const imgUrl = typeof img === "string" ? img : img?.url || img?.path;
+                      return (
+                        <div key={idx} className="relative rounded-xl overflow-hidden border border-slate-200 bg-white">
+                          <Image
+                            src={imgUrl}
+                            width={110}
+                            height={110}
+                            className="object-cover rounded-xl"
+                            alt={`Product image ${idx + 1}`}
+                          />
+                          <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[9px] px-1 rounded font-mono">
+                            #{idx + 1}
+                          </span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-slate-400 py-4 text-center w-full">Rasm mavjud emas</div>
+                  )}
+                </div>
+              </Image.PreviewGroup>
+            </div>
+
+            {/* Current status display */}
+            <div className="p-3 bg-amber-50/60 border border-amber-200 rounded-xl grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-amber-800/80 font-bold block text-[10px] uppercase">Hozirgi moderatsiya statusi</span>
+                <Tag color="orange" className="font-bold mt-1">
+                  {moderationTargetListing.moderationStatus || moderationTargetListing.status || "PENDING"}
+                </Tag>
+              </div>
+              <div>
+                <span className="text-amber-800/80 font-bold block text-[10px] uppercase">Hozirgi yosh reytingi</span>
+                <Tag color={moderationTargetListing.contentRating === "ADULT" ? "red" : "default"} className="font-bold mt-1">
+                  {moderationTargetListing.contentRating || (moderationTargetListing.isAgeRestricted ? "ADULT" : "GENERAL")}
+                </Tag>
+              </div>
+              {moderationTargetListing.moderationReason && (
+                <div className="col-span-2 mt-1 pt-1 border-t border-amber-200/60">
+                  <span className="text-amber-900 font-bold text-[10px]">Oldingi moderator izohi:</span>
+                  <p className="text-amber-900 text-xs m-0 mt-0.5">{moderationTargetListing.moderationReason}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Moderator Action Controls */}
+            <div className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-3.5">
+              <span className="font-extrabold text-slate-900 text-sm block border-b pb-2">
+                Moderator Qarorini Belgilash
+              </span>
+
+              {/* Content Rating Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block text-xs">
+                    Kontent Yosh Reytingi (Content Rating):
+                  </label>
+                  <Select
+                    value={modContentRating}
+                    onChange={(val) => {
+                      setModContentRating(val);
+                      if (val === "ADULT") setModIsAgeRestricted(true);
+                      else setModIsAgeRestricted(false);
+                    }}
+                    className="w-full"
+                  >
+                    <Select.Option value="GENERAL">
+                      <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>GENERAL — Ommaviy / Umumiy kontent</span>
+                      </div>
+                    </Select.Option>
+                    <Select.Option value="ADULT">
+                      <div className="flex items-center gap-1.5 font-bold text-rose-600">
+                        <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+                        <span>ADULT_18_PLUS — 18+ Yosh chegarasi talab etiladi</span>
+                      </div>
+                    </Select.Option>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 block text-xs">
+                    18+ Avtomatik Xiralashtirish (Blur & Age Gate):
+                  </label>
+                  <div className="flex items-center gap-2 pt-1.5">
+                    <Switch
+                      checked={modIsAgeRestricted}
+                      onChange={setModIsAgeRestricted}
+                    />
+                    <span className="text-xs font-semibold text-slate-600">
+                      {modIsAgeRestricted ? "Faol (Public feed xiralashtiriladi)" : "O'chiq (Oddiy ko'rsatiladi)"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Moderation Status Decision */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block text-xs">
+                  Moderatsiya Qarori (Status):
+                </label>
+                <Select
+                  value={modDecisionStatus}
+                  onChange={setModDecisionStatus}
+                  className="w-full"
+                >
+                  <Select.Option value="APPROVED">
+                    <div className="flex items-center gap-1.5 font-bold text-emerald-600">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>APPROVED — Tasdiqlash & Saytda e'lon qilish</span>
+                    </div>
+                  </Select.Option>
+                  <Select.Option value="NEEDS_REVIEW">
+                    <div className="flex items-center gap-1.5 font-bold text-amber-600">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>NEEDS_REVIEW — Qo'shimcha tekshiruv talab etiladi</span>
+                    </div>
+                  </Select.Option>
+                  <Select.Option value="REJECTED">
+                    <div className="flex items-center gap-1.5 font-bold text-rose-600">
+                      <XCircle className="w-3.5 h-3.5" />
+                      <span>REJECTED — Rad etish</span>
+                    </div>
+                  </Select.Option>
+                  <Select.Option value="REMOVED">
+                    <div className="flex items-center gap-1.5 font-bold text-red-700">
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>REMOVE — Qoidalarga zid kontentni butunlay olib tashlash</span>
+                    </div>
+                  </Select.Option>
+                </Select>
+              </div>
+
+              {/* Reason / Comment */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 block text-xs">
+                  Moderator Izohi va Audit Sababi:
+                </label>
+                <Input.TextArea
+                  rows={2}
+                  value={modReason}
+                  onChange={(e) => setModReason(e.target.value)}
+                  placeholder="Moderatsiya qarorining asosi, xavfsizlik tekshiruvi natijasi yoki rad etish sababi (audit logda qayd etiladi)..."
+                  className="!rounded-xl text-xs"
+                />
+              </div>
             </div>
           </div>
         )}
