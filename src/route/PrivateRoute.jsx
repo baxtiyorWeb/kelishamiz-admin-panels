@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import useAuthStore from "../store";
 
-const ALLOWED_ADMIN_ROLES = ["ADMIN", "SUPER_ADMIN", "MODERATOR", "SUPPORT"];
+const ALLOWED_ADMIN_ROLES = ["SUPER_ADMIN"];
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, user, fetchAdminProfile, logout } = useAuthStore();

@@ -1,253 +1,109 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Phone,
   Lock,
   User,
-  MapPin,
   ArrowRight,
   CheckCircle,
   AlertCircle,
   ChevronLeft,
   Shield,
-  Sparkles,
+  Eye,
+  EyeOff,
+  KeyRound,
 } from "lucide-react";
 import api from "../config/auth/api";
 
 const LoginComponent = () => {
-  const [phone, setPhone] = useState("");
-  const [step, setStep] = useState("phone"); // phone | otp | register
-  const [code, setCode] = useState("");
-  const [username, setUsername] = useState("");
-  const [regionId, setRegionId] = useState("");
-  const [districtId, setDistrictId] = useState("");
-  const [regions, setRegions] = useState([]);
-  const [districts, setDistricts] = useState([]);
+  const [loginIdentifier, setLoginIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [step, setStep] = useState("login"); // "login" | "mfa"
   const [error, setError] = useState("");
-  const [isNewUser, setIsNewUser] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(0);
   const [success, setSuccess] = useState("");
-  const [responseCode, setResponseCode] = useState("");
   const [mfaToken, setMfaToken] = useState("");
   const [mfaCode, setMfaCode] = useState("");
   const [isBackupCode, setIsBackupCode] = useState(false);
 
-  // Fetch regions when step becomes register
-  useEffect(() => {
-    if (step === "register") {
-      fetchRegionsData();
-    }
-  }, [step]);
-
-  const fetchRegionsData = async () => {
-    try {
-      const response = await api.get("/location/regions");
-      const data = await response.data;
-      if (data?.content) {
-        setRegions(data.content);
-      }
-    } catch (err) {
-      setError("Viloyatlarni yuklashda xatolik yuz berdi");
-    }
-  };
-
-  const handleRegionChange = (e) => {
-    const selectedRegionId = e.target.value;
-    setRegionId(selectedRegionId);
-    setDistrictId("");
-
-    const selectedRegion = regions.find((r) => r.id === parseInt(selectedRegionId));
-    setDistricts(selectedRegion ? selectedRegion.districts : []);
-  };
-
-  const formatPhoneNumber = (value) => {
-    const cleaned = value.replace(/\D/g, "");
-    const match = cleaned.match(/^(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})?/);
-    if (!match) return "";
-
-    return [match[1], match[2], match[3], match[4]].filter(Boolean).join(" ").trim();
-  };
-
-  const handleChange = (e) => {
-    const { value } = e.target;
-    const cleanedValue = value.replace("+998 ", "").replace(/\s/g, "");
-    const formatted = formatPhoneNumber(cleanedValue);
-    const finalValue = formatted ? `+998 ${formatted}` : "";
-    setPhone(finalValue);
-  };
-
-  useEffect(() => {
-    let timer;
-    if (countdown > 0 && step === "otp") {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [countdown, step]);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-  };
-
-  const handleSendPhone = async () => {
+  const handleLogin = async (e) => {
+    if (e) e.preventDefault();
     setError("");
-    setLoading(true);
+    setSuccess("");
 
-    const phoneDigits = phone.replace(/\D/g, "");
-    if (phoneDigits.length < 9) {
-      setError("Iltimos, to'g'ri telefon raqamini kiriting");
-      setLoading(false);
+    const cleanIdentifier = loginIdentifier.trim();
+    if (!cleanIdentifier) {
+      setError("Iltimos, login (username) yoki telefon raqamingizni kiriting.");
       return;
     }
 
+    if (!password) {
+      setError("Iltimos, parolingizni kiriting.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const checkRes = await api.post("/auth/check-phone", {
-        phone: `+${phoneDigits}`,
+      const response = await api.post("/admin/auth/login", {
+        login: cleanIdentifier,
+        password,
       });
-      setIsNewUser(!checkRes.data?.exists);
 
-      try {
-        const response = await api.post("/auth/send-otp", {
-          phone: `+${phoneDigits}`,
-        });
-        const incomingOtp =
-          response.data?.otp ||
-          response.data?.code ||
-          response.data?.content?.otp ||
-          response.data?.content?.code ||
-          "";
-
-        setStep("otp");
-        setCountdown(120);
-        setResponseCode(incomingOtp);
-
-        if (incomingOtp) {
-          setCode(incomingOtp);
-          setSuccess("Ruxsat berilgan raqam: Kod avtomatik to'ldirildi!");
-          // Avtomatik tizimga kirish
-          setTimeout(() => {
-            executeLogin(incomingOtp, `+${phoneDigits}`, !checkRes.data?.exists);
-          }, 600);
-        } else {
-          setSuccess("Tasdiqlash kodi yuborildi");
-        }
-      } catch (otpError) {
-        if (otpError?.response?.status === 409) {
-          setStep("otp");
-          setCountdown(120);
-          setError("Bu telefon raqam allaqachon ro'yxatdan o'tgan. OTP kodini kiriting.");
-        } else {
-          setError("OTP yuborishda xatolik yuz berdi. Qayta urinib ko'ring.");
-        }
+      if (response.data?.requiresMfa) {
+        setMfaToken(response.data.mfaToken);
+        setStep("mfa");
+        setSuccess("Ikki bosqichli autentifikatsiya (2FA) talab qilinadi.");
+        setLoading(false);
+        return;
       }
-    } catch (checkErr) {
-      setError("Telefon raqamini tekshirishda xatolik yuz berdi. Qayta urinib ko'ring.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const executeLogin = async (otpValue, targetPhone, isNew) => {
-    setError("");
-    setLoading(true);
+      const token =
+        response.data?.access_token ||
+        response.data?.accessToken ||
+        response.data?.content?.accessToken;
+      const refreshToken =
+        response.data?.refresh_token ||
+        response.data?.refreshToken ||
+        response.data?.content?.refreshToken;
+      const user = response.data?.user;
 
-    try {
-      const phoneDigits = (targetPhone || phone).replace(/\D/g, "");
-      const otpCode = otpValue || responseCode || code;
+      if (token) {
+        localStorage.setItem("accessToken", token);
+        if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+        if (user) localStorage.setItem("user", JSON.stringify(user));
+        setSuccess("Super Admin tasdiqlandi! Boshqaruv paneliga yo'naltirilmoqda...");
 
-      if (isNew) {
-        const verifyRes = await api.post("/auth/verify-otp", {
-          phone: `+${phoneDigits}`,
-          code: otpCode,
-        });
-
-        if (verifyRes.data?.success) {
-          setStep("register");
-          setSuccess("Kod tasdiqlandi. Iltimos, ma'lumotlaringizni kiriting");
-        } else {
-          setError(verifyRes.data?.message || "OTP kodi noto'g'ri yoki muddati o'tgan.");
-        }
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 600);
       } else {
-        try {
-          const loginRes = await api.post("/admin/auth/login", {
-            phone: `+${phoneDigits}`,
-            otp: otpCode,
-          });
-
-          if (loginRes.data?.requiresMfa) {
-            setMfaToken(loginRes.data.mfaToken);
-            setStep("mfa");
-            setSuccess(
-              "Ikki bosqichli autentifikatsiya (MFA) faol. Authenticator yoki zaxira kodini kiriting.",
-            );
-            setLoading(false);
-            return;
-          }
-
-          const token =
-            loginRes.data?.access_token ||
-            loginRes.data?.accessToken ||
-            loginRes.data?.content?.accessToken;
-          const refreshToken =
-            loginRes.data?.refresh_token ||
-            loginRes.data?.refreshToken ||
-            loginRes.data?.content?.refreshToken;
-          const user = loginRes.data?.user;
-
-          if (token) {
-            localStorage.setItem("accessToken", token);
-            if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
-            if (user) localStorage.setItem("user", JSON.stringify(user));
-            setSuccess("Muvaffaqiyatli kirildi! Yo'naltirilmoqda...");
-
-            setTimeout(() => {
-              window.location.href = "/";
-            }, 800);
-          } else {
-            setError(loginRes.data?.message || "Tizimga kirishda xatolik yuz berdi.");
-          }
-        } catch (adminErr) {
-          const status = adminErr?.response?.status;
-          const message = adminErr?.response?.data?.message;
-
-          if (status === 429) {
-            setError(
-              message || "Ko'p marotaba urinish qilindi. Iltimos, 1 daqiqadan so'ng qayta urinib ko'ring.",
-            );
-          } else if (status === 423) {
-            setError(
-              message || "Xavfsizlik: Hisob bir nechta noto'g'ri urinishlar sababli 15 daqiqaga bloklangan.",
-            );
-          } else if (status === 401) {
-            setError(message || "Kirish taqiqlangan. Admin huquqi talab qilinadi.");
-          } else {
-            setError(message || "Admin paneliga kirishda xatolik yuz berdi.");
-          }
-        }
+        setError(response.data?.message || "Tizimga kirishda xatolik yuz berdi.");
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || "OTP tekshirishda xatolik yuz berdi.";
-      setError(msg);
+      const status = err?.response?.status;
+      const message = err?.response?.data?.message;
+
+      if (status === 429) {
+        setError(
+          message || "Ko'p marotaba noto'g'ri urinish qilindi. Xavfsizlik tufayli hisob bloklandi yoki cheklov o'rnatildi.",
+        );
+      } else if (status === 401) {
+        setError(message || "Login yoki parol noto'g'ri. Admin huquqi talab qilinadi.");
+      } else {
+        setError(message || "Serverga ulanishda xatolik yuz berdi. Qaytadan urinib ko'ring.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = () => {
-    if (code.length < 4 && !responseCode) {
-      setError("Iltimos, to'g'ri kodni kiriting");
-      return;
-    }
-    executeLogin(responseCode || code, phone, isNewUser);
-  };
-
-  const handleVerifyMfa = async () => {
+  const handleVerifyMfa = async (e) => {
+    if (e) e.preventDefault();
     if (!mfaCode.trim()) {
-      setError("Iltimos, tasdiqlash kodini kiriting");
+      setError("Iltimos, tasdiqlash kodini kiriting.");
       return;
     }
     setError("");
@@ -274,10 +130,10 @@ const LoginComponent = () => {
         localStorage.setItem("accessToken", token);
         if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
         if (user) localStorage.setItem("user", JSON.stringify(user));
-        setSuccess("MFA tasdiqlandi! Boshqaruv paneliga yo'naltirilmoqda...");
+        setSuccess("2FA muvaffaqiyatli tasdiqlandi! Yo'naltirilmoqda...");
         setTimeout(() => {
           window.location.href = "/";
-        }, 800);
+        }, 600);
       } else {
         setError("Autentifikatsiya kodi noto'g'ri.");
       }
@@ -291,99 +147,10 @@ const LoginComponent = () => {
     }
   };
 
-  const handleCreateAccount = async () => {
-    setError("");
-    setLoading(true);
-
-    if (!username.trim()) {
-      setError("Iltimos, foydalanuvchi nomini kiriting");
-      setLoading(false);
-      return;
-    }
-
-    if (!regionId) {
-      setError("Iltimos, viloyatni tanlang");
-      setLoading(false);
-      return;
-    }
-
-    if (!districtId) {
-      setError("Iltimos, tumanni tanlang");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const phoneDigits = phone.replace(/\D/g, "");
-      const res = await api.post("/auth/create-account", {
-        phone: `+${phoneDigits}`,
-        username,
-        regionId: parseInt(regionId),
-        districtId: parseInt(districtId),
-      });
-
-      localStorage.setItem("accessToken", res.data?.content?.accessToken);
-      localStorage.setItem("refreshToken", res.data?.content?.refreshToken);
-
-      setSuccess("Hisobingiz muvaffaqiyatli yaratildi! Yo'naltirilmoqda...");
-
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 1000);
-    } catch (err) {
-      if (err?.response?.status === 409) {
-        setError("Bu telefon raqam allaqachon ro'yxatdan o'tgan.");
-      } else {
-        setError("Hisob yaratishda xato. Qayta urinib ko'ring.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (countdown > 0) return;
-
-    setError("");
-    setLoading(true);
-
-    try {
-      const phoneDigits = phone.replace(/\D/g, "");
-      const response = await api.post("/auth/send-otp", {
-        phone: `+${phoneDigits}`,
-      });
-      const incomingOtp =
-        response.data?.otp ||
-        response.data?.code ||
-        response.data?.content?.otp ||
-        response.data?.content?.code ||
-        "";
-
-      setCountdown(120);
-      setResponseCode(incomingOtp);
-
-      if (incomingOtp) {
-        setCode(incomingOtp);
-        setSuccess("Ruxsat berilgan raqam: Kod avtomatik to'ldirildi!");
-        setTimeout(() => {
-          executeLogin(incomingOtp, `+${phoneDigits}`, isNewUser);
-        }, 600);
-      } else {
-        setSuccess("Yangi tasdiqlash kodi yuborildi");
-      }
-    } catch (err) {
-      setError("OTP qayta yuborishda xatolik yuz berdi.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const goBack = () => {
-    if (step === "otp") {
-      setStep("phone");
-    } else if (step === "register") {
-      setStep("otp");
-    }
+  const goBackToLogin = () => {
+    setStep("login");
+    setMfaCode("");
+    setMfaToken("");
     setError("");
     setSuccess("");
   };
@@ -412,9 +179,10 @@ const LoginComponent = () => {
               </div>
             </div>
 
-            {step !== "phone" && (
+            {step === "mfa" && (
               <button
-                onClick={goBack}
+                type="button"
+                onClick={goBackToLogin}
                 className="rounded-xl p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -424,16 +192,12 @@ const LoginComponent = () => {
 
           <div className="mt-6">
             <h2 className="text-lg font-bold text-white">
-              {step === "phone" && "Tizimga Kirish"}
-              {step === "otp" && "SMS Tasdiqlash"}
-              {step === "mfa" && "2FA Himoya (TOTP)"}
-              {step === "register" && "Admin Ma'lumotlari"}
+              {step === "login" && "Super Admin Kirish"}
+              {step === "mfa" && "2FA Tasdiqlash (TOTP)"}
             </h2>
             <p className="text-xs text-indigo-100/80 mt-0.5">
-              {step === "phone" && "Telefon raqamingizni kiritib tasdiqlang"}
-              {step === "otp" && "SMS orqali yuborilgan 6 xonali kod"}
+              {step === "login" && "Login (telefon yoki username) va maxfiy parolingizni kiriting"}
               {step === "mfa" && (isBackupCode ? "Zaxira tiklash kodini kiriting" : "Authenticator ilovangizdagi 6 xonali kod")}
-              {step === "register" && "Yangi administrator hisobini to'ldiring"}
             </p>
           </div>
         </div>
@@ -466,98 +230,79 @@ const LoginComponent = () => {
             )}
           </AnimatePresence>
 
-          {/* Steps */}
-          {step === "phone" && (
-            <div className="flex flex-col gap-4">
+          {/* Login Step */}
+          {step === "login" && (
+            <form onSubmit={handleLogin} className="flex flex-col gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  Telefon Raqam
+                  Login / Telefon Raqami
                 </label>
                 <div className="relative">
-                  <Phone className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
-                    type="tel"
-                    value={phone}
-                    onChange={handleChange}
-                    placeholder="+998 90 123 45 67"
+                    type="text"
+                    value={loginIdentifier}
+                    onChange={(e) => setLoginIdentifier(e.target.value)}
+                    placeholder="Masalan: superadmin yoki +998901234567"
                     disabled={loading}
+                    autoComplete="username"
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-slate-900 font-semibold text-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all"
                   />
                 </div>
               </div>
 
-              <button
-                onClick={handleSendPhone}
-                disabled={loading || !phone}
-                className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>SMS Kodni Olish</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-
-          {step === "otp" && (
-            <div className="flex flex-col gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  SMS Tasdiqlash Kodi
+                  Maxfiy Parol
                 </label>
                 <div className="relative">
                   <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
-                    type="text"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    placeholder="Masalan: 123456"
-                    maxLength={6}
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Parolingizni kiriting"
                     disabled={loading}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-slate-900 font-mono font-bold text-center tracking-widest text-base outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all"
+                    autoComplete="current-password"
+                    className="w-full pl-11 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-slate-900 font-semibold text-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
+              <div className="p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 flex items-start gap-2.5">
+                <Shield className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-indigo-900/80 leading-relaxed font-medium">
+                  Ushbu panelga faqat <span className="font-bold text-indigo-700">SUPER_ADMIN</span> huquqiga ega akkauntlar kira oladi. Barcha kirish urinishlari qatʼiy xavfsizlik nazoratida.
+                </p>
+              </div>
+
               <button
-                onClick={handleVerifyOtp}
-                disabled={loading || (!code && !responseCode)}
-                className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                type="submit"
+                disabled={loading || !loginIdentifier || !password}
+                className="w-full mt-1 py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <span>Tasdiqlash & Kirish</span>
+                    <span>Tizimga Kirish</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
-
-              <div className="text-center mt-1">
-                {countdown > 0 ? (
-                  <span className="text-xs text-slate-400 font-medium">
-                    Kodni qayta yuborish: {formatTime(countdown)}
-                  </span>
-                ) : (
-                  <button
-                    onClick={handleResendOtp}
-                    disabled={loading}
-                    className="text-xs font-bold text-indigo-600 hover:underline"
-                  >
-                    Kodni qayta yuborish
-                  </button>
-                )}
-              </div>
-            </div>
+            </form>
           )}
 
+          {/* MFA Step */}
           {step === "mfa" && (
-            <div className="flex flex-col gap-4">
+            <form onSubmit={handleVerifyMfa} className="flex flex-col gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">
                   {isBackupCode ? "Zaxira (Backup) Kodingiz" : "Authenticator 6 xonali kodi"}
@@ -571,15 +316,16 @@ const LoginComponent = () => {
                     placeholder={isBackupCode ? "XXXX-XXXX" : "123456"}
                     maxLength={isBackupCode ? 16 : 8}
                     disabled={loading}
+                    autoFocus
                     className="w-full pl-11 pr-4 py-3 rounded-xl border border-indigo-200 bg-indigo-50/30 focus:bg-white text-slate-900 font-mono font-bold text-center tracking-widest text-base outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 transition-all"
                   />
                 </div>
               </div>
 
               <button
-                onClick={handleVerifyMfa}
+                type="submit"
                 disabled={loading || !mfaCode.trim()}
-                className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -599,86 +345,20 @@ const LoginComponent = () => {
                     setMfaCode("");
                     setError("");
                   }}
-                  className="text-xs font-bold text-indigo-600 hover:underline"
+                  className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
                 >
                   {isBackupCode
                     ? "← Authenticator ilovasi kodidan foydalanish"
                     : "Zaxira (backup recovery) kodidan foydalanish"}
                 </button>
               </div>
-            </div>
-          )}
-
-          {step === "register" && (
-            <div className="flex flex-col gap-3.5">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">To'liq Ism</label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Ism va familiya"
-                    className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-indigo-600"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Viloyat</label>
-                <select
-                  value={regionId}
-                  onChange={handleRegionChange}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-indigo-600"
-                >
-                  <option value="">Viloyatni tanlang</option>
-                  {regions.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Tuman</label>
-                <select
-                  value={districtId}
-                  onChange={(e) => setDistrictId(e.target.value)}
-                  disabled={!regionId}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-indigo-600 disabled:opacity-50"
-                >
-                  <option value="">Tumanni tanlang</option>
-                  {districts.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                onClick={handleCreateAccount}
-                disabled={loading || !username || !regionId || !districtId}
-                className="w-full mt-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-50"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>Hisobni Yakunlash</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
+            </form>
           )}
 
           {/* Security badge footer */}
           <div className="flex items-center justify-center gap-1.5 pt-2 text-[11px] text-slate-400 font-medium border-t border-slate-100">
-            <Shield className="w-3.5 h-3.5 text-indigo-500" />
-            <span>256-Bit SSL Shifrlangan Xavfsiz Boshqaruv Tizimi</span>
+            <KeyRound className="w-3.5 h-3.5 text-indigo-500" />
+            <span>256-Bit SSL Shifrlangan • Faqat Super Admin Kirish</span>
           </div>
         </div>
       </div>
