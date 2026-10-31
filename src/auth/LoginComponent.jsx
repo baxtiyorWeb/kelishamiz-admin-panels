@@ -52,8 +52,12 @@ const LoginComponent = () => {
         password,
       });
 
-      if (response.data?.requiresMfa) {
-        setMfaToken(response.data.mfaToken);
+      const data = response.data;
+      const requiresMfa = data?.requiresMfa || data?.content?.requiresMfa;
+      const mfaPendingToken = data?.mfaToken || data?.content?.mfaToken;
+
+      if (requiresMfa) {
+        setMfaToken(mfaPendingToken);
         setStep("mfa");
         setSuccess("Ikki bosqichli autentifikatsiya (2FA) talab qilinadi.");
         setLoading(false);
@@ -61,14 +65,20 @@ const LoginComponent = () => {
       }
 
       const token =
-        response.data?.access_token ||
-        response.data?.accessToken ||
-        response.data?.content?.accessToken;
+        data?.accessToken ||
+        data?.access_token ||
+        data?.content?.accessToken ||
+        data?.content?.access_token ||
+        data?.data?.accessToken ||
+        data?.data?.access_token;
       const refreshToken =
-        response.data?.refresh_token ||
-        response.data?.refreshToken ||
-        response.data?.content?.refreshToken;
-      const user = response.data?.user;
+        data?.refreshToken ||
+        data?.refresh_token ||
+        data?.content?.refreshToken ||
+        data?.content?.refresh_token ||
+        data?.data?.refreshToken ||
+        data?.data?.refresh_token;
+      const user = data?.user || data?.content?.user || data?.data?.user;
 
       if (token) {
         localStorage.setItem("accessToken", token);
@@ -80,7 +90,11 @@ const LoginComponent = () => {
           window.location.href = "/";
         }, 600);
       } else {
-        setError(response.data?.message || "Tizimga kirishda xatolik yuz berdi.");
+        const errorMsg =
+          data?.error ||
+          (data?.success ? "Avtorizatsiya tokeni topilmadi." : data?.message) ||
+          "Tizimga kirishda xatolik yuz berdi.";
+        setError(errorMsg);
       }
     } catch (err) {
       const status = err?.response?.status;
@@ -116,15 +130,22 @@ const LoginComponent = () => {
         isBackupCode,
       });
 
+      const data = res.data;
       const token =
-        res.data?.access_token ||
-        res.data?.accessToken ||
-        res.data?.content?.accessToken;
+        data?.accessToken ||
+        data?.access_token ||
+        data?.content?.accessToken ||
+        data?.content?.access_token ||
+        data?.data?.accessToken ||
+        data?.data?.access_token;
       const refreshToken =
-        res.data?.refresh_token ||
-        res.data?.refreshToken ||
-        res.data?.content?.refreshToken;
-      const user = res.data?.user;
+        data?.refreshToken ||
+        data?.refresh_token ||
+        data?.content?.refreshToken ||
+        data?.content?.refresh_token ||
+        data?.data?.refreshToken ||
+        data?.data?.refresh_token;
+      const user = data?.user || data?.content?.user || data?.data?.user;
 
       if (token) {
         localStorage.setItem("accessToken", token);
