@@ -105,14 +105,21 @@ api.interceptors.response.use(
           });
 
           if (response.status === 200) {
+            const data = response.data;
             const newAccessToken =
-              response.data?.accessToken ||
-              response.data?.content?.accessToken ||
-              response.data?.data?.accessToken;
+              data?.accessToken ||
+              data?.access_token ||
+              data?.content?.accessToken ||
+              data?.content?.access_token ||
+              data?.data?.accessToken ||
+              data?.data?.access_token;
             const newRefreshToken =
-              response.data?.refreshToken ||
-              response.data?.content?.refreshToken ||
-              response.data?.data?.refreshToken;
+              data?.refreshToken ||
+              data?.refresh_token ||
+              data?.content?.refreshToken ||
+              data?.content?.refresh_token ||
+              data?.data?.refreshToken ||
+              data?.data?.refresh_token;
 
             if (newAccessToken) {
               setAccessToken(newAccessToken);

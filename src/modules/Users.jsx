@@ -70,14 +70,14 @@ const Users = () => {
     queryFn: async () => {
       try {
         const res = await api.get("/admin/auth/me");
-        return res.data;
+        return res.data?.content || res.data;
       } catch {
         return null;
       }
     },
     staleTime: 60000,
   });
-  const currentAdminRole = meData?.role || "ADMIN";
+  const currentAdminRole = meData?.role || meData?.content?.role || "ADMIN";
 
   // Modals state
   const [messageModalVisible, setMessageModalVisible] = useState(false);

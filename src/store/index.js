@@ -29,8 +29,9 @@ const useAuthStore = create((set, getState) => ({
   fetchAdminProfile: async () => {
     try {
       const response = await api.get("/admin/auth/me");
-      const profile = response.data;
-      if (profile) {
+      const data = response.data;
+      const profile = data?.content || data;
+      if (profile && (profile.id || profile.role || profile.username)) {
         set({ user: profile });
         localStorage.setItem("user", JSON.stringify(profile));
         return profile;
@@ -47,15 +48,22 @@ const useAuthStore = create((set, getState) => ({
   login: async (credentials) => {
     try {
       const response = await api.post("/admin/auth/login", credentials);
+      const data = response.data;
       const accessToken =
-        response.data?.access_token ||
-        response.data?.accessToken ||
-        get(response, "data.content.accessToken");
+        data?.accessToken ||
+        data?.access_token ||
+        data?.content?.accessToken ||
+        data?.content?.access_token ||
+        data?.data?.accessToken ||
+        data?.data?.access_token;
       const refreshToken =
-        response.data?.refresh_token ||
-        response.data?.refreshToken ||
-        get(response, "data.content.refreshToken");
-      const user = response.data?.user;
+        data?.refreshToken ||
+        data?.refresh_token ||
+        data?.content?.refreshToken ||
+        data?.content?.refresh_token ||
+        data?.data?.refreshToken ||
+        data?.data?.refresh_token;
+      const user = data?.user || data?.content?.user || data?.data?.user;
 
       set({
         accessToken,
@@ -109,10 +117,14 @@ const useAuthStore = create((set, getState) => ({
         refreshToken: state.refreshToken,
       });
 
+      const data = response.data;
       const newAccessToken =
-        get(response, "data.accessToken") ||
-        get(response, "data.content.accessToken") ||
-        get(response, "data.data.accessToken");
+        data?.accessToken ||
+        data?.access_token ||
+        data?.content?.accessToken ||
+        data?.content?.access_token ||
+        data?.data?.accessToken ||
+        data?.data?.access_token;
       if (!newAccessToken) {
         console.log("Failed to retrieve new access token, logging out...");
         state.logout();

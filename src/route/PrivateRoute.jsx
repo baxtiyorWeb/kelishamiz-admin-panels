@@ -19,7 +19,8 @@ const PrivateRoute = ({ children }) => {
 
       try {
         const profile = await fetchAdminProfile();
-        if (!profile || !ALLOWED_ADMIN_ROLES.includes(profile.role)) {
+        const role = profile?.role || profile?.content?.role;
+        if (!role || !ALLOWED_ADMIN_ROLES.includes(role)) {
           logout();
           return;
         }
@@ -57,7 +58,7 @@ const PrivateRoute = ({ children }) => {
     );
   }
 
-  const currentRole = user?.role;
+  const currentRole = user?.role || user?.content?.role;
   if (!currentRole || !ALLOWED_ADMIN_ROLES.includes(currentRole)) {
     return <Navigate to="/auth/login" replace />;
   }
