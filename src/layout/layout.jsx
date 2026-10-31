@@ -44,6 +44,7 @@ import {
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "../config/auth/api";
+import useAuthStore from "../store";
 
 const NAV_GROUPS = [
   {
@@ -244,6 +245,7 @@ const AppLayout = () => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [commandSearch, setCommandSearch] = useState("");
 
+  const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -279,15 +281,8 @@ const AppLayout = () => {
     refetchInterval: 30000,
   });
 
-  const handleLogout = async () => {
-    try {
-      await api.post("/admin/auth/logout");
-    } catch (e) {
-      console.warn("Logout notification failed:", e);
-    }
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    window.location.href = "/auth/login";
+  const handleLogout = () => {
+    logout();
   };
 
   const getPageMeta = () => {
@@ -338,17 +333,22 @@ const AppLayout = () => {
     );
   }, [allNavItems, commandSearch]);
 
+  const adminDisplayName = user?.fullName || user?.username || "Administrator";
+  const adminIdentifier = user?.phone || user?.username || "admin@kelishamiz.uz";
+  const adminRoleDisplay = user?.role || "ADMIN";
+  const avatarLetter = (user?.username?.[0] || user?.fullName?.[0] || "A").toUpperCase();
+
   const userMenu = {
     items: [
       {
         key: "profile",
         label: (
           <div className="py-1 px-1">
-            <div className="font-semibold text-slate-900 text-xs">Super Administrator</div>
-            <div className="text-[11px] text-slate-500 font-mono">admin@kelishamiz.uz</div>
+            <div className="font-semibold text-slate-900 text-xs">{adminDisplayName}</div>
+            <div className="text-[11px] text-slate-500 font-mono">{adminIdentifier}</div>
             <div className="mt-1">
               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                Full Privileges
+                {adminRoleDisplay}
               </span>
             </div>
           </div>
@@ -503,14 +503,14 @@ const AppLayout = () => {
                   className="bg-blue-700 font-bold text-white text-xs flex-shrink-0"
                   size={32}
                 >
-                  A
+                  {avatarLetter}
                 </Avatar>
                 <div className="min-w-0">
                   <div className="text-xs font-semibold text-slate-800 truncate">
-                    Administrator
+                    {adminDisplayName}
                   </div>
                   <div className="text-[10px] text-slate-400 font-mono truncate">
-                    Superuser
+                    {adminRoleDisplay}
                   </div>
                 </div>
               </div>
@@ -696,14 +696,14 @@ const AppLayout = () => {
                   className="bg-blue-700 text-white font-bold text-xs ring-1 ring-slate-200"
                   size={32}
                 >
-                  A
+                  {avatarLetter}
                 </Avatar>
                 <div className="hidden xl:block text-left">
                   <div className="text-xs font-semibold text-slate-800 leading-tight">
-                    Super Admin
+                    {adminDisplayName}
                   </div>
                   <div className="text-[10px] text-slate-400 font-mono leading-tight">
-                    admin@kelishamiz.uz
+                    {adminRoleDisplay}
                   </div>
                 </div>
               </div>
