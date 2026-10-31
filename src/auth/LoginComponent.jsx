@@ -172,50 +172,61 @@ const LoginComponent = () => {
           setError(verifyRes.data?.message || "OTP kodi noto'g'ri yoki muddati o'tgan.");
         }
       } else {
-        let loginRes;
         try {
-          loginRes = await api.post("/admin/auth/login", {
+          const loginRes = await api.post("/admin/auth/login", {
             phone: `+${phoneDigits}`,
             otp: otpCode,
           });
-        } catch (adminErr) {
-          if (adminErr?.response?.status === 423) {
-            setError(
-              adminErr.response?.data?.message ||
-              "Xavfsizlik: Hisob bir nechta noto'g'ri urinishlar sababli 15 daqiqaga bloklangan.",
+
+          if (loginRes.data?.requiresMfa) {
+            setMfaToken(loginRes.data.mfaToken);
+            setStep("mfa");
+            setSuccess(
+              "Ikki bosqichli autentifikatsiya (MFA) faol. Authenticator yoki zaxira kodini kiriting.",
             );
             setLoading(false);
             return;
           }
-          loginRes = await api.post("/auth/login/verify-otp", {
-            phone: `+${phoneDigits}`,
-            code: otpCode,
-          });
-        }
 
-        if (loginRes.data?.requiresMfa) {
-          setMfaToken(loginRes.data.mfaToken);
-          setStep("mfa");
-          setSuccess(
-            "Ikki bosqichli autentifikatsiya (MFA) faol. Authenticator yoki zaxira kodini kiriting.",
-          );
-          setLoading(false);
-          return;
-        }
+          const token =
+            loginRes.data?.access_token ||
+            loginRes.data?.accessToken ||
+            loginRes.data?.content?.accessToken;
+          const refreshToken =
+            loginRes.data?.refresh_token ||
+            loginRes.data?.refreshToken ||
+            loginRes.data?.content?.refreshToken;
+          const user = loginRes.data?.user;
 
-        const token = loginRes.data?.accessToken || loginRes.data?.content?.accessToken;
-        const refreshToken = loginRes.data?.refreshToken || loginRes.data?.content?.refreshToken;
+          if (token) {
+            localStorage.setItem("accessToken", token);
+            if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+            if (user) localStorage.setItem("user", JSON.stringify(user));
+            setSuccess("Muvaffaqiyatli kirildi! Yo'naltirilmoqda...");
 
-        if (token) {
-          localStorage.setItem("accessToken", token);
-          if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
-          setSuccess("Muvaffaqiyatli kirildi! Yo'naltirilmoqda...");
+            setTimeout(() => {
+              window.location.href = "/";
+            }, 800);
+          } else {
+            setError(loginRes.data?.message || "Tizimga kirishda xatolik yuz berdi.");
+          }
+        } catch (adminErr) {
+          const status = adminErr?.response?.status;
+          const message = adminErr?.response?.data?.message;
 
-          setTimeout(() => {
-            window.location.href = "/";
-          }, 800);
-        } else {
-          setError(loginRes.data?.message || "Tizimga kirishda xatolik yuz berdi.");
+          if (status === 429) {
+            setError(
+              message || "Ko'p marotaba urinish qilindi. Iltimos, 1 daqiqadan so'ng qayta urinib ko'ring.",
+            );
+          } else if (status === 423) {
+            setError(
+              message || "Xavfsizlik: Hisob bir nechta noto'g'ri urinishlar sababli 15 daqiqaga bloklangan.",
+            );
+          } else if (status === 401) {
+            setError(message || "Kirish taqiqlangan. Admin huquqi talab qilinadi.");
+          } else {
+            setError(message || "Admin paneliga kirishda xatolik yuz berdi.");
+          }
         }
       }
     } catch (err) {
@@ -246,14 +257,23 @@ const LoginComponent = () => {
       const res = await api.post("/admin/auth/mfa/verify", {
         mfaToken,
         code: mfaCode.trim(),
+        isBackupCode,
       });
 
-      const token = res.data?.accessToken;
-      const refreshToken = res.data?.refreshToken;
+      const token =
+        res.data?.access_token ||
+        res.data?.accessToken ||
+        res.data?.content?.accessToken;
+      const refreshToken =
+        res.data?.refresh_token ||
+        res.data?.refreshToken ||
+        res.data?.content?.refreshToken;
+      const user = res.data?.user;
 
       if (token) {
         localStorage.setItem("accessToken", token);
         if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+        if (user) localStorage.setItem("user", JSON.stringify(user));
         setSuccess("MFA tasdiqlandi! Boshqaruv paneliga yo'naltirilmoqda...");
         setTimeout(() => {
           window.location.href = "/";
