@@ -31,6 +31,13 @@ import {
   CreditCardOutlined,
   AlertOutlined,
   HistoryOutlined,
+  ShopOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  LinkOutlined,
+  MessageOutlined,
+  GlobalOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import ProductReference from "../components/ProductReference";
@@ -113,16 +120,23 @@ const UserDetail = () => {
     },
   });
 
-  const user = get(data, "content.user", get(data, "user", null));
+  const user =
+    get(data, "content.user") ||
+    get(data, "user") ||
+    (get(data, "content.id") ? get(data, "content") : null) ||
+    (data?.id ? data : null);
+  const stats = get(data, "content.stats", get(data, "stats", {}));
+  const shops = get(data, "content.shops", get(data, "shops", []));
+  const telegram = get(data, "content.telegram", get(data, "telegram", {}));
   const products = get(data, "content.products", get(data, "products", []));
   const transactions = get(data, "content.transactions", get(data, "transactions", []));
-  const reportsFiled = get(data, "content.reports.filed", get(data, "reports.filed", []));
-  const reportsAgainst = get(data, "content.reports.against", get(data, "reports.against", []));
-  const auditHistory = get(data, "content.auditHistory", get(data, "auditHistory", []));
+  const reportsFiled = get(data, "content.reportsFiled", get(data, "reportsFiled", get(data, "content.reports.filed", [])));
+  const reportsAgainst = get(data, "content.reportsAgainst", get(data, "reportsAgainst", get(data, "content.reports.against", [])));
+  const auditHistory = get(data, "content.moderationHistory", get(data, "moderationHistory", get(data, "content.auditHistory", [])));
 
   const allReports = [
-    ...reportsAgainst.map((r) => ({ ...r, direction: "AGAINST" })),
-    ...reportsFiled.map((r) => ({ ...r, direction: "FILED" })),
+    ...(Array.isArray(reportsAgainst) ? reportsAgainst : []).map((r) => ({ ...r, direction: "AGAINST" })),
+    ...(Array.isArray(reportsFiled) ? reportsFiled : []).map((r) => ({ ...r, direction: "FILED" })),
   ];
 
   if (isLoading) {
@@ -179,6 +193,80 @@ const UserDetail = () => {
       render: (st, record) => (
         <StatusBadge status={st || (record.published ? "active" : "pending")} domain="listing" />
       ),
+    },
+  ];
+
+  const shopColumns = [
+    {
+      title: "Do'kon",
+      key: "shop",
+      render: (_, r) => (
+        <div className="flex items-center gap-2.5 py-1">
+          <Avatar
+            size={40}
+            src={r.logoUrl}
+            icon={<ShopOutlined />}
+            className="bg-purple-100 text-purple-700 font-bold border border-purple-200 flex-shrink-0"
+          >
+            {(r.name || "D")[0]?.toUpperCase()}
+          </Avatar>
+          <div className="flex flex-col min-w-0">
+            <span className="font-bold text-slate-900 text-xs truncate">{r.name}</span>
+            <span className="text-[11px] font-mono text-purple-600">@{r.username}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "Kategoriya",
+      dataIndex: "categoryName",
+      key: "categoryName",
+      render: (cat) => <Tag color="purple">{cat || "Umumiy"}</Tag>,
+    },
+    {
+      title: "Mahsulotlar Soni",
+      key: "productsCount",
+      render: (_, r) => (
+        <div className="flex flex-col text-xs">
+          <span className="font-extrabold text-slate-800">{r.productsCount || 0} ta mahsulot</span>
+          <span className="text-[10px] text-emerald-600 font-medium">({r.activeProductsCount || 0} ta faol)</span>
+        </div>
+      ),
+    },
+    {
+      title: "Telefon",
+      dataIndex: "phone",
+      key: "phone",
+      render: (ph) => <span className="font-mono text-xs text-slate-600">{ph || "—"}</span>,
+    },
+    {
+      title: "Holati",
+      key: "status",
+      render: (_, r) => (
+        <Space size={4}>
+          <Tag color={r.status === "ACTIVE" ? "success" : "default"}>
+            {r.status === "ACTIVE" ? "FAOL" : r.status}
+          </Tag>
+          {r.isVerified && <Tag color="blue">TASDIQLANGAN</Tag>}
+        </Space>
+      ),
+    },
+    {
+      title: "Havola",
+      key: "link",
+      render: (_, r) => {
+        const url = `https://kelishamiz.uz/shop/${r.username || r.id}`;
+        return (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-indigo-600 hover:text-indigo-800 font-semibold text-xs inline-flex items-center gap-1"
+          >
+            Saytda ko'rish <ArrowLeftOutlined className="rotate-135 text-[10px]" />
+          </a>
+        );
+      },
     },
   ];
 
@@ -368,23 +456,59 @@ const UserDetail = () => {
 
             {/* User Meta Data */}
             <div className="flex flex-col gap-2.5 text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-100">
+              <div className="flex justify-between py-1 border-b border-slate-100 items-center">
                 <span className="text-slate-500 font-medium">Hamyon Balansi:</span>
                 <span className="font-bold text-emerald-700 text-sm">
                   {Number(user.balance || 0).toLocaleString("uz-UZ")} UZS
                 </span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
+              <div className="flex justify-between py-1 border-b border-slate-100 items-center">
                 <span className="text-slate-500 font-medium">Username:</span>
                 <span className="font-semibold text-slate-800">@{user.username || "yo'q"}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
+              <div className="flex justify-between py-1 border-b border-slate-100 items-center">
+                <span className="text-slate-500 font-medium">Telegram Bot:</span>
+                {telegram.isBotConnected || user.profile?.telegram_chat_id ? (
+                  <Tag color="success" className="!rounded m-0 font-bold text-[11px]">
+                    Ulangan (#{telegram.chatId || user.profile?.telegram_chat_id})
+                  </Tag>
+                ) : (
+                  <Tag color="default" className="!rounded m-0 text-[11px] text-slate-400">
+                    Ulanmagan
+                  </Tag>
+                )}
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100 items-center">
+                <span className="text-slate-500 font-medium">Telegram Guruh/Kanal:</span>
+                {telegram.isChannelConnected || user.profile?.telegram_channel_id || user.telegram_channel_id ? (
+                  <Tag color="blue" className="!rounded m-0 font-bold text-[11px] max-w-[150px] truncate">
+                    {telegram.channelId || user.profile?.telegram_channel_id || user.telegram_channel_id}
+                  </Tag>
+                ) : (
+                  <Tag color="default" className="!rounded m-0 text-[11px] text-slate-400">
+                    Ulanmagan
+                  </Tag>
+                )}
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100 items-center">
+                <span className="text-slate-500 font-medium">Do'konlar Soni:</span>
+                <span className="font-bold text-slate-800">
+                  {stats.shopsCount ?? shops.length} ta ({stats.totalShopProducts ?? 0} tovar)
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100 items-center">
+                <span className="text-slate-500 font-medium">Jami E'lonlar:</span>
+                <span className="font-bold text-slate-800">
+                  {stats.totalListings ?? products.length} ta ({stats.activeListings ?? 0} faol)
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100 items-center">
                 <span className="text-slate-500 font-medium">Hudud:</span>
                 <span className="font-semibold text-slate-800 text-right truncate max-w-[180px]">
                   {get(user, "profile.region.name", "N/A")} / {get(user, "profile.district.name", "N/A")}
                 </span>
               </div>
-              <div className="flex justify-between py-1">
+              <div className="flex justify-between py-1 items-center">
                 <span className="text-slate-500 font-medium">Manzil:</span>
                 <span className="font-semibold text-slate-800 text-right truncate max-w-[180px]">{get(user, "profile.address") || "Kiritilmagan"}</span>
               </div>
@@ -442,6 +566,28 @@ const UserDetail = () => {
                         pageSize: 5,
                         size: "small",
                         showTotal: (total) => `Jami: ${total} ta e'lon`,
+                      }}
+                    />
+                  ),
+                },
+                {
+                  key: "shops",
+                  label: (
+                    <span className="font-semibold text-xs flex items-center gap-1.5">
+                      <ShopOutlined /> Do'konlar ({shops.length})
+                    </span>
+                  ),
+                  children: (
+                    <Table
+                      size="small"
+                      dataSource={shops}
+                      columns={shopColumns}
+                      rowKey="id"
+                      scroll={{ x: 600 }}
+                      pagination={{
+                        pageSize: 5,
+                        size: "small",
+                        showTotal: (total) => `Jami: ${total} ta do'kon`,
                       }}
                     />
                   ),
