@@ -98,6 +98,45 @@ const STATUS_OPTIONS = Object.entries(STATUS_CONFIG).map(([value, conf]) => ({
   textColor: conf.textColor,
 }));
 
+const DEAL_TYPE_CONFIG = {
+  SELL: {
+    label: "Sotish",
+    badge: "Sotiladi",
+    icon: "🏷️",
+    textColor: "text-emerald-700",
+    bgColor: "bg-emerald-50 border-emerald-200",
+  },
+  RENT_OUT: {
+    label: "Ijaraga berish",
+    badge: "Ijaraga beriladi",
+    icon: "🔑",
+    textColor: "text-blue-700",
+    bgColor: "bg-blue-50 border-blue-200",
+  },
+  BUY: {
+    label: "Sotib olish",
+    badge: "Sotib olinadi",
+    icon: "🛒",
+    textColor: "text-amber-700",
+    bgColor: "bg-amber-50 border-amber-200",
+  },
+  RENT_IN: {
+    label: "Ijaraga olish",
+    badge: "Ijaraga olinadi",
+    icon: "🏠",
+    textColor: "text-purple-700",
+    bgColor: "bg-purple-50 border-purple-200",
+  },
+};
+
+const DEAL_TYPE_OPTIONS = [
+  { value: "all", label: "Barcha e'lon turlari" },
+  { value: "SELL", label: "🏷️ Sotish" },
+  { value: "RENT_OUT", label: "🔑 Ijaraga berish" },
+  { value: "BUY", label: "🛒 Sotib olish" },
+  { value: "RENT_IN", label: "🏠 Ijaraga olish" },
+];
+
 const checkerboardStyle = {
   backgroundColor: "#f8fafc",
   backgroundImage: `
@@ -133,6 +172,7 @@ const Products = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeProgress, setOptimizeProgress] = useState(0);
   const [searchFilter, setSearchFilter] = useState("");
+  const [dealTypeFilter, setDealTypeFilter] = useState("all");
   const [isBgModalOpen, setIsBgModalOpen] = useState(false);
   const [selectedBgImages, setSelectedBgImages] = useState([]);
   const [selectedGalleryImageIds, setSelectedGalleryImageIds] = useState([]);
@@ -155,13 +195,16 @@ const Products = () => {
     isFetching,
     refetch: refetchProducts,
   } = useQuery({
-    queryKey: ["admin-listings", page, pageSize, statusTab, searchFilter],
+    queryKey: ["admin-listings", page, pageSize, statusTab, searchFilter, dealTypeFilter],
     queryFn: async () => {
       let url = `/admin/listings?page=${page}&limit=${pageSize}&search=${encodeURIComponent(searchFilter)}`;
       if (statusTab === "adult_queue") {
         url += `&contentRating=ADULT`;
       } else if (statusTab !== "all" && statusTab !== "top") {
         url += `&status=${statusTab}`;
+      }
+      if (dealTypeFilter && dealTypeFilter !== "all") {
+        url += `&dealType=${dealTypeFilter}`;
       }
       const response = await api.get(url);
       if (response.status !== 200 || !response.data) {
@@ -568,16 +611,37 @@ const Products = () => {
               >
                 {record.title}
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 flex-wrap">
                 <span className="font-mono text-slate-400 font-semibold">#{record.id}</span>
                 <span>•</span>
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 font-semibold text-[10px] truncate">
                   <Layers className="w-3 h-3 text-purple-500 flex-shrink-0" />
                   {record.category?.name || "Kategoriyasiz"}
                 </span>
+                {record.dealType && record.dealType !== "SELL" && (
+                  <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${DEAL_TYPE_CONFIG[record.dealType]?.bgColor || "bg-blue-50"} ${DEAL_TYPE_CONFIG[record.dealType]?.textColor || "text-blue-700"}`}>
+                    {DEAL_TYPE_CONFIG[record.dealType]?.icon} {DEAL_TYPE_CONFIG[record.dealType]?.label}
+                  </span>
+                )}
               </div>
             </div>
           </div>
+        );
+      },
+    },
+    {
+      title: "E'lon Turi",
+      dataIndex: "dealType",
+      key: "dealType",
+      width: 145,
+      render: (dealType) => {
+        const type = dealType || "SELL";
+        const cfg = DEAL_TYPE_CONFIG[type] || DEAL_TYPE_CONFIG.SELL;
+        return (
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${cfg.bgColor} ${cfg.textColor}`}>
+            <span>{cfg.icon}</span>
+            <span>{cfg.label}</span>
+          </span>
         );
       },
     },
@@ -886,7 +950,7 @@ const Products = () => {
             Foydalanuvchilar joylagan e'lonlarni tekshirish, tezkor tasdiqlash va TOP statuslarini boshqarish
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -897,9 +961,20 @@ const Products = () => {
                 setSearchFilter(e.target.value);
                 setPage(1);
               }}
-              className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 w-60"
+              className="pl-9 pr-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs text-slate-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 w-52"
             />
           </div>
+
+          <Select
+            value={dealTypeFilter}
+            onChange={(val) => {
+              setDealTypeFilter(val);
+              setPage(1);
+            }}
+            options={DEAL_TYPE_OPTIONS}
+            className="w-44 !rounded-lg text-xs"
+            placeholder="E'lon turi"
+          />
 
           <Popconfirm
             title="Barcha rasmlarni Bunny CDN ga optimize qilish?"
@@ -1226,6 +1301,17 @@ const Products = () => {
                     {selectedProductData.category?.name || "Kategoriyasiz"}
                   </span>
                   <span>•</span>
+                  {(() => {
+                    const dt = selectedProductData.dealType || "SELL";
+                    const cfg = DEAL_TYPE_CONFIG[dt] || DEAL_TYPE_CONFIG.SELL;
+                    return (
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-xs border ${cfg.bgColor} ${cfg.textColor}`}>
+                        <span>{cfg.icon}</span>
+                        <span>{cfg.badge}</span>
+                      </span>
+                    );
+                  })()}
+                  <span>•</span>
                   <span className="inline-flex items-center gap-1 text-slate-600 font-medium">
                     <MapPin className="w-3 h-3 text-slate-400" />
                     {selectedProductData.location || "O'zbekiston"}
@@ -1386,6 +1472,28 @@ const Products = () => {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Properties & Specifications */}
+            {selectedProductData.productProperties?.length > 0 && (
+              <div>
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <TagIcon className="w-3.5 h-3.5 text-indigo-500" />
+                  Xususiyatlar & Parametrlar ({selectedProductData.productProperties.length} ta)
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                  {selectedProductData.productProperties.map((pp, idx) => (
+                    <div key={pp.id || idx} className="flex flex-col bg-white p-2.5 rounded-xl border border-slate-100 shadow-xs">
+                      <span className="text-[11px] font-semibold text-slate-400">
+                        {pp.property?.name || "Parametr"}
+                      </span>
+                      <span className="text-xs font-black text-slate-800 mt-0.5">
+                        {pp.value || "—"}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

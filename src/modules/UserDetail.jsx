@@ -177,6 +177,22 @@ const UserDetail = () => {
       render: (cat) => <Tag color="purple">{cat || "N/A"}</Tag>,
     },
     {
+      title: "E'lon Turi",
+      dataIndex: "dealType",
+      key: "dealType",
+      render: (dealType) => {
+        const type = dealType || "SELL";
+        const map = {
+          SELL: { label: "Sotish", color: "green", icon: "🏷️" },
+          RENT_OUT: { label: "Ijara (Berish)", color: "blue", icon: "🔑" },
+          BUY: { label: "Sotib olish", color: "orange", icon: "🛒" },
+          RENT_IN: { label: "Ijara (Olish)", color: "purple", icon: "🏠" },
+        };
+        const item = map[type] || map.SELL;
+        return <Tag color={item.color}>{item.icon} {item.label}</Tag>;
+      },
+    },
+    {
       title: "Narx",
       dataIndex: "price",
       key: "price",
