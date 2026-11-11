@@ -167,12 +167,188 @@ const CATEGORY_IMAGE_MAPPING = [
   },
 ];
 
+const PRESET_DEAL_TYPES = [
+  { key: "SELL", label: "Sotaman", desc: "Sotuvga chiqarish" },
+  { key: "RENT_OUT", label: "Ijaraga beraman", desc: "Ijaraga topshirish" },
+  { key: "DAILY_RENT", label: "Kunlik ijara", desc: "Kunlik ijaraga berish" },
+  { key: "BUY", label: "Sotib olaman", desc: "Sotib olish istagi" },
+  { key: "RENT_IN", label: "Ijaraga olaman", desc: "Ijaraga olish istagi" },
+  { key: "INSTALLMENT", label: "Bo'lib to'lash", desc: "Nasiya / muddatli to'lov" },
+  { key: "VIPKUP", label: "Boshlang'ich to'lov (Vipkup)", desc: "Vipkup shartlarida" },
+  { key: "EXCHANGE", label: "Barter / Almashish", desc: "Almashish istagi" },
+];
+
+function CategoryDealTypesEditor({ value = [], onChange }) {
+  const currentList = Array.isArray(value) ? value : [];
+  const [customLabel, setCustomLabel] = useState("");
+  const [customKey, setCustomKey] = useState("");
+  const [customDesc, setCustomDesc] = useState("");
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+
+  const isSelected = (key) => currentList.some((item) => item.key === key);
+
+  const handleTogglePreset = (preset) => {
+    if (isSelected(preset.key)) {
+      onChange(currentList.filter((item) => item.key !== preset.key));
+    } else {
+      onChange([...currentList, preset]);
+    }
+  };
+
+  const handleRemove = (keyToRemove) => {
+    onChange(currentList.filter((item) => item.key !== keyToRemove));
+  };
+
+  const handleAddCustom = () => {
+    const label = customLabel.trim();
+    if (!label) return;
+    const generatedKey = customKey.trim() || label.toUpperCase().replace(/[^A-Z0-9]/g, "_").slice(0, 30);
+    if (isSelected(generatedKey)) {
+      message.warning("Bu kalit (key) allaqachon mavjud!");
+      return;
+    }
+    onChange([
+      ...currentList,
+      {
+        key: generatedKey,
+        label,
+        desc: customDesc.trim() || undefined,
+      },
+    ]);
+    setCustomLabel("");
+    setCustomKey("");
+    setCustomDesc("");
+    setIsAddingCustom(false);
+  };
+
+  return (
+    <div className="space-y-3 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/80">
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="font-bold text-xs text-slate-800">E'lon / Bitim turlari</span>
+          <p className="text-[11px] text-slate-500">
+            Ushbu kategoriya uchun ruxsat etilgan sotuv turlari
+          </p>
+        </div>
+        <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+          {currentList.length} ta tanlangan
+        </span>
+      </div>
+
+      {/* Selected tags */}
+      {currentList.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5 p-2 bg-white rounded-xl border border-slate-200 min-h-[42px]">
+          {currentList.map((item) => (
+            <span
+              key={item.key}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/70"
+            >
+              <span>{item.label}</span>
+              <span className="font-mono text-[10px] text-indigo-400">({item.key})</span>
+              <button
+                type="button"
+                onClick={() => handleRemove(item.key)}
+                className="hover:text-red-500 transition-colors ml-0.5"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <div className="text-[11px] text-slate-400 italic bg-white p-2 rounded-xl border border-dashed border-slate-200">
+          Hozircha tanlanmagan (bo'sh bo'lsa ota kategoriyadan meros oladi yoki "Sotaman" bo'ladi)
+        </div>
+      )}
+
+      {/* Presets */}
+      <div>
+        <div className="text-[11px] font-semibold text-slate-500 mb-1.5">Tayyor turlardan tanlash:</div>
+        <div className="flex flex-wrap gap-1.5">
+          {PRESET_DEAL_TYPES.map((preset) => {
+            const active = isSelected(preset.key);
+            return (
+              <button
+                key={preset.key}
+                type="button"
+                onClick={() => handleTogglePreset(preset)}
+                className={`text-xs px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
+                  active
+                    ? "bg-indigo-600 border-indigo-600 text-white font-medium shadow-xs"
+                    : "bg-white border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-slate-50"
+                }`}
+              >
+                {active ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                <span>{preset.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Custom item toggle */}
+      {!isAddingCustom ? (
+        <button
+          type="button"
+          onClick={() => setIsAddingCustom(true)}
+          className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-1 mt-1 cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Boshqa (maxsus) sotuv turini qo'shish</span>
+        </button>
+      ) : (
+        <div className="bg-white p-2.5 rounded-xl border border-indigo-200 space-y-2 mt-2">
+          <div className="text-xs font-bold text-slate-800">Yangi e'lon turi qo'shish</div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              size="small"
+              placeholder="Nomi (masalan: Kunlik ijara)"
+              value={customLabel}
+              onChange={(e) => setCustomLabel(e.target.value)}
+              className="!rounded-lg"
+            />
+            <Input
+              size="small"
+              placeholder="Kalit kodi (masalan: DAILY_RENT)"
+              value={customKey}
+              onChange={(e) => setCustomKey(e.target.value)}
+              className="!rounded-lg font-mono text-xs"
+            />
+          </div>
+          <Input
+            size="small"
+            placeholder="Qisqa tavsif (ixtiyoriy, masalan: Kunbay ijaraga berish)"
+            value={customDesc}
+            onChange={(e) => setCustomDesc(e.target.value)}
+            className="!rounded-lg"
+          />
+          <div className="flex justify-end gap-2 pt-1">
+            <Button size="small" onClick={() => setIsAddingCustom(false)}>
+              Bekor
+            </Button>
+            <Button
+              type="primary"
+              size="small"
+              onClick={handleAddCustom}
+              disabled={!customLabel.trim()}
+              className="!bg-indigo-600"
+            >
+              Qo'shish
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const initCategory = {
   name: "",
   imageUrl: "",
   isVisible: true,
   order: 0,
   parentId: null,
+  dealTypes: [],
 };
 
 const initProperty = {
@@ -395,7 +571,11 @@ const CategoryPage = () => {
 
   const handleOpenEdit = useCallback((cat) => {
     setCurrentEditId(cat.id);
-    setEditingCategory({ ...cat, parentId: cat.parent?.id ?? cat.parentId ?? null });
+    setEditingCategory({
+      ...cat,
+      parentId: cat.parent?.id ?? cat.parentId ?? null,
+      dealTypes: Array.isArray(cat.dealTypes) ? cat.dealTypes : [],
+    });
     setIsEditModalOpen(true);
   }, []);
 
@@ -759,6 +939,28 @@ const CategoryPage = () => {
           </span>
         ) : (
           <span className="text-slate-400 text-xs">—</span>
+        ),
+    },
+    {
+      title: "E'lon turlari",
+      dataIndex: "dealTypes",
+      width: 160,
+      render: (types) =>
+        Array.isArray(types) && types.length > 0 ? (
+          <div className="flex flex-wrap gap-1 max-w-[180px]">
+            {types.slice(0, 2).map((t, idx) => (
+              <Tag key={idx} color="blue" className="!text-[11px] !m-0 !px-1.5 !py-0.5">
+                {t.label || t.key}
+              </Tag>
+            ))}
+            {types.length > 2 && (
+              <Tag className="!text-[10px] !m-0 !px-1 text-slate-500 bg-slate-100">
+                +{types.length - 2}
+              </Tag>
+            )}
+          </div>
+        ) : (
+          <span className="text-slate-400 text-xs italic">Standart / Meros</span>
         ),
     },
     {
@@ -1334,7 +1536,7 @@ const CategoryPage = () => {
         confirmLoading={createMutation.isPending || isUploading}
         okText="Qo'shish"
         cancelText="Bekor"
-        width={480}
+        width={560}
         className="!rounded-3xl"
       >
         <Form layout="vertical" className="mt-4">
@@ -1362,6 +1564,12 @@ const CategoryPage = () => {
               value={categoryData.order}
               onChange={(v) => setCategoryData({ ...categoryData, order: v ?? 0 })}
               className="w-full !rounded-xl"
+            />
+          </Form.Item>
+          <Form.Item label="E'lon / Sotuv turlari">
+            <CategoryDealTypesEditor
+              value={categoryData.dealTypes}
+              onChange={(dealTypes) => setCategoryData({ ...categoryData, dealTypes })}
             />
           </Form.Item>
           <Form.Item label="Kategoriya Ikonkasi / Rasmi">
@@ -1397,12 +1605,21 @@ const CategoryPage = () => {
         onCancel={() => setIsEditModalOpen(false)}
         onOk={() => {
           if (!editingCategory) return;
-          updateMutation.mutate({ id: currentEditId, ...editingCategory });
+          const { name, imageUrl, parentId, isVisible, order, dealTypes } = editingCategory;
+          updateMutation.mutate({
+            id: currentEditId,
+            name,
+            imageUrl,
+            parentId,
+            isVisible,
+            order,
+            dealTypes: Array.isArray(dealTypes) ? dealTypes : [],
+          });
         }}
         confirmLoading={updateMutation.isPending || isUploading}
         okText="Saqlash"
         cancelText="Bekor"
-        width={480}
+        width={560}
         className="!rounded-3xl"
       >
         {editingCategory && (
@@ -1432,6 +1649,12 @@ const CategoryPage = () => {
                 value={editingCategory.order}
                 onChange={(v) => setEditingCategory({ ...editingCategory, order: v ?? 0 })}
                 className="w-full !rounded-xl"
+              />
+            </Form.Item>
+            <Form.Item label="E'lon / Sotuv turlari">
+              <CategoryDealTypesEditor
+                value={editingCategory.dealTypes}
+                onChange={(dealTypes) => setEditingCategory({ ...editingCategory, dealTypes })}
               />
             </Form.Item>
             <Form.Item label="Rasm O'zgartirish">
