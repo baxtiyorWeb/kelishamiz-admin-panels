@@ -42,6 +42,8 @@ import {
   Sparkles,
   ExternalLink,
   Lock,
+  ShoppingBag,
+  Store,
 } from "lucide-react";
 import { CompactStatCard } from "../components/CompactStatCard";
 
@@ -108,6 +110,8 @@ const Users = () => {
       else if (roleTab === "blocked") statusParam = "blocked";
       else if (roleTab === "spam") statusParam = "spam";
       else if (roleTab === "active") statusParam = "active";
+      else if (roleTab === "bot") statusParam = "bot";
+      else if (roleTab === "channel") statusParam = "channel";
 
       const response = await api.get("/admin/users", {
         params: {
@@ -116,6 +120,7 @@ const Users = () => {
           search: searchTerm ? searchTerm.trim() : undefined,
           role: roleParam || undefined,
           status: statusParam || undefined,
+          telegram: roleTab === "bot" || roleTab === "channel" ? roleTab : undefined,
         },
       });
       return response.data?.content || response.data;
@@ -274,6 +279,8 @@ const Users = () => {
       if (roleTab === "user" && u.role !== "USER") return false;
       if (roleTab === "blocked" && !u.isBlocked) return false;
       if (roleTab === "spam" && !u.isSpam) return false;
+      if (roleTab === "bot" && !u.hasTelegramBot && !u.telegram_chat_id) return false;
+      if (roleTab === "channel" && !u.hasTelegramChannel && !u.telegram_channel_id) return false;
 
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
@@ -395,6 +402,93 @@ const Users = () => {
               <span className="font-semibold text-xs text-teal-600">SUPPORT</span>
             </Option>
           </Select>
+        );
+      },
+    },
+    {
+      title: "E'lonlar",
+      key: "productsCount",
+      width: 105,
+      render: (_, record) => {
+        const count = record.productsCount || 0;
+        return (
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-extrabold ${
+              count > 0
+                ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                : "text-slate-400 bg-slate-50 border border-slate-100"
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>{count} ta</span>
+          </span>
+        );
+      },
+    },
+    {
+      title: "Do'konlar",
+      key: "shopsCount",
+      width: 105,
+      render: (_, record) => {
+        const count = record.shopsCount || 0;
+        return (
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-extrabold ${
+              count > 0
+                ? "bg-purple-50 text-purple-700 border border-purple-200"
+                : "text-slate-400 bg-slate-50 border border-slate-100"
+            }`}
+          >
+            <Store className="w-3.5 h-3.5" />
+            <span>{count} ta</span>
+          </span>
+        );
+      },
+    },
+    {
+      title: "Telegram",
+      key: "telegram",
+      width: 160,
+      render: (_, record) => {
+        const hasBot = Boolean(record.hasTelegramBot || record.telegram_chat_id);
+        const hasChannel = Boolean(record.hasTelegramChannel || record.telegram_channel_id);
+        return (
+          <div className="flex flex-col gap-1 text-[11px]">
+            <Tooltip
+              title={
+                hasBot
+                  ? `Bot ulangan: Chat ID #${record.telegram_chat_id}`
+                  : "Botga ulanmagan"
+              }
+            >
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                  hasBot
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "text-slate-400 bg-slate-50"
+                }`}
+              >
+                <span>🤖 {hasBot ? "Bot: Ulangan" : "Bot: Yo'q"}</span>
+              </span>
+            </Tooltip>
+            <Tooltip
+              title={
+                hasChannel
+                  ? `Guruh/Kanal: ${record.telegram_channel_id}`
+                  : "Guruh yoki kanal qo'shilmagan"
+              }
+            >
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] truncate max-w-[140px] ${
+                  hasChannel
+                    ? "bg-sky-50 text-sky-700 border border-sky-200"
+                    : "text-slate-400 bg-slate-50"
+                }`}
+              >
+                <span>📢 {hasChannel ? record.telegram_channel_id : "Kanal: Yo'q"}</span>
+              </span>
+            </Tooltip>
+          </div>
         );
       },
     },
@@ -598,6 +692,8 @@ const Users = () => {
               { key: "active", label: `Faol (${stats.active})` },
               { key: "user", label: "Oddiy Foydalanuvchilar" },
               { key: "admin", label: `Adminlar (${stats.admins})` },
+              { key: "bot", label: "🤖 Botga ulanganlar" },
+              { key: "channel", label: "📢 Guruh/Kanal ulaganlar" },
               { key: "blocked", label: `Bloklanganlar (${stats.blocked})` },
               { key: "spam", label: `Spam Belgisi (${stats.spam})` },
             ]}
