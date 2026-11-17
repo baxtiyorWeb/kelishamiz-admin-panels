@@ -179,7 +179,16 @@ const PRESET_DEAL_TYPES = [
 ];
 
 function CategoryDealTypesEditor({ value = [], onChange }) {
-  const currentList = Array.isArray(value) ? value : [];
+  const currentList = useMemo(() => {
+    if (!Array.isArray(value)) return [];
+    return value.filter(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        !Array.isArray(item) &&
+        (item.key || item.label)
+    );
+  }, [value]);
   const [customLabel, setCustomLabel] = useState("");
   const [customKey, setCustomKey] = useState("");
   const [customDesc, setCustomDesc] = useState("");
@@ -1632,7 +1641,15 @@ const CategoryPage = () => {
             parentId,
             isVisible,
             order,
-            dealTypes: Array.isArray(dealTypes) ? dealTypes : [],
+            dealTypes: Array.isArray(dealTypes)
+              ? dealTypes.filter(
+                  (item) =>
+                    item &&
+                    typeof item === "object" &&
+                    !Array.isArray(item) &&
+                    (item.key || item.label)
+                )
+              : [],
           });
         }}
         confirmLoading={updateMutation.isPending || isUploading}
@@ -1761,7 +1778,15 @@ const CategoryPage = () => {
           if (!quickDealTypeCategory) return;
           updateMutation.mutate({
             id: quickDealTypeCategory.id,
-            dealTypes: Array.isArray(quickDealTypeCategory.dealTypes) ? quickDealTypeCategory.dealTypes : [],
+            dealTypes: Array.isArray(quickDealTypeCategory.dealTypes)
+              ? quickDealTypeCategory.dealTypes.filter(
+                  (item) =>
+                    item &&
+                    typeof item === "object" &&
+                    !Array.isArray(item) &&
+                    (item.key || item.label)
+                )
+              : [],
           });
           setQuickDealTypeCategory(null);
         }}
