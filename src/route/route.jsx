@@ -27,6 +27,7 @@ import SecurityOperationsCenter from "../modules/SecurityOperationsCenter";
 import AdminGuide from "../modules/AdminGuide";
 import PlatformHealth from "../modules/PlatformHealth";
 import ProductParameters from "../modules/ProductParameters";
+import DealTypesManagement from "../modules/DealTypesManagement";
 
 export const AppRouter = () => {
   return (
@@ -46,6 +47,7 @@ export const AppRouter = () => {
         <Route path="/security-center" element={<SecurityOperationsCenter />} />
         <Route path="/products" element={<Products />} />
         <Route path="/product-parameters" element={<ProductParameters />} />
+        <Route path="/deal-types" element={<DealTypesManagement />} />
         <Route path="/shops" element={<Shops />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/categories" element={<Category />} />
