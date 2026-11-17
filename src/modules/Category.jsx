@@ -272,7 +272,61 @@ function CategoryDealTypesEditor({ value = [], onChange }) {
 
       {/* Presets */}
       <div>
-        <div className="text-[11px] font-semibold text-slate-500 mb-1.5">Tayyor turlardan tanlash:</div>
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="text-[11px] font-semibold text-slate-500">Tayyor shablonlar:</div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() =>
+                onChange([{ key: "SELL", label: "Sotaman", desc: "Sotuvga chiqarish" }])
+              }
+              className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
+            >
+              Faqat Sotuv
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                onChange([
+                  { key: "SELL", label: "Sotaman", desc: "Sotuvga chiqarish" },
+                  { key: "RENT_OUT", label: "Ijaraga beraman", desc: "Ijaraga topshirish" },
+                  { key: "DAILY_RENT", label: "Kunlik ijara", desc: "Kunlik ijaraga berish" },
+                ])
+              }
+              className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
+            >
+              Ijara & Sotuv
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                onChange([
+                  { key: "SELL", label: "Sotaman", desc: "Sotuvga chiqarish" },
+                  { key: "INSTALLMENT", label: "Bo'lib to'lash", desc: "Nasiya / muddatli to'lov" },
+                  { key: "VIPKUP", label: "Boshlang'ich to'lov (Vipkup)", desc: "Vipkup shartlarida" },
+                  { key: "EXCHANGE", label: "Barter / Almashish", desc: "Almashish istagi" },
+                ])
+              }
+              className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
+            >
+              Avto & Nasiya
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange([...PRESET_DEAL_TYPES])}
+              className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer"
+            >
+              Barchasi
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-[10px] px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold cursor-pointer"
+            >
+              Tozalash
+            </button>
+          </div>
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {PRESET_DEAL_TYPES.map((preset) => {
             const active = isSelected(preset.key);
@@ -293,6 +347,18 @@ function CategoryDealTypesEditor({ value = [], onChange }) {
             );
           })}
         </div>
+      </div>
+
+      <div className="pt-1 flex items-center justify-between border-t border-slate-200/60">
+        <a
+          href="/deal-types"
+          target="_blank"
+          rel="noreferrer"
+          className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1"
+        >
+          <span>E'lon turlarini alohida sahifada boshqarish</span>
+          <span>&rarr;</span>
+        </a>
       </div>
 
       {/* Custom item toggle */}
@@ -1776,37 +1842,65 @@ const CategoryPage = () => {
         onCancel={() => setQuickDealTypeCategory(null)}
         onOk={() => {
           if (!quickDealTypeCategory) return;
+          const validTypes = Array.isArray(quickDealTypeCategory.dealTypes)
+            ? quickDealTypeCategory.dealTypes.filter(
+                (item) =>
+                  item &&
+                  typeof item === "object" &&
+                  !Array.isArray(item) &&
+                  (item.key || item.label)
+              )
+            : [];
           updateMutation.mutate({
             id: quickDealTypeCategory.id,
-            dealTypes: Array.isArray(quickDealTypeCategory.dealTypes)
-              ? quickDealTypeCategory.dealTypes.filter(
-                  (item) =>
-                    item &&
-                    typeof item === "object" &&
-                    !Array.isArray(item) &&
-                    (item.key || item.label)
-                )
-              : [],
+            dealTypes: validTypes.length > 0 ? validTypes : null,
+            applyToChildren: Boolean(quickDealTypeCategory.applyToChildren),
           });
           setQuickDealTypeCategory(null);
         }}
         confirmLoading={updateMutation.isPending}
         okText="Saqlash"
         cancelText="Bekor"
-        width={560}
+        width={580}
         className="!rounded-3xl"
       >
         {quickDealTypeCategory && (
           <div className="py-2 space-y-4">
-            <p className="text-xs text-slate-500">
-              <strong>"{quickDealTypeCategory.name}"</strong> kategoriyasida e'lon berishda ko'rinadigan sotuv/bitim turlarini belgilang:
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-slate-500">
+                <strong>"{quickDealTypeCategory.name}"</strong> kategoriyasida e'lon berishda ko'rinadigan sotuv/bitim turlarini belgilang:
+              </p>
+              <a
+                href="/deal-types"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-bold shrink-0 ml-2"
+              >
+                Kengaytirilgan sahifa &rarr;
+              </a>
+            </div>
             <CategoryDealTypesEditor
               value={quickDealTypeCategory.dealTypes}
               onChange={(dealTypes) =>
                 setQuickDealTypeCategory({ ...quickDealTypeCategory, dealTypes })
               }
             />
+            <div className="pt-2 px-1">
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={Boolean(quickDealTypeCategory.applyToChildren)}
+                  onChange={(e) =>
+                    setQuickDealTypeCategory({
+                      ...quickDealTypeCategory,
+                      applyToChildren: e.target.checked,
+                    })
+                  }
+                  className="rounded text-indigo-600 focus:ring-indigo-500"
+                />
+                <span>Ushbu e'lon turlarini barcha ichki (quyi) kategoriyalarga ham tatbiq etish</span>
+              </label>
+            </div>
           </div>
         )}
       </Modal>

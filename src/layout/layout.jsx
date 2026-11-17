@@ -148,12 +148,18 @@ const NAV_GROUPS = [
         desc: "Parametrlar & xususiyatlar",
       },
       {
-        path: "/product-parameters",
+        path: "/deal-types",
         icon: TagIcon,
+        label: "E'lon Turlari",
+        desc: "Kategoriyalar bo'yicha bitim turlari",
+        badge: "Yangi",
+        badgeColor: "bg-emerald-100 text-emerald-800",
+      },
+      {
+        path: "/product-parameters",
+        icon: Sliders,
         label: "Mahsulot Parametrlari",
-        desc: "E'lon turlari, holat va to'lov turlari",
-        badge: "E'lon turlari",
-        badgeColor: "bg-amber-100 text-amber-800",
+        desc: "Holat va to'lov turlari sozlamalari",
       },
       {
         path: "/banners",
