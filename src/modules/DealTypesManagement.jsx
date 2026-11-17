@@ -171,26 +171,42 @@ export default function DealTypesManagement() {
 
   // Build flattened category list with hierarchy path and parent lookups
   const { flatCategories, categoryMap, rootCategories } = useMemo(() => {
-    const list = isArray(rawCategories) ? rawCategories : [];
+    const rawList = isArray(rawCategories) ? rawCategories : [];
     const map = new Map();
-    const flat = [];
+    const allFlatNodes = [];
     const roots = [];
 
-    // First map all categories by ID
-    list.forEach((c) => {
-      map.set(Number(c.id), c);
-      if (!c.parentId && !c.parent?.id) {
-        roots.push(c);
+    // 1. Recursive helper to collect all nodes into map and flat list
+    const traverse = (node, parent = null) => {
+      if (!node || !node.id) return;
+      const normalizedNode = {
+        ...node,
+        id: Number(node.id),
+        parentId: node.parentId ?? node.parent?.id ?? parent?.id ?? null,
+        parent: node.parent || (parent ? { id: parent.id, name: parent.name } : null),
+      };
+      map.set(Number(normalizedNode.id), normalizedNode);
+      allFlatNodes.push(normalizedNode);
+
+      if (Array.isArray(node.children) && node.children.length > 0) {
+        node.children.forEach((child) => traverse(child, normalizedNode));
       }
+    };
+
+    rawList.forEach((root) => {
+      roots.push(root);
+      traverse(root, null);
     });
 
-    // Helper to get parent chain
+    // 2. Helper to get parent chain
     const getParentChain = (cat) => {
       const chain = [];
       let current = cat;
+      const visited = new Set();
       while (current) {
-        const pId = current.parentId || current.parent?.id;
-        if (!pId) break;
+        const pId = current.parentId ?? current.parent?.id;
+        if (!pId || visited.has(Number(pId))) break;
+        visited.add(Number(pId));
         const parent = map.get(Number(pId));
         if (parent) {
           chain.unshift(parent);
@@ -202,7 +218,8 @@ export default function DealTypesManagement() {
       return chain;
     };
 
-    list.forEach((cat) => {
+    // 3. Build enriched flat items
+    const flat = allFlatNodes.map((cat) => {
       const chain = getParentChain(cat);
       const pathNames = [...chain.map((p) => p.name), cat.name];
       const hasOwnDealTypes = Array.isArray(cat.dealTypes) && cat.dealTypes.length > 0;
@@ -231,7 +248,7 @@ export default function DealTypesManagement() {
         }
       }
 
-      flat.push({
+      return {
         ...cat,
         id: Number(cat.id),
         chain,
@@ -241,7 +258,7 @@ export default function DealTypesManagement() {
         inheritedFrom,
         effectiveDealTypes,
         mode,
-      });
+      };
     });
 
     return { flatCategories: flat, categoryMap: map, rootCategories: roots };
