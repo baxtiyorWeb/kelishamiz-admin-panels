@@ -143,7 +143,7 @@ const Locations = () => {
   }, [districtsList, searchDistrict]);
 
   const handleInlineDistrictAdd = () => {
-    if (!activeRegion) return message.warning("Viloyatni tanlang!");
+    if (!activeRegion?.id) return message.warning("Viloyatni tanlang!");
     if (!inlineDistrictName.trim()) return message.warning("Tuman nomini kiriting!");
     createDistrictMutation.mutate({
       regionId: activeRegion.id,
@@ -459,6 +459,7 @@ const Locations = () => {
         open={isDistrictModalOpen}
         onCancel={() => setIsDistrictModalOpen(false)}
         onOk={() => {
+          if (!activeRegion?.id) return message.warning("Avval viloyatni tanlang!");
           if (!newDistrictName.trim()) return message.warning("Nomini kiriting!");
           createDistrictMutation.mutate({
             regionId: activeRegion.id,
