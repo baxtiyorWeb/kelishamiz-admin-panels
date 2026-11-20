@@ -451,8 +451,8 @@ const Products = () => {
       rejectReasonType === "Boshqa"
         ? rejectCustomReason.trim() || "Talablarga javob bermaydi"
         : rejectCustomReason.trim()
-          ? `${rejectReasonType}: ${rejectCustomReason.trim()}`
-          : rejectReasonType;
+        ? `${rejectReasonType}: ${rejectCustomReason.trim()}`
+        : rejectReasonType;
     rejectListing({ id: rejectTargetListing.id, reason: finalReason });
   };
 
@@ -1559,10 +1559,11 @@ const Products = () => {
                     return (
                       <div
                         key={img.id || idx}
-                        className={`group relative rounded-2xl overflow-hidden border-2 transition-all bg-white flex flex-col ${isSelected
+                        className={`group relative rounded-2xl overflow-hidden border-2 transition-all bg-white flex flex-col ${
+                          isSelected
                             ? "border-indigo-600 shadow-md ring-2 ring-indigo-600/20"
                             : "border-slate-200 hover:border-indigo-300 shadow-xs"
-                          }`}
+                        }`}
                       >
                         {/* Checkbox for batch selection */}
                         <div className="absolute top-2 left-2 z-20">
