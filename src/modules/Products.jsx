@@ -55,6 +55,37 @@ import {
   Undo2,
 } from "lucide-react";
 
+const formatPropertyValue = (raw) => {
+  if (raw === null || raw === undefined || raw === "") return "—";
+  if (typeof raw === "boolean") return raw ? "Mavjud" : "Yo'q";
+  if (Array.isArray(raw)) {
+    const joined = raw.map(formatPropertyValue).filter((v) => v && v !== "—").join(", ");
+    return joined || "—";
+  }
+  if (typeof raw === "object") {
+    const nested = raw.value ?? raw.name ?? raw.label ?? raw.key;
+    if (nested !== undefined && nested !== raw) {
+      return formatPropertyValue(nested);
+    }
+    try {
+      return JSON.stringify(raw);
+    } catch {
+      return "—";
+    }
+  }
+  const str = String(raw).trim();
+  if (str === "true") return "Mavjud";
+  if (str === "false") return "Yo'q";
+  if ((str.startsWith("{") && str.endsWith("}")) || (str.startsWith("[") && str.endsWith("]"))) {
+    try {
+      return formatPropertyValue(JSON.parse(str));
+    } catch {
+      return str;
+    }
+  }
+  return str || "—";
+};
+
 const extractYoutubeId = (url) => {
   if (!url || typeof url !== "string") return null;
   const trimmed = url.trim();
@@ -420,8 +451,8 @@ const Products = () => {
       rejectReasonType === "Boshqa"
         ? rejectCustomReason.trim() || "Talablarga javob bermaydi"
         : rejectCustomReason.trim()
-        ? `${rejectReasonType}: ${rejectCustomReason.trim()}`
-        : rejectReasonType;
+          ? `${rejectReasonType}: ${rejectCustomReason.trim()}`
+          : rejectReasonType;
     rejectListing({ id: rejectTargetListing.id, reason: finalReason });
   };
 
@@ -1528,11 +1559,10 @@ const Products = () => {
                     return (
                       <div
                         key={img.id || idx}
-                        className={`group relative rounded-2xl overflow-hidden border-2 transition-all bg-white flex flex-col ${
-                          isSelected
+                        className={`group relative rounded-2xl overflow-hidden border-2 transition-all bg-white flex flex-col ${isSelected
                             ? "border-indigo-600 shadow-md ring-2 ring-indigo-600/20"
                             : "border-slate-200 hover:border-indigo-300 shadow-xs"
-                        }`}
+                          }`}
                       >
                         {/* Checkbox for batch selection */}
                         <div className="absolute top-2 left-2 z-20">
@@ -1630,16 +1660,22 @@ const Products = () => {
                   Xususiyatlar & Parametrlar ({selectedProductData.productProperties.length} ta)
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
-                  {selectedProductData.productProperties.map((pp, idx) => (
-                    <div key={pp.id || idx} className="flex flex-col bg-white p-2.5 rounded-xl border border-slate-100 shadow-xs">
-                      <span className="text-[11px] font-semibold text-slate-400">
-                        {pp.property?.name || "Parametr"}
-                      </span>
-                      <span className="text-xs font-black text-slate-800 mt-0.5">
-                        {pp.value || "—"}
-                      </span>
-                    </div>
-                  ))}
+                  {selectedProductData.productProperties.map((pp, idx) => {
+                    const propName =
+                      typeof pp.property?.name === "object" && pp.property?.name !== null
+                        ? pp.property.name.value || pp.property.name.name || "Parametr"
+                        : pp.property?.name || pp.key || "Parametr";
+                    return (
+                      <div key={pp.id || idx} className="flex flex-col bg-white p-2.5 rounded-xl border border-slate-100 shadow-xs">
+                        <span className="text-[11px] font-semibold text-slate-400">
+                          {String(propName)}
+                        </span>
+                        <span className="text-xs font-black text-slate-800 mt-0.5">
+                          {formatPropertyValue(pp.value)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
