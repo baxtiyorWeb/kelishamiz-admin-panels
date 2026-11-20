@@ -49,9 +49,21 @@ import {
   Sparkles,
   RefreshCw,
   Image as ImageIcon,
+  Video,
+  Play,
   Wand2,
   Undo2,
 } from "lucide-react";
+
+const extractYoutubeId = (url) => {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+  const match = trimmed.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/
+  );
+  return match ? match[1] : null;
+};
 import { ProductImageBgModal } from "../components/ProductImageBgModal";
 import { CompactStatCard } from "../components/CompactStatCard";
 import UserReference from "../components/UserReference";
@@ -640,6 +652,11 @@ const Products = () => {
                   <span className="text-[9px] font-bold mt-0.5">Rasm yo'q</span>
                 </div>
               )}
+              {record.videoUrl && (
+                <div className="absolute top-1 left-1 bg-rose-600/95 backdrop-blur-md text-[9px] text-white font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm">
+                  <Play className="w-2.5 h-2.5 fill-white text-white" />
+                </div>
+              )}
               {imgCount > 1 && (
                 <div className="absolute bottom-1 right-1 bg-slate-950/80 backdrop-blur-md text-[9px] text-white font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
                   <span>+{imgCount - 1}</span>
@@ -663,6 +680,12 @@ const Products = () => {
                   <Layers className="w-3 h-3 text-purple-500 flex-shrink-0" />
                   {record.category?.name || "Kategoriyasiz"}
                 </span>
+                {record.videoUrl && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[10px]">
+                    <Video className="w-3 h-3 text-rose-600" />
+                    <span>YouTube Video</span>
+                  </span>
+                )}
                 {record.dealType && record.dealType !== "SELL" && (() => {
                   const cfg = getDealTypeConfig(record.dealType);
                   return (
@@ -1377,6 +1400,82 @@ const Products = () => {
                 </div>
               </div>
             </div>
+
+            {/* YouTube Video Moderation Section (Displayed FIRST before photos) */}
+            {selectedProductData.videoUrl && (() => {
+              const ytId = extractYoutubeId(selectedProductData.videoUrl);
+              return (
+                <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 space-y-3 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-600 text-white text-xs font-extrabold">
+                        <Video className="w-3.5 h-3.5" />
+                        <span>1-O&apos;rinda: YouTube Video Moderatsiyasi (Maks. 1 daqiqa)</span>
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-white/10 text-[11px] font-bold text-slate-200">
+                        Holati: {selectedProductData.videoModerationStatus || "PENDING"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={selectedProductData.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>YouTube&apos;da ochish</span>
+                      </a>
+
+                      <Popconfirm
+                        title="Faqat videoni o'chirib tashlaysizmi?"
+                        description="E'lonning o'zi va rasmlari qoladi, faqat video olib tashlanadi."
+                        onConfirm={async () => {
+                          try {
+                            await api.delete(`/admin/listings/${selectedProductData.id}/video`, {
+                              data: { reason: "Moderator tomonidan video qoidaga zid deb topildi" },
+                            });
+                            message.success("E'lon videosi olib tashlandi!");
+                            refetchSelectedProduct();
+                            refetchProducts();
+                          } catch (err) {
+                            message.error(err?.response?.data?.message || "Videoni o'chirishda xatolik");
+                          }
+                        }}
+                        okText="Ha, videoni o'chirish"
+                        cancelText="Bekor"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Videoni o&apos;chirish</span>
+                        </button>
+                      </Popconfirm>
+                    </div>
+                  </div>
+
+                  {ytId ? (
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-slate-800">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`}
+                        title="Product YouTube Video"
+                        className="w-full h-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-xs text-amber-300 font-mono break-all">
+                      Video URL: {selectedProductData.videoUrl}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Photos Lightbox Gallery with AI Background Removal Actions */}
             {selectedProductData.images?.length > 0 && (

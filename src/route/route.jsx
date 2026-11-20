@@ -28,6 +28,7 @@ import AdminGuide from "../modules/AdminGuide";
 import PlatformHealth from "../modules/PlatformHealth";
 import ProductParameters from "../modules/ProductParameters";
 import DealTypesManagement from "../modules/DealTypesManagement";
+import ContactSettings from "../modules/ContactSettings";
 
 export const AppRouter = () => {
   return (
@@ -67,6 +68,7 @@ export const AppRouter = () => {
         <Route path="/audit-logs" element={<AuditLogs />} />
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/settings" element={<SystemSettings />} />
+        <Route path="/contact-settings" element={<ContactSettings />} />
       </Route>
 
       <Route path="/auth" element={<AuthLayout />}>
