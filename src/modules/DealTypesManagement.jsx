@@ -171,26 +171,42 @@ export default function DealTypesManagement() {
 
   // Build flattened category list with hierarchy path and parent lookups
   const { flatCategories, categoryMap, rootCategories } = useMemo(() => {
-    const list = isArray(rawCategories) ? rawCategories : [];
+    const rawList = isArray(rawCategories) ? rawCategories : [];
     const map = new Map();
-    const flat = [];
+    const allFlatNodes = [];
     const roots = [];
 
-    // First map all categories by ID
-    list.forEach((c) => {
-      map.set(Number(c.id), c);
-      if (!c.parentId && !c.parent?.id) {
-        roots.push(c);
+    // 1. Recursive helper to collect all nodes into map and flat list
+    const traverse = (node, parent = null) => {
+      if (!node || !node.id) return;
+      const normalizedNode = {
+        ...node,
+        id: Number(node.id),
+        parentId: node.parentId ?? node.parent?.id ?? parent?.id ?? null,
+        parent: node.parent || (parent ? { id: parent.id, name: parent.name } : null),
+      };
+      map.set(Number(normalizedNode.id), normalizedNode);
+      allFlatNodes.push(normalizedNode);
+
+      if (Array.isArray(node.children) && node.children.length > 0) {
+        node.children.forEach((child) => traverse(child, normalizedNode));
       }
+    };
+
+    rawList.forEach((root) => {
+      roots.push(root);
+      traverse(root, null);
     });
 
-    // Helper to get parent chain
+    // 2. Helper to get parent chain
     const getParentChain = (cat) => {
       const chain = [];
       let current = cat;
+      const visited = new Set();
       while (current) {
-        const pId = current.parentId || current.parent?.id;
-        if (!pId) break;
+        const pId = current.parentId ?? current.parent?.id;
+        if (!pId || visited.has(Number(pId))) break;
+        visited.add(Number(pId));
         const parent = map.get(Number(pId));
         if (parent) {
           chain.unshift(parent);
@@ -202,7 +218,8 @@ export default function DealTypesManagement() {
       return chain;
     };
 
-    list.forEach((cat) => {
+    // 3. Build enriched flat items
+    const flat = allFlatNodes.map((cat) => {
       const chain = getParentChain(cat);
       const pathNames = [...chain.map((p) => p.name), cat.name];
       const hasOwnDealTypes = Array.isArray(cat.dealTypes) && cat.dealTypes.length > 0;
@@ -227,11 +244,11 @@ export default function DealTypesManagement() {
           }
         }
         if (mode === "default") {
-          effectiveDealTypes = DEFAULT_DEAL_TYPES_LIST;
+          effectiveDealTypes = [];
         }
       }
 
-      flat.push({
+      return {
         ...cat,
         id: Number(cat.id),
         chain,
@@ -241,7 +258,7 @@ export default function DealTypesManagement() {
         inheritedFrom,
         effectiveDealTypes,
         mode,
-      });
+      };
     });
 
     return { flatCategories: flat, categoryMap: map, rootCategories: roots };
@@ -584,7 +601,14 @@ export default function DealTypesManagement() {
       key: "effectiveDealTypes",
       render: (types = [], record) => {
         if (!types || types.length === 0) {
-          return <span className="text-xs text-slate-400 italic">Mavjud emas</span>;
+          return (
+            <span className="text-xs text-slate-400 italic flex items-center gap-1.5">
+              <span>Mavjud emas</span>
+              <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80 font-medium">
+                (step o'tkazib yuboriladi)
+              </span>
+            </span>
+          );
         }
         return (
           <div className="flex flex-wrap gap-1.5 max-w-xl">
@@ -632,9 +656,9 @@ export default function DealTypesManagement() {
           );
         }
         return (
-          <Tag color="default" className="rounded-md text-xs inline-flex items-center gap-1 text-slate-500">
-            <Globe className="w-3 h-3" />
-            Standart tizim
+          <Tag color="default" className="rounded-md text-xs inline-flex items-center gap-1 text-slate-400 bg-slate-50 border-slate-200">
+            <XCircle className="w-3 h-3 text-slate-400" />
+            Biriktirilmagan (bo'sh)
           </Tag>
         );
       },
@@ -931,7 +955,7 @@ export default function DealTypesManagement() {
                         { value: "all", label: "Barcha holatlar" },
                         { value: "custom", label: "Faqat maxsus sozlangan" },
                         { value: "inherited", label: "Ota kategoriyadan meros" },
-                        { value: "default", label: "Standart tizim" },
+                        { value: "default", label: "Biriktirilmagan (bo'sh)" },
                       ]}
                     />
 

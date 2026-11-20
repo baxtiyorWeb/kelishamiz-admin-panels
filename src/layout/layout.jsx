@@ -229,6 +229,14 @@ const NAV_GROUPS = [
         label: "Tizim Sozlamalari & Flags",
         desc: "Control Plane, Kill Switches & Konfiguratsiya",
       },
+      {
+        path: "/contact-settings",
+        icon: Contact,
+        label: "Biz bilan aloqa (Dynamic)",
+        desc: "Aloqa kanallari va murojaat mavzulari",
+        badge: "Super Admin",
+        badgeColor: "bg-purple-100 text-purple-800",
+      },
     ],
   },
   {

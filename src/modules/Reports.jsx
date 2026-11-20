@@ -332,6 +332,25 @@ const Reports = () => {
     const typeUpper = (targetType || "").toUpperCase();
     const isProduct = typeUpper === "PRODUCT" || typeUpper === "LISTING";
     const isUser = typeUpper === "USER" || typeUpper === "CHAT_USER";
+    const isFeedback = typeUpper === "FEEDBACK";
+
+    if (isFeedback) {
+      return (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border text-xs font-bold bg-purple-50 text-purple-700 border-purple-200">
+              <MessageSquare className="w-3.5 h-3.5 text-purple-600" />
+              <span>BIZ BILAN ALOQA</span>
+            </span>
+          </div>
+          {targetId && targetId !== "guest" && (
+            <span className="font-mono text-[11px] font-semibold text-slate-600">
+              📞 {targetId}
+            </span>
+          )}
+        </div>
+      );
+    }
 
     if (targetDetails?.isDeleted) {
       return (

@@ -542,6 +542,7 @@ const CategoryPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["categories-all"] });
+      queryClient.invalidateQueries({ queryKey: ["deal-types-categories"] });
       setIsEditModalOpen(false);
       setInlineEditId(null);
       message.success("Yangilandi!");
@@ -1700,23 +1701,25 @@ const CategoryPage = () => {
         onOk={() => {
           if (!editingCategory) return;
           const { name, imageUrl, parentId, isVisible, order, dealTypes } = editingCategory;
-          updateMutation.mutate({
+          const updatePayload = {
             id: currentEditId,
             name,
             imageUrl,
             parentId,
             isVisible,
             order,
-            dealTypes: Array.isArray(dealTypes)
-              ? dealTypes.filter(
-                  (item) =>
-                    item &&
-                    typeof item === "object" &&
-                    !Array.isArray(item) &&
-                    (item.key || item.label)
-                )
-              : [],
-          });
+          };
+          if (Array.isArray(dealTypes)) {
+            const valid = dealTypes.filter(
+              (item) =>
+                item &&
+                typeof item === "object" &&
+                !Array.isArray(item) &&
+                (item.key || item.label)
+            );
+            updatePayload.dealTypes = valid.length > 0 ? valid : null;
+          }
+          updateMutation.mutate(updatePayload);
         }}
         confirmLoading={updateMutation.isPending || isUploading}
         okText="Saqlash"
